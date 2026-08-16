@@ -6,6 +6,13 @@ export const BOAT_MODEL = {
   halfWidth: 1.2,
 } as const;
 
+export const LONGBOAT_RIG = {
+  thwartZ: [2.05, 1.05, 0.05, -0.95, -1.95] as const,
+  seatY: 0.4,
+  seatWidth: 1.42,
+  keelY: 0.18,
+} as const;
+
 export const BOAT_BOUNDS = {
   width: BOAT_MODEL.halfWidth * 1.55,
   height: 1.15,

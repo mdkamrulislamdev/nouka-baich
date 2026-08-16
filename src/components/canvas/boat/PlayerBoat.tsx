@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Box3, Group, Vector3 } from "three";
 
 import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
+import { LongboatSeats } from "@/components/canvas/boat/LongboatSeats";
 import {
   cloneGltfScene,
   enableGltfShadows,
@@ -44,5 +45,10 @@ export function PlayerBoat() {
   const { scene } = useGltfModel(BOAT_MODEL.path);
   const boat = useMemo(() => prepareBoatScene(scene), [scene]);
 
-  return <primitive object={boat} />;
+  return (
+    <group>
+      <primitive object={boat} />
+      <LongboatSeats />
+    </group>
+  );
 }
