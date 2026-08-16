@@ -65,6 +65,12 @@ export function clearObstacles(): void {
   obstacles.length = 0;
 }
 
+export function deactivateAllObstacles(): void {
+  for (let index = 0; index < obstacles.length; index += 1) {
+    obstacles[index].active = false;
+  }
+}
+
 export function forEachActiveObstacle(
   callback: (obstacle: ObstacleRecord) => void,
 ): void {

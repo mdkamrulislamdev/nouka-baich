@@ -243,6 +243,17 @@ export function ObstacleSpawner() {
     }
 
     const { status, speed, level } = useGameStore.getState();
+    if (status === "MENU") {
+      for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+        item.record.active = false;
+        item.object.visible = false;
+      }
+      distanceRef.current = OBSTACLE_SPAWN.interval * 0.35;
+      spawnCountRef.current = 0;
+      return;
+    }
+
     if (status !== "PLAYING") {
       return;
     }

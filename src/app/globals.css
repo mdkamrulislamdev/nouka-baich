@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-bengali: var(--font-bengali), var(--font-geist-sans), sans-serif;
 }
 
 html,
