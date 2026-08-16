@@ -5,6 +5,7 @@ import { type ReactNode } from "react";
 import { PCFShadowMap } from "three";
 
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
+import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
 import { CAMERA, FOG } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
@@ -49,6 +50,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
       >
         <ChaseCamera />
         <SceneLighting />
+        <PlaceholderBoat />
         {children}
       </Canvas>
     </div>
