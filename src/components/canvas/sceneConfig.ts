@@ -79,6 +79,13 @@ export const PALM_MODEL = {
   targetHeight: 5.2,
 } as const;
 
+export const SCENERY = {
+  treeCount: 24,
+  hutCount: 8,
+  grassCount: 128,
+  palmCount: 12,
+} as const;
+
 export function getLaneLimit(): number {
   const riverHalf = WORLD_SCROLL.riverWidth / 2;
   const bankInset = WORLD_SCROLL.bankWidth / 2;

@@ -9,7 +9,21 @@ import {
   type BufferGeometry,
 } from "three";
 
-export type SceneryKind = "tree" | "palm" | "hut";
+export type SceneryKind = "tree" | "palm" | "hut" | "grass";
+
+export const TREE_LOCAL = {
+  trunk: [0, 0.7, 0],
+  crown: [0, 2.05, 0],
+  top: [0, 3.15, 0],
+  bush: [0.45, 0.32, 0.2],
+} as const;
+
+export const HUT_LOCAL = {
+  wall: [0, 0.58, 0],
+  roof: [0, 1.38, 0],
+  door: [0, 0.36, 0.79],
+  roofRotationY: Math.PI / 4,
+} as const;
 
 export type SceneryResources = {
   treeTrunk: BufferGeometry;
@@ -109,24 +123,66 @@ function addMesh(
 
 export function createTreeProp(resources: SceneryResources): Group {
   const group = new Group();
-  addMesh(group, resources.treeTrunk, resources.trunkMat, 0, 0.7, 0);
-  addMesh(group, resources.treeCrown, resources.crownMat, 0, 2.05, 0);
-  addMesh(group, resources.treeTop, resources.topMat, 0, 3.15, 0);
-  addMesh(group, resources.bush, resources.bushMat, 0.45, 0.32, 0.2);
+  addMesh(
+    group,
+    resources.treeTrunk,
+    resources.trunkMat,
+    TREE_LOCAL.trunk[0],
+    TREE_LOCAL.trunk[1],
+    TREE_LOCAL.trunk[2],
+  );
+  addMesh(
+    group,
+    resources.treeCrown,
+    resources.crownMat,
+    TREE_LOCAL.crown[0],
+    TREE_LOCAL.crown[1],
+    TREE_LOCAL.crown[2],
+  );
+  addMesh(
+    group,
+    resources.treeTop,
+    resources.topMat,
+    TREE_LOCAL.top[0],
+    TREE_LOCAL.top[1],
+    TREE_LOCAL.top[2],
+  );
+  addMesh(
+    group,
+    resources.bush,
+    resources.bushMat,
+    TREE_LOCAL.bush[0],
+    TREE_LOCAL.bush[1],
+    TREE_LOCAL.bush[2],
+  );
   return group;
 }
 
 export function createHutProp(resources: SceneryResources): Group {
   const group = new Group();
-  addMesh(group, resources.hutWall, resources.wallMat, 0, 0.58, 0);
+  addMesh(
+    group,
+    resources.hutWall,
+    resources.wallMat,
+    HUT_LOCAL.wall[0],
+    HUT_LOCAL.wall[1],
+    HUT_LOCAL.wall[2],
+  );
 
   const roof = new Mesh(resources.hutRoof, resources.roofMat);
-  roof.position.set(0, 1.38, 0);
-  roof.rotation.y = Math.PI / 4;
+  roof.position.set(HUT_LOCAL.roof[0], HUT_LOCAL.roof[1], HUT_LOCAL.roof[2]);
+  roof.rotation.y = HUT_LOCAL.roofRotationY;
   roof.castShadow = true;
   roof.receiveShadow = true;
   group.add(roof);
 
-  addMesh(group, resources.hutDoor, resources.doorMat, 0, 0.36, 0.79);
+  addMesh(
+    group,
+    resources.hutDoor,
+    resources.doorMat,
+    HUT_LOCAL.door[0],
+    HUT_LOCAL.door[1],
+    HUT_LOCAL.door[2],
+  );
   return group;
 }
