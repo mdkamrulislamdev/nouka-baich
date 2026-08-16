@@ -1,6 +1,5 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Group } from "three";
@@ -8,6 +7,7 @@ import { Group } from "three";
 import { PALM_MODEL, SCENERY, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
 import { preparePalm } from "@/components/canvas/world/PalmProp";
 import { ObjectPool } from "@/lib/ObjectPool";
+import { useGltfModel } from "@/lib/gltf";
 import { useGameStore } from "@/store/useGameStore";
 
 const { segmentCount, segmentLength, recycleZ, riverWidth } = WORLD_SCROLL;
@@ -39,7 +39,7 @@ function recycleZPosition(currentZ: number): number {
 }
 
 export function PooledScenery() {
-  const { scene: palmScene } = useGLTF(PALM_MODEL.path);
+  const { scene: palmScene } = useGltfModel(PALM_MODEL.path);
   const rootRef = useRef<Group>(null);
   const propsRef = useRef<PooledPalm[] | null>(null);
 
@@ -101,5 +101,3 @@ export function PooledScenery() {
 
   return <group ref={rootRef} />;
 }
-
-useGLTF.preload(PALM_MODEL.path);

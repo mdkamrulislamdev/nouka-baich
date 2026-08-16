@@ -15,6 +15,7 @@ import { SceneLighting } from "@/components/canvas/SceneLighting";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { CAMERA, getAtmosphere } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
+import "@/lib/gltf";
 
 type GameCanvasProps = {
   children?: ReactNode;

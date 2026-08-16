@@ -1,38 +1,20 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
 import { useMemo } from "react";
-import {
-  Box3,
-  Group,
-  Mesh,
-  MeshStandardMaterial,
-  Vector3,
-  type Object3D,
-} from "three";
+import { Box3, Group, Vector3 } from "three";
 
 import { PALM_MODEL } from "@/components/canvas/sceneConfig";
-
-function enableShadows(object: Object3D) {
-  object.traverse((child) => {
-    if (!(child instanceof Mesh)) {
-      return;
-    }
-
-    child.castShadow = true;
-    child.receiveShadow = true;
-
-    if (child.material instanceof MeshStandardMaterial) {
-      child.material.envMapIntensity = 0.85;
-    }
-  });
-}
+import {
+  cloneGltfScene,
+  enableGltfShadows,
+  useGltfModel,
+} from "@/lib/gltf";
 
 export function preparePalm(source: Group): Group {
   const wrapper = new Group();
-  const palm = source.clone(true);
+  const palm = cloneGltfScene(source);
   wrapper.add(palm);
-  enableShadows(wrapper);
+  enableGltfShadows(wrapper, 0.85);
 
   wrapper.updateMatrixWorld(true);
   const box = new Box3().setFromObject(wrapper);
@@ -54,10 +36,8 @@ type PalmPropProps = {
 };
 
 export function PalmProp({ scale = 1 }: PalmPropProps) {
-  const { scene } = useGLTF(PALM_MODEL.path);
+  const { scene } = useGltfModel(PALM_MODEL.path);
   const palm = useMemo(() => preparePalm(scene), [scene]);
 
   return <primitive object={palm} scale={scale} />;
 }
-
-useGLTF.preload(PALM_MODEL.path);

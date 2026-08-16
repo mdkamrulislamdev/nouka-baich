@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { Suspense, useRef } from "react";
 import { type Group } from "three";
 
+import { GltfFallback } from "@/components/canvas/assets/GltfFallback";
 import { ObstacleSpawner } from "@/components/canvas/obstacles/ObstacleSpawner";
 import { InstancedScenery } from "@/components/canvas/world/InstancedScenery";
 import { PooledScenery } from "@/components/canvas/world/PooledScenery";
@@ -46,7 +47,7 @@ export function ScrollingWorld() {
 
   return (
     <group>
-      <Suspense fallback={null}>
+      <Suspense fallback={<GltfFallback />}>
         <RiverWater />
         <InstancedScenery />
         <PooledScenery />

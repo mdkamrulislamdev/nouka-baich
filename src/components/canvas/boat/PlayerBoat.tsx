@@ -1,38 +1,20 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
 import { useMemo } from "react";
-import {
-  Box3,
-  Group,
-  Mesh,
-  MeshStandardMaterial,
-  Vector3,
-  type Object3D,
-} from "three";
+import { Box3, Group, Vector3 } from "three";
 
 import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
-
-function enableBoatShadows(object: Object3D) {
-  object.traverse((child) => {
-    if (!(child instanceof Mesh)) {
-      return;
-    }
-
-    child.castShadow = true;
-    child.receiveShadow = true;
-
-    if (child.material instanceof MeshStandardMaterial) {
-      child.material.envMapIntensity = 1.1;
-    }
-  });
-}
+import {
+  cloneGltfScene,
+  enableGltfShadows,
+  useGltfModel,
+} from "@/lib/gltf";
 
 function prepareBoatScene(source: Group): Group {
   const wrapper = new Group();
-  const boat = source.clone(true);
+  const boat = cloneGltfScene(source);
   wrapper.add(boat);
-  enableBoatShadows(wrapper);
+  enableGltfShadows(wrapper, 1.1);
 
   wrapper.updateMatrixWorld(true);
   let box = new Box3().setFromObject(wrapper);
@@ -59,10 +41,8 @@ function prepareBoatScene(source: Group): Group {
 }
 
 export function PlayerBoat() {
-  const { scene } = useGLTF(BOAT_MODEL.path);
+  const { scene } = useGltfModel(BOAT_MODEL.path);
   const boat = useMemo(() => prepareBoatScene(scene), [scene]);
 
   return <primitive object={boat} />;
 }
-
-useGLTF.preload(BOAT_MODEL.path);

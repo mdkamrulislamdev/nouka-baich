@@ -1,38 +1,17 @@
-import {
-  Box3,
-  Group,
-  Mesh,
-  MeshStandardMaterial,
-  Vector3,
-  type Object3D,
-} from "three";
+import { Box3, Group, Vector3 } from "three";
 
 import { ROCK_MODEL } from "@/components/canvas/sceneConfig";
+import { cloneGltfScene, enableGltfShadows } from "@/lib/gltf";
 
 const fitBox = new Box3();
 const fitSize = new Vector3();
 const fitCenter = new Vector3();
 
-function enableRockShadows(object: Object3D): void {
-  object.traverse((child) => {
-    if (!(child instanceof Mesh)) {
-      return;
-    }
-
-    child.castShadow = true;
-    child.receiveShadow = true;
-
-    if (child.material instanceof MeshStandardMaterial) {
-      child.material.envMapIntensity = 0.75;
-    }
-  });
-}
-
 export function prepareRock(source: Group): Group {
   const wrapper = new Group();
-  const rock = source.clone(true);
+  const rock = cloneGltfScene(source);
   wrapper.add(rock);
-  enableRockShadows(wrapper);
+  enableGltfShadows(wrapper, 0.75);
 
   wrapper.updateMatrixWorld(true);
   fitBox.setFromObject(wrapper);

@@ -1,6 +1,5 @@
 "use client";
 
-import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Group, Vector3 } from "three";
@@ -33,6 +32,7 @@ import {
 } from "@/components/canvas/obstacles/markerFactory";
 import { prepareRock } from "@/components/canvas/obstacles/rockFactory";
 import { ObjectPool } from "@/lib/ObjectPool";
+import { useGltfModel } from "@/lib/gltf";
 import { clamp } from "@/lib/clamp";
 import {
   acquirePreferredObstacle,
@@ -162,7 +162,7 @@ function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
 }
 
 export function ObstacleSpawner() {
-  const { scene: rockScene } = useGLTF(ROCK_MODEL.path);
+  const { scene: rockScene } = useGltfModel(ROCK_MODEL.path);
   const rootRef = useRef<Group>(null);
   const itemsRef = useRef<PooledObstacle[] | null>(null);
   const distanceRef = useRef(0);
@@ -311,5 +311,3 @@ export function ObstacleSpawner() {
 
   return <group ref={rootRef} />;
 }
-
-useGLTF.preload(ROCK_MODEL.path);
