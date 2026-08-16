@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 
@@ -22,15 +22,34 @@ export const metadata: Metadata = {
   title: "Nouka Baich 3D",
   description:
     "A 3D boat racing game inspired by traditional Bangladeshi Nouka Baich.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Nouka Baich 3D",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${notoBengali.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${notoBengali.variable} h-full overflow-hidden overscroll-none antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex h-full min-h-0 flex-col overflow-hidden overscroll-none select-none">
+        {children}
+      </body>
     </html>
   );
 }
