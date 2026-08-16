@@ -2,10 +2,11 @@
 
 import { Canvas } from "@react-three/fiber";
 import { type ReactNode } from "react";
+import { PCFShadowMap } from "three";
 
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
-import { FOG } from "@/components/canvas/sceneConfig";
+import { CAMERA, FOG } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
 
 type GameCanvasProps = {
@@ -18,9 +19,15 @@ export function GameCanvas({ children }: GameCanvasProps) {
   return (
     <div className="absolute inset-0 h-full w-full">
       <Canvas
-        shadows
+        shadows={{ type: PCFShadowMap }}
         dpr={dpr}
         frameloop="always"
+        camera={{
+          fov: CAMERA.fov,
+          near: CAMERA.near,
+          far: CAMERA.far,
+          position: CAMERA.position,
+        }}
         gl={{
           antialias: true,
           alpha: false,
@@ -34,9 +41,10 @@ export function GameCanvas({ children }: GameCanvasProps) {
             WebGL is required to play Nouka Baich 3D.
           </div>
         }
-        onCreated={({ gl }) => {
+        onCreated={({ gl, camera }) => {
           gl.setClearColor(FOG.color);
-          gl.toneMappingExposure = 1.08;
+          gl.toneMappingExposure = 0.78;
+          camera.lookAt(...CAMERA.lookAt);
         }}
       >
         <ChaseCamera />

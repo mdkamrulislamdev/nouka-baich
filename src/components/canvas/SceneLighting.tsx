@@ -1,6 +1,6 @@
 "use client";
 
-import { Environment, Sky } from "@react-three/drei";
+import { Environment } from "@react-three/drei";
 import { Suspense } from "react";
 
 import { FOG, SUN_POSITION } from "@/components/canvas/sceneConfig";
@@ -8,17 +8,18 @@ import { FOG, SUN_POSITION } from "@/components/canvas/sceneConfig";
 export function SceneLighting() {
   return (
     <>
+      <color attach="background" args={["#243044"]} />
       <fogExp2 attach="fog" args={[FOG.color, FOG.density]} />
 
-      <ambientLight color="#ffd2a8" intensity={0.42} />
+      <ambientLight color="#ffd2a8" intensity={0.38} />
       <hemisphereLight
-        color="#ffe6c8"
-        groundColor="#3a2718"
-        intensity={0.32}
+        color="#f0d4b0"
+        groundColor="#2c2118"
+        intensity={0.28}
       />
       <directionalLight
         color="#ffd09a"
-        intensity={2.35}
+        intensity={1.85}
         position={SUN_POSITION}
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -32,16 +33,14 @@ export function SceneLighting() {
         shadow-camera-bottom={-16}
       />
 
-      <Sky
-        sunPosition={SUN_POSITION}
-        turbidity={6.5}
-        rayleigh={1.15}
-        mieCoefficient={0.0045}
-        mieDirectionalG={0.82}
-      />
-
       <Suspense fallback={null}>
-        <Environment preset="sunset" environmentIntensity={0.55} />
+        <Environment
+          preset="sunset"
+          background
+          backgroundBlurriness={0.35}
+          backgroundIntensity={0.42}
+          environmentIntensity={0.7}
+        />
       </Suspense>
     </>
   );
