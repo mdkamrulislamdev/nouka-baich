@@ -166,6 +166,11 @@ export const STEER = {
   tiltDamping: 10,
 } as const;
 
+export const AUDIO = {
+  musicVolume: 0.4,
+  sfxVolume: 0.72,
+} as const;
+
 export const SCORE = {
   referenceSpeed: 12,
 } as const;
