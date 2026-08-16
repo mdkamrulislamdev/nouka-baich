@@ -11,7 +11,7 @@ import {
   type Object3D,
 } from "three";
 
-import { BOAT_MODEL, BOAT_SPAWN } from "@/components/canvas/sceneConfig";
+import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
 
 function enableBoatShadows(object: Object3D) {
   object.traverse((child) => {
@@ -62,7 +62,7 @@ export function PlayerBoat() {
   const { scene } = useGLTF(BOAT_MODEL.path);
   const boat = useMemo(() => prepareBoatScene(scene), [scene]);
 
-  return <primitive object={boat} position={BOAT_SPAWN} />;
+  return <primitive object={boat} />;
 }
 
 useGLTF.preload(BOAT_MODEL.path);

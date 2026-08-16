@@ -5,6 +5,7 @@ import { Suspense, type ReactNode, useEffect } from "react";
 import { PCFShadowMap } from "three";
 
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
+import { BoatController } from "@/components/canvas/boat/BoatController";
 import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
@@ -58,9 +59,11 @@ export function GameCanvas({ children }: GameCanvasProps) {
         <ChaseCamera />
         <SceneLighting />
         <ScrollingWorld />
-        <Suspense fallback={<PlaceholderBoat />}>
-          <PlayerBoat />
-        </Suspense>
+        <BoatController>
+          <Suspense fallback={<PlaceholderBoat />}>
+            <PlayerBoat />
+          </Suspense>
+        </BoatController>
         {children}
       </Canvas>
     </div>

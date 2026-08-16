@@ -26,3 +26,8 @@ export const WORLD_SCROLL = {
   recycleZ: 30,
   riverWidth: 16,
 } as const;
+
+export const STEER = {
+  maxOffset: 6,
+  damping: 8,
+} as const;
