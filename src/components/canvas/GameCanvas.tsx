@@ -26,7 +26,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
   }, []);
 
   return (
-    <div className="absolute inset-0 h-full w-full">
+    <div className="absolute inset-0 h-full w-full touch-none" data-game-canvas>
       <Canvas
         shadows={{ type: PCFShadowMap }}
         dpr={dpr}
@@ -44,7 +44,12 @@ export function GameCanvas({ children }: GameCanvasProps) {
           stencil: false,
         }}
         resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
-        style={{ display: "block", width: "100%", height: "100%" }}
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          touchAction: "none",
+        }}
         fallback={
           <div className="flex h-full w-full items-center justify-center text-sm text-zinc-400">
             WebGL is required to play Nouka Baich 3D.

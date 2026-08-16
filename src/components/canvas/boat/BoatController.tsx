@@ -5,7 +5,7 @@ import { type ReactNode, useRef } from "react";
 import { type Group } from "three";
 
 import { BOAT_SPAWN, STEER } from "@/components/canvas/sceneConfig";
-import { useKeyboardSteering } from "@/hooks/useKeyboardSteering";
+import { useSteeringAxis } from "@/hooks/useSteeringAxis";
 import { useGameStore } from "@/store/useGameStore";
 
 type BoatControllerProps = {
@@ -14,7 +14,7 @@ type BoatControllerProps = {
 
 export function BoatController({ children }: BoatControllerProps) {
   const groupRef = useRef<Group>(null);
-  const getSteerAxis = useKeyboardSteering();
+  const getSteerAxis = useSteeringAxis();
 
   useFrame((_, delta) => {
     const group = groupRef.current;

@@ -30,4 +30,5 @@ export const WORLD_SCROLL = {
 export const STEER = {
   maxOffset: 6,
   damping: 8,
+  dragPixelsForFullSteer: 140,
 } as const;
