@@ -11,6 +11,7 @@ import {
   OBSTACLE_SPAWN,
   ROCK_MODEL,
   getLaneLimit,
+  getSpawnInterval,
 } from "@/components/canvas/sceneConfig";
 import {
   createDinghyObstacle,
@@ -241,7 +242,7 @@ export function ObstacleSpawner() {
       return;
     }
 
-    const { status, speed } = useGameStore.getState();
+    const { status, speed, level } = useGameStore.getState();
     if (status !== "PLAYING") {
       return;
     }
@@ -271,8 +272,9 @@ export function ObstacleSpawner() {
       }
     });
 
-    while (distanceRef.current >= OBSTACLE_SPAWN.interval) {
-      distanceRef.current -= OBSTACLE_SPAWN.interval;
+    const interval = getSpawnInterval(level);
+    while (distanceRef.current >= interval) {
+      distanceRef.current -= interval;
       spawnCountRef.current += 1;
       const slot = acquirePreferredObstacle(
         pickSpawnKind(spawnCountRef.current),

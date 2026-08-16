@@ -139,6 +139,30 @@ export const SCORE = {
   referenceSpeed: 12,
 } as const;
 
+export const PROGRESSION = {
+  metersPerLevel: 500,
+  baseSpeed: 12,
+  speedPerLevel: 2.2,
+  minInterval: 7.5,
+  intervalDecay: 0.9,
+  speedDamping: 1.35,
+} as const;
+
+export function getLevelForDistance(distance: number): number {
+  return 1 + Math.floor(Math.max(0, distance) / PROGRESSION.metersPerLevel);
+}
+
+export function getTargetSpeed(level: number): number {
+  return PROGRESSION.baseSpeed + Math.max(0, level - 1) * PROGRESSION.speedPerLevel;
+}
+
+export function getSpawnInterval(level: number): number {
+  return Math.max(
+    PROGRESSION.minInterval,
+    OBSTACLE_SPAWN.interval * PROGRESSION.intervalDecay ** Math.max(0, level - 1),
+  );
+}
+
 export const OBSTACLE_SPAWN = {
   interval: 16,
   spawnZ: -96,

@@ -6,6 +6,7 @@ import { PCFShadowMap } from "three";
 
 import { CollisionSystem } from "@/components/canvas/obstacles/CollisionSystem";
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
+import { ProgressionSystem } from "@/components/canvas/ProgressionSystem";
 import { ScoreEngine } from "@/components/canvas/ScoreEngine";
 import { BoatController } from "@/components/canvas/boat/BoatController";
 import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
@@ -73,6 +74,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
         </BoatController>
         <CollisionSystem />
         <ScoreEngine />
+        <ProgressionSystem />
         {children}
       </Canvas>
     </div>
