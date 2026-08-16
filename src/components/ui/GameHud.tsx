@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsButton } from "@/components/ui/SettingsModal";
 import { useGameStore } from "@/store/useGameStore";
 
 type HudStatProps = {
@@ -45,6 +46,12 @@ export function GameHud() {
         <HudStat bangla="স্তর" label="Level" value={`${level}`} />
         <div className="w-px self-stretch bg-[#e4c36a]/25" />
         <HudStat bangla="সেরা" label="Best" value={`${highScore}`} />
+        <div className="hidden items-center sm:flex">
+          <SettingsButton />
+        </div>
+      </div>
+      <div className="mt-2 flex justify-end sm:hidden">
+        <SettingsButton />
       </div>
     </div>
   );

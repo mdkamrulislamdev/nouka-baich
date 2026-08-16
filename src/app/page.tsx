@@ -3,6 +3,7 @@ import { AudioDirector } from "@/components/ui/AudioDirector";
 import { GameHud } from "@/components/ui/GameHud";
 import { GameOverModal } from "@/components/ui/GameOverModal";
 import { MainMenu } from "@/components/ui/MainMenu";
+import { SettingsModal } from "@/components/ui/SettingsModal";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
       <GameHud />
       <MainMenu />
       <GameOverModal />
+      <SettingsModal />
     </main>
   );
 }

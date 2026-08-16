@@ -17,6 +17,7 @@ import { WaterWake } from "@/components/canvas/fx/WaterWake";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { CAMERA, getAtmosphere } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
+import { useGameStore } from "@/store/useGameStore";
 import "@/lib/gltf";
 
 type GameCanvasProps = {
@@ -25,12 +26,15 @@ type GameCanvasProps = {
 
 export function GameCanvas({ children }: GameCanvasProps) {
   const dpr = useGameDpr();
+  const graphicsQuality = useGameStore((state) => state.graphicsQuality);
+  const adaptiveLow = useGameStore((state) => state.adaptiveLow);
+  const highFx = graphicsQuality === "high" && !adaptiveLow;
 
   return (
     <div className="absolute inset-0 h-full w-full touch-none" data-game-canvas>
       <Canvas
-        shadows={{ type: PCFShadowMap }}
-        dpr={dpr}
+        shadows={highFx ? { type: PCFShadowMap } : false}
+        dpr={highFx ? dpr : [1, 1]}
         frameloop="always"
         camera={{
           fov: CAMERA.fov,
@@ -39,7 +43,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
           position: CAMERA.position,
         }}
         gl={{
-          antialias: true,
+          antialias: highFx,
           alpha: false,
           powerPreference: "high-performance",
           stencil: false,

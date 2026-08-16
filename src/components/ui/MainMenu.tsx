@@ -1,6 +1,7 @@
 "use client";
 
 import { beginRun } from "@/lib/gameSession";
+import { SettingsButton } from "@/components/ui/SettingsModal";
 import { useGameStore } from "@/store/useGameStore";
 
 function AlpanaCorner({ className }: { className: string }) {
@@ -77,6 +78,7 @@ export function MainMenu() {
           <p className="mt-3 text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
             Play
           </p>
+          <SettingsButton className="mt-5" />
         </div>
       </div>
     </div>

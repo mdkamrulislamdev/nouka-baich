@@ -6,11 +6,15 @@ import { type HemisphereLight } from "three";
 
 import { GradientSky } from "@/components/canvas/Atmosphere";
 import { SUN_POSITION, getAtmosphere } from "@/components/canvas/sceneConfig";
+import { useGameStore } from "@/store/useGameStore";
 
 const INITIAL = getAtmosphere(1);
 
 export function SceneLighting() {
   const hemisphereRef = useRef<HemisphereLight>(null);
+  const graphicsQuality = useGameStore((state) => state.graphicsQuality);
+  const adaptiveLow = useGameStore((state) => state.adaptiveLow);
+  const highFx = graphicsQuality === "high" && !adaptiveLow;
 
   return (
     <>
@@ -23,10 +27,10 @@ export function SceneLighting() {
       />
       <directionalLight
         color={INITIAL.sunColor}
-        intensity={1.85}
+        intensity={highFx ? 1.85 : 1.35}
         position={SUN_POSITION}
-        castShadow
-        shadow-mapSize={[2048, 2048]}
+        castShadow={highFx}
+        shadow-mapSize={highFx ? [2048, 2048] : [512, 512]}
         shadow-bias={-0.0002}
         shadow-normalBias={0.04}
         shadow-camera-near={1}

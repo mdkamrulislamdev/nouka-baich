@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 export type GameStatus = "MENU" | "PLAYING" | "GAMEOVER";
+export type GraphicsQuality = "high" | "low";
 
 export type GameState = {
   status: GameStatus;
@@ -12,6 +13,11 @@ export type GameState = {
   level: number;
   highScore: number;
   isNewHighScore: boolean;
+  musicMuted: boolean;
+  sfxMuted: boolean;
+  graphicsQuality: GraphicsQuality;
+  settingsOpen: boolean;
+  adaptiveLow: boolean;
 };
 
 export type GameActions = {
@@ -22,6 +28,11 @@ export type GameActions = {
   setLaneOffset: (laneOffset: number) => void;
   setLevel: (level: number) => void;
   setHighScore: (highScore: number) => void;
+  setMusicMuted: (musicMuted: boolean) => void;
+  setSfxMuted: (sfxMuted: boolean) => void;
+  setGraphicsQuality: (graphicsQuality: GraphicsQuality) => void;
+  setSettingsOpen: (settingsOpen: boolean) => void;
+  setAdaptiveLow: (adaptiveLow: boolean) => void;
   startGame: () => void;
   endGame: () => void;
   resetGame: () => void;
@@ -38,6 +49,11 @@ const INITIAL_STATE: GameState = {
   level: 1,
   highScore: 0,
   isNewHighScore: false,
+  musicMuted: false,
+  sfxMuted: false,
+  graphicsQuality: "high",
+  settingsOpen: false,
+  adaptiveLow: false,
 };
 
 export const useGameStore = create<GameStore>()(
@@ -50,11 +66,21 @@ export const useGameStore = create<GameStore>()(
     setLaneOffset: (laneOffset) => set({ laneOffset }),
     setLevel: (level) => set({ level }),
     setHighScore: (highScore) => set({ highScore }),
+    setMusicMuted: (musicMuted) => set({ musicMuted }),
+    setSfxMuted: (sfxMuted) => set({ sfxMuted }),
+    setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
+    setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+    setAdaptiveLow: (adaptiveLow) => set({ adaptiveLow }),
     startGame: () =>
       set((state) => ({
         ...INITIAL_STATE,
         highScore: state.highScore,
+        musicMuted: state.musicMuted,
+        sfxMuted: state.sfxMuted,
+        graphicsQuality: state.graphicsQuality,
+        adaptiveLow: state.adaptiveLow,
         isNewHighScore: false,
+        settingsOpen: false,
         status: "PLAYING",
       })),
     endGame: () =>
@@ -77,6 +103,11 @@ export function getGameState(): GameState {
     level,
     highScore,
     isNewHighScore,
+    musicMuted,
+    sfxMuted,
+    graphicsQuality,
+    settingsOpen,
+    adaptiveLow,
   } = useGameStore.getState();
   return {
     status,
@@ -87,5 +118,10 @@ export function getGameState(): GameState {
     level,
     highScore,
     isNewHighScore,
+    musicMuted,
+    sfxMuted,
+    graphicsQuality,
+    settingsOpen,
+    adaptiveLow,
   };
 }
