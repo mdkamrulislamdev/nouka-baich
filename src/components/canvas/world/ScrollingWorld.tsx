@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { Suspense, useRef } from "react";
 import { type Group } from "three";
 
+import { ObstacleSpawner } from "@/components/canvas/obstacles/ObstacleSpawner";
 import { InstancedScenery } from "@/components/canvas/world/InstancedScenery";
 import { PooledScenery } from "@/components/canvas/world/PooledScenery";
 import { RiverBank } from "@/components/canvas/world/RiverBank";
@@ -49,6 +50,7 @@ export function ScrollingWorld() {
         <RiverWater />
         <InstancedScenery />
         <PooledScenery />
+        <ObstacleSpawner />
         {Array.from({ length: segmentCount }, (_, index) => (
           <group
             key={index}

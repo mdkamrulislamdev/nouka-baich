@@ -107,3 +107,12 @@ export const STEER = {
   rollMax: 0.22,
   tiltDamping: 10,
 } as const;
+
+export const OBSTACLE_SPAWN = {
+  interval: 16,
+  spawnZ: -96,
+  recycleZ: 22,
+  poolSize: 12,
+  y: 0.1,
+  laneScale: 0.86,
+} as const;
