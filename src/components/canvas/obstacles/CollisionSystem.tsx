@@ -6,17 +6,27 @@ import {
   clearLastCollision,
   queryObstacleCollision,
 } from "@/lib/collision";
+import { resetCrashShake, triggerCrashShake } from "@/lib/crashFeedback";
 import { useGameStore } from "@/store/useGameStore";
 
 export function CollisionSystem() {
   useFrame(() => {
-    const { status, laneOffset } = useGameStore.getState();
+    const { status, laneOffset, endGame } = useGameStore.getState();
     if (status !== "PLAYING") {
+      if (status === "MENU") {
+        resetCrashShake();
+      }
       clearLastCollision();
       return;
     }
 
-    queryObstacleCollision(laneOffset);
+    const hit = queryObstacleCollision(laneOffset);
+    if (!hit) {
+      return;
+    }
+
+    triggerCrashShake(laneOffset - hit.x);
+    endGame();
   });
 
   return null;

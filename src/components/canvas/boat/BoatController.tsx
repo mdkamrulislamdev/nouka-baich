@@ -7,6 +7,7 @@ import { type Group } from "three";
 import { BOAT_SPAWN, STEER, getLaneLimit } from "@/components/canvas/sceneConfig";
 import { useSteeringAxis } from "@/hooks/useSteeringAxis";
 import { clamp } from "@/lib/clamp";
+import { getCrashPose } from "@/lib/crashFeedback";
 import { useGameStore } from "@/store/useGameStore";
 
 type BoatControllerProps = {
@@ -33,9 +34,17 @@ export function BoatController({ children }: BoatControllerProps) {
     }
 
     const { status, laneOffset, setLaneOffset } = useGameStore.getState();
-    if (status !== "PLAYING") {
+    if (status === "MENU") {
       group.position.set(...BOAT_SPAWN);
       group.rotation.set(0, 0, 0);
+      return;
+    }
+
+    if (status !== "PLAYING") {
+      const crash = getCrashPose();
+      const settle = Math.min(delta, 0.05);
+      group.rotation.z = dampToward(group.rotation.z, crash.roll, 8, settle);
+      group.rotation.y = dampToward(group.rotation.y, crash.yaw, 8, settle);
       return;
     }
 
