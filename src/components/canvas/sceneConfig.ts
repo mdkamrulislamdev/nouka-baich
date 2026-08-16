@@ -35,6 +35,14 @@ export function getLaneLimit(): number {
   return Math.max(0, riverHalf - bankInset - BOAT_MODEL.halfWidth);
 }
 
+export const WATER = {
+  color: "#0e3a42",
+  sunColor: "#ffd09a",
+  distortionScale: 2.6,
+  size: 0.55,
+  normalsPath: "/textures/waternormals.jpg",
+} as const;
+
 export const STEER = {
   damping: 8,
   dragPixelsForFullSteer: 140,
