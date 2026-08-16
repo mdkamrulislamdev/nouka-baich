@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { Suspense, useRef } from "react";
 import { type Group } from "three";
 
+import { PooledScenery } from "@/components/canvas/world/PooledScenery";
 import { RiverBank } from "@/components/canvas/world/RiverBank";
 import { RiverWater } from "@/components/canvas/world/RiverWater";
 import { WORLD_SCROLL } from "@/components/canvas/sceneConfig";
@@ -45,6 +46,7 @@ export function ScrollingWorld() {
     <group>
       <Suspense fallback={null}>
         <RiverWater />
+        <PooledScenery />
         {Array.from({ length: segmentCount }, (_, index) => (
           <group
             key={index}
@@ -53,8 +55,8 @@ export function ScrollingWorld() {
             }}
             position={[0, 0, initialSegmentZ(index)]}
           >
-            <RiverBank side={-1} segmentIndex={index} />
-            <RiverBank side={1} segmentIndex={index} />
+            <RiverBank side={-1} />
+            <RiverBank side={1} />
           </group>
         ))}
       </Suspense>

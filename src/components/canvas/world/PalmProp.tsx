@@ -28,7 +28,7 @@ function enableShadows(object: Object3D) {
   });
 }
 
-function preparePalm(source: Group): Group {
+export function preparePalm(source: Group): Group {
   const wrapper = new Group();
   const palm = source.clone(true);
   wrapper.add(palm);
