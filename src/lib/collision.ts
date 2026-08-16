@@ -74,3 +74,31 @@ export function queryObstacleCollision(
 
   return lastHit;
 }
+
+const NEAR_MISS_X = 1.35;
+const NEAR_MISS_Z = 2.4;
+
+export function queryNearMiss(laneOffset: number): ObstacleRecord | null {
+  updatePlayerBox(laneOffset);
+  const playerHalfX = BOAT_BOUNDS.width * 0.5;
+  let closest: ObstacleRecord | null = null;
+  let closestGap = Number.POSITIVE_INFINITY;
+
+  forEachActiveObstacle((obstacle) => {
+    if (obstacle.z < -NEAR_MISS_Z || obstacle.z > BOAT_BOUNDS.length * 0.35) {
+      return;
+    }
+
+    const gapX =
+      Math.abs(obstacle.x - laneOffset) - playerHalfX - obstacle.halfX;
+    if (gapX <= 0 || gapX > NEAR_MISS_X) {
+      return;
+    }
+    if (gapX < closestGap) {
+      closestGap = gapX;
+      closest = obstacle;
+    }
+  });
+
+  return closest;
+}

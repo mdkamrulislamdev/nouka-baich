@@ -170,6 +170,12 @@ export const AUDIO = {
   musicVolume: 0.4,
   sfxVolume: 0.72,
   bgmPath: "/audio/folk-loop.wav",
+  sfx: {
+    row: "/audio/sfx-row.wav",
+    splash: "/audio/sfx-splash.wav",
+    crash: "/audio/sfx-crash.wav",
+    nearMiss: "/audio/sfx-near-miss.wav",
+  },
 } as const;
 
 export const SCORE = {

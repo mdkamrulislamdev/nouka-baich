@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { type Group } from "three";
 
 import { LONGBOAT_RIG, OARS } from "@/components/canvas/sceneConfig";
+import { updateRowingClock } from "@/lib/rowingClock";
 import { useGameStore } from "@/store/useGameStore";
 
 const SIDES = [-1, 1] as const;
@@ -55,12 +56,7 @@ export function OarRig() {
   useFrame((_, delta) => {
     const { status, speed } = useGameStore.getState();
     const dt = Math.min(delta, 0.05);
-
-    if (status === "PLAYING") {
-      phaseRef.current += dt * (OARS.baseRate + speed * OARS.speedRate);
-    } else if (status === "MENU") {
-      phaseRef.current = 0;
-    }
+    phaseRef.current = updateRowingClock(dt, status, speed);
 
     for (let seat = 0; seat < LONGBOAT_RIG.thwartZ.length; seat += 1) {
       const stroke = Math.sin(phaseRef.current + seat * OARS.stagger);

@@ -8,6 +8,7 @@ import { CollisionSystem } from "@/components/canvas/obstacles/CollisionSystem";
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
 import { ProgressionSystem } from "@/components/canvas/ProgressionSystem";
 import { ScoreEngine } from "@/components/canvas/ScoreEngine";
+import { SfxSystem } from "@/components/canvas/SfxSystem";
 import { BoatController } from "@/components/canvas/boat/BoatController";
 import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
@@ -71,6 +72,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
         </BoatController>
         <WaterWake />
         <CollisionSystem />
+        <SfxSystem />
         <ScoreEngine />
         <ProgressionSystem />
         {children}

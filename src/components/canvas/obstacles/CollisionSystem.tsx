@@ -7,6 +7,7 @@ import {
   queryObstacleCollision,
 } from "@/lib/collision";
 import { resetCrashShake, triggerCrashShake } from "@/lib/crashFeedback";
+import { audio } from "@/lib/audio";
 import { useGameStore } from "@/store/useGameStore";
 
 export function CollisionSystem() {
@@ -26,6 +27,7 @@ export function CollisionSystem() {
     }
 
     triggerCrashShake(laneOffset - hit.x);
+    audio.playSfx("crash");
     endGame();
   });
 
