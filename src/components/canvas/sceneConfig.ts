@@ -135,6 +135,10 @@ export const STEER = {
   tiltDamping: 10,
 } as const;
 
+export const SCORE = {
+  referenceSpeed: 12,
+} as const;
+
 export const OBSTACLE_SPAWN = {
   interval: 16,
   spawnZ: -96,
