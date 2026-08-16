@@ -23,7 +23,7 @@ export function ChaseCamera() {
     camera.position.set(
       CAMERA.position[0] + laneOffset + shake.x,
       CAMERA.position[1] + shake.y,
-      CAMERA.position[2],
+      CAMERA.position[2] + shake.z,
     );
     camera.lookAt(laneOffset, CAMERA.lookAt[1], CAMERA.lookAt[2]);
   });

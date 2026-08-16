@@ -5,6 +5,7 @@ import { useRef } from "react";
 
 import { audio } from "@/lib/audio";
 import { queryNearMiss } from "@/lib/collision";
+import { triggerNearMissShake } from "@/lib/crashFeedback";
 import { getRowingPhase } from "@/lib/rowingClock";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -43,6 +44,7 @@ export function SfxSystem() {
     if (near && !heardNearMiss.has(near.id)) {
       heardNearMiss.add(near.id);
       audio.playSfx("nearMiss", { volume: 0.45 });
+      triggerNearMissShake(laneOffset - near.x);
     }
   });
 
