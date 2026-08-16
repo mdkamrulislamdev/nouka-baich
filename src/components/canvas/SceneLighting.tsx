@@ -1,24 +1,28 @@
 "use client";
 
-import { Environment, Sky } from "@react-three/drei";
-import { Suspense } from "react";
+import { Environment } from "@react-three/drei";
+import { Suspense, useRef } from "react";
+import { type HemisphereLight } from "three";
 
-import { FOG, SUN_POSITION } from "@/components/canvas/sceneConfig";
+import { GradientSky } from "@/components/canvas/Atmosphere";
+import { SUN_POSITION, getAtmosphere } from "@/components/canvas/sceneConfig";
+
+const INITIAL = getAtmosphere(1);
 
 export function SceneLighting() {
+  const hemisphereRef = useRef<HemisphereLight>(null);
+
   return (
     <>
-      <color attach="background" args={["#243044"]} />
-      <fogExp2 attach="fog" args={[FOG.color, FOG.density]} />
-
-      <ambientLight color="#ffd2a8" intensity={0.38} />
+      <ambientLight color={INITIAL.ambient} intensity={0.38} />
       <hemisphereLight
-        color="#f0d4b0"
-        groundColor="#2c2118"
+        ref={hemisphereRef}
+        color={INITIAL.ambient}
+        groundColor={INITIAL.ground}
         intensity={0.28}
       />
       <directionalLight
-        color="#ffd09a"
+        color={INITIAL.sunColor}
         intensity={1.85}
         position={SUN_POSITION}
         castShadow
@@ -33,13 +37,7 @@ export function SceneLighting() {
         shadow-camera-bottom={-16}
       />
 
-      <Sky
-        sunPosition={SUN_POSITION}
-        turbidity={2.4}
-        rayleigh={0.55}
-        mieCoefficient={0.005}
-        mieDirectionalG={0.8}
-      />
+      <GradientSky hemisphereRef={hemisphereRef} />
 
       <Suspense fallback={null}>
         <Environment preset="sunset" environmentIntensity={0.7} />

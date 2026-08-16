@@ -16,10 +16,54 @@ export const CAMERA = {
 
 export const SUN_POSITION: [number, number, number] = [28, 32, 12];
 
-export const FOG = {
-  color: "#6d5c4a",
-  density: 0.01,
-} as const;
+export type AtmospherePalette = {
+  zenith: string;
+  horizon: string;
+  fogDensity: number;
+  sunColor: string;
+  ambient: string;
+  ground: string;
+};
+
+export const LEVEL_ATMOSPHERES: AtmospherePalette[] = [
+  {
+    zenith: "#3a6ea8",
+    horizon: "#e0a36a",
+    fogDensity: 0.01,
+    sunColor: "#ffd09a",
+    ambient: "#ffd2a8",
+    ground: "#3a2718",
+  },
+  {
+    zenith: "#4ea3d4",
+    horizon: "#c8e4c0",
+    fogDensity: 0.007,
+    sunColor: "#fff1c8",
+    ambient: "#e7f3ff",
+    ground: "#3d4a28",
+  },
+  {
+    zenith: "#5b6d78",
+    horizon: "#8aa090",
+    fogDensity: 0.016,
+    sunColor: "#d8d0c0",
+    ambient: "#c5d0c8",
+    ground: "#2c2a24",
+  },
+  {
+    zenith: "#2a2458",
+    horizon: "#c46b8a",
+    fogDensity: 0.012,
+    sunColor: "#ffb08a",
+    ambient: "#e0b8d0",
+    ground: "#2a1820",
+  },
+];
+
+export function getAtmosphere(level: number): AtmospherePalette {
+  const index = Math.max(0, level - 1) % LEVEL_ATMOSPHERES.length;
+  return LEVEL_ATMOSPHERES[index];
+}
 
 export const WORLD_SCROLL = {
   segmentLength: 42,

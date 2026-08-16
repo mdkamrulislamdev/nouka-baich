@@ -10,7 +10,7 @@ import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
-import { CAMERA, FOG } from "@/components/canvas/sceneConfig";
+import { CAMERA, getAtmosphere } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -56,7 +56,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
           </div>
         }
         onCreated={({ gl, camera }) => {
-          gl.setClearColor(FOG.color);
+          gl.setClearColor(getAtmosphere(1).horizon);
           gl.toneMappingExposure = 0.78;
           camera.lookAt(...CAMERA.lookAt);
         }}
