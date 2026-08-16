@@ -4,9 +4,21 @@ import { AUDIO } from "@/components/canvas/sceneConfig";
 
 export type SfxId = "row" | "splash" | "crash" | "nearMiss";
 
+const SFX_COOLDOWN_MS: Record<SfxId, number> = {
+  row: 95,
+  splash: 120,
+  crash: 0,
+  nearMiss: 200,
+};
+
+if (typeof window !== "undefined") {
+  Howler.html5PoolSize = 24;
+}
+
 class SoundManager {
   private bgm: Howl | null = null;
-  private readonly sfx = new Map<string, Howl>();
+  private readonly sfx = new Map<SfxId, Howl>();
+  private readonly lastPlayed = new Map<SfxId, number>();
   private musicMuted = false;
   private sfxMuted = false;
   private unlocked = false;
@@ -48,7 +60,7 @@ class SoundManager {
       src: [src],
       loop: true,
       volume: AUDIO.musicVolume,
-      html5: true,
+      html5: false,
       preload: true,
     });
     this.bgm.mute(this.musicMuted);
@@ -74,7 +86,9 @@ class SoundManager {
       new Howl({
         src: [src],
         volume: AUDIO.sfxVolume,
+        html5: false,
         preload: true,
+        pool: 3,
       }),
     );
   }
@@ -83,6 +97,14 @@ class SoundManager {
     if (this.sfxMuted) {
       return;
     }
+
+    const now =
+      typeof performance === "undefined" ? Date.now() : performance.now();
+    const last = this.lastPlayed.get(id) ?? 0;
+    if (now - last < SFX_COOLDOWN_MS[id]) {
+      return;
+    }
+    this.lastPlayed.set(id, now);
 
     const sound = this.sfx.get(id);
     if (!sound) {
