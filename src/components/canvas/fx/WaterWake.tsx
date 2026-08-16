@@ -92,13 +92,16 @@ export function WaterWake() {
     }
 
     const dt = Math.min(delta, 0.05);
-    const { status, speed, laneOffset } = useGameStore.getState();
+    const { status, speed, laneOffset, graphicsQuality, adaptiveLow } =
+      useGameStore.getState();
     const positionAttr = geometry.getAttribute("position");
     const lifeAttr = geometry.getAttribute("aLife");
     const sizeAttr = geometry.getAttribute("aSize");
 
     if (status === "PLAYING") {
-      const emitRate = WAKE.emitPerSecond * (0.55 + speed / 18);
+      const qualityScale =
+        graphicsQuality === "high" && !adaptiveLow ? 1 : 0.35;
+      const emitRate = WAKE.emitPerSecond * (0.55 + speed / 18) * qualityScale;
       emitAccRef.current += emitRate * dt;
       while (emitAccRef.current >= 1) {
         emitAccRef.current -= 1;
