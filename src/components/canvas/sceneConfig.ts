@@ -98,6 +98,14 @@ export const LOG_OBSTACLE = {
   y: 0.22,
 } as const;
 
+export const DINGHY_OBSTACLE = {
+  length: 3.2,
+  beam: 1.35,
+  y: 0.08,
+  minSpeed: 3.2,
+  maxSpeed: 5.4,
+} as const;
+
 export const SCENERY = {
   treeCount: 24,
   hutCount: 8,
@@ -134,7 +142,9 @@ export const OBSTACLE_SPAWN = {
   poolSize: 6,
   rockPoolSize: 8,
   logPoolSize: 8,
+  dinghyPoolSize: 6,
   y: 0.1,
   laneScale: 0.86,
   rockLaneScale: 0.52,
+  dinghyLaneScale: 0.7,
 } as const;
