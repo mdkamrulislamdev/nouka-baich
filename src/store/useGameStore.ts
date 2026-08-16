@@ -11,6 +11,7 @@ export type GameState = {
   laneOffset: number;
   level: number;
   highScore: number;
+  isNewHighScore: boolean;
 };
 
 export type GameActions = {
@@ -36,6 +37,7 @@ const INITIAL_STATE: GameState = {
   laneOffset: 0,
   level: 1,
   highScore: 0,
+  isNewHighScore: false,
 };
 
 export const useGameStore = create<GameStore>()(
@@ -52,11 +54,13 @@ export const useGameStore = create<GameStore>()(
       set((state) => ({
         ...INITIAL_STATE,
         highScore: state.highScore,
+        isNewHighScore: false,
         status: "PLAYING",
       })),
     endGame: () =>
       set((state) => ({
         status: "GAMEOVER",
+        isNewHighScore: state.score > state.highScore,
         highScore: Math.max(state.highScore, state.score),
       })),
     resetGame: () => set(INITIAL_STATE),
@@ -64,7 +68,24 @@ export const useGameStore = create<GameStore>()(
 );
 
 export function getGameState(): GameState {
-  const { status, score, distance, speed, laneOffset, level, highScore } =
-    useGameStore.getState();
-  return { status, score, distance, speed, laneOffset, level, highScore };
+  const {
+    status,
+    score,
+    distance,
+    speed,
+    laneOffset,
+    level,
+    highScore,
+    isNewHighScore,
+  } = useGameStore.getState();
+  return {
+    status,
+    score,
+    distance,
+    speed,
+    laneOffset,
+    level,
+    highScore,
+    isNewHighScore,
+  };
 }

@@ -1,5 +1,6 @@
 import { GameCanvasLoader } from "@/components/canvas/GameCanvasLoader";
 import { GameHud } from "@/components/ui/GameHud";
+import { GameOverModal } from "@/components/ui/GameOverModal";
 import { MainMenu } from "@/components/ui/MainMenu";
 
 export default function Home() {
@@ -8,6 +9,7 @@ export default function Home() {
       <GameCanvasLoader />
       <GameHud />
       <MainMenu />
+      <GameOverModal />
     </main>
   );
 }

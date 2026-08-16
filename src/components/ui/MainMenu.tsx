@@ -1,7 +1,6 @@
 "use client";
 
-import { resetCrashShake } from "@/lib/crashFeedback";
-import { deactivateAllObstacles } from "@/lib/obstacleWorld";
+import { beginRun } from "@/lib/gameSession";
 import { useGameStore } from "@/store/useGameStore";
 
 function AlpanaCorner({ className }: { className: string }) {
@@ -40,9 +39,7 @@ export function MainMenu() {
   }
 
   const handleStart = () => {
-    deactivateAllObstacles();
-    resetCrashShake();
-    useGameStore.getState().startGame();
+    beginRun();
   };
 
   return (
