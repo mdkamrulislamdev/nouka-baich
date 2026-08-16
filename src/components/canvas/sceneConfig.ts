@@ -86,6 +86,12 @@ export const PALM_MODEL = {
   targetHeight: 5.2,
 } as const;
 
+export const ROCK_MODEL = {
+  path: "/models/stylized_rocks/scene.gltf",
+  targetWidth: 2.7,
+  embedY: -0.16,
+} as const;
+
 export const SCENERY = {
   treeCount: 24,
   hutCount: 8,
@@ -119,7 +125,9 @@ export const OBSTACLE_SPAWN = {
   interval: 16,
   spawnZ: -96,
   recycleZ: 22,
-  poolSize: 12,
+  poolSize: 8,
+  rockPoolSize: 8,
   y: 0.1,
   laneScale: 0.86,
+  rockLaneScale: 0.52,
 } as const;

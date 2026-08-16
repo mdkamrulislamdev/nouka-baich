@@ -32,6 +32,10 @@ export function clearLastCollision(): void {
 }
 
 function writeObstacleBox(obstacle: ObstacleRecord): Box3 {
+  if (obstacle.worldBox) {
+    return obstacle.worldBox;
+  }
+
   obstacleCenter.set(obstacle.x, obstacle.y + obstacle.halfY, obstacle.z);
   obstacleSize.set(obstacle.halfX * 2, obstacle.halfY * 2, obstacle.halfZ * 2);
   return obstacleBox.setFromCenterAndSize(obstacleCenter, obstacleSize);

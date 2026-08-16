@@ -1,11 +1,13 @@
 "use client";
 
+import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
-import { Group } from "three";
+import { Group, Vector3 } from "three";
 
 import {
   OBSTACLE_SPAWN,
+  ROCK_MODEL,
   getLaneLimit,
 } from "@/components/canvas/sceneConfig";
 import {
@@ -14,43 +16,60 @@ import {
   disposeMarkerResources,
   MARKER_EXTENTS,
 } from "@/components/canvas/obstacles/markerFactory";
+import { prepareRock } from "@/components/canvas/obstacles/rockFactory";
 import { ObjectPool } from "@/lib/ObjectPool";
 import {
   acquireIdleObstacle,
   clearObstacles,
+  createObstacleRecord,
   forEachActiveObstacle,
   registerObstacle,
+  type ObstacleKind,
   type ObstacleRecord,
 } from "@/lib/obstacleWorld";
 import { useGameStore } from "@/store/useGameStore";
 
-type PooledMarker = {
+type PooledObstacle = {
   object: Group;
   record: ObstacleRecord;
 };
+
+const worldSize = new Vector3();
 
 function seededRandom(seed: number): number {
   const value = Math.sin(seed * 12.9898) * 43758.5453;
   return value - Math.floor(value);
 }
 
-function syncMarker(item: PooledMarker): void {
+function pickSpawnKind(seed: number): ObstacleKind {
+  return seededRandom(seed * 1.7) < 0.72 ? "rock" : "marker";
+}
+
+function syncObstacle(item: PooledObstacle): void {
   const { record, object } = item;
   object.visible = record.active;
   if (!record.active) {
     return;
   }
+
   object.position.set(record.x, record.y, record.z);
   object.rotation.y = record.rotY;
   object.scale.setScalar(record.scale);
+
+  if (record.worldBox) {
+    object.updateWorldMatrix(true, false);
+    record.worldBox.setFromObject(object);
+    record.worldBox.getSize(worldSize);
+    record.halfX = worldSize.x * 0.5;
+    record.halfY = worldSize.y * 0.5;
+    record.halfZ = worldSize.z * 0.5;
+  }
 }
 
 function placeMarker(record: ObstacleRecord, seed: number, z: number): void {
   const laneLimit = getLaneLimit();
-  const x = (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale;
   record.active = true;
-  record.kind = "marker";
-  record.x = x;
+  record.x = (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale;
   record.y = OBSTACLE_SPAWN.y;
   record.z = z;
   record.rotY = seededRandom(seed * 2.2) * Math.PI * 2;
@@ -60,9 +79,21 @@ function placeMarker(record: ObstacleRecord, seed: number, z: number): void {
   record.halfZ = MARKER_EXTENTS.halfZ * record.scale;
 }
 
+function placeRock(record: ObstacleRecord, seed: number, z: number): void {
+  const laneLimit = getLaneLimit();
+  record.active = true;
+  record.x =
+    (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.rockLaneScale;
+  record.y = ROCK_MODEL.embedY;
+  record.z = z;
+  record.rotY = seededRandom(seed * 3.4) * Math.PI * 2;
+  record.scale = 0.78 + seededRandom(seed * 5.2) * 0.4;
+}
+
 export function ObstacleSpawner() {
+  const { scene: rockScene } = useGLTF(ROCK_MODEL.path);
   const rootRef = useRef<Group>(null);
-  const itemsRef = useRef<PooledMarker[] | null>(null);
+  const itemsRef = useRef<PooledObstacle[] | null>(null);
   const distanceRef = useRef(0);
   const spawnCountRef = useRef(0);
 
@@ -73,31 +104,33 @@ export function ObstacleSpawner() {
     }
 
     const resources = createMarkerResources();
-    const pool = new ObjectPool(
+    const markerPool = new ObjectPool(
       () => createMarkerObstacle(resources),
       OBSTACLE_SPAWN.poolSize,
     );
-    const items: PooledMarker[] = [];
+    const rockPool = new ObjectPool(
+      () => prepareRock(rockScene),
+      OBSTACLE_SPAWN.rockPoolSize,
+    );
+    const items: PooledObstacle[] = [];
 
-    for (let index = 0; index < OBSTACLE_SPAWN.poolSize; index += 1) {
-      const object = pool.acquire();
-      const record: ObstacleRecord = {
-        id: index,
-        kind: "marker",
-        active: false,
-        x: 0,
-        y: OBSTACLE_SPAWN.y,
-        z: 0,
-        rotY: 0,
-        scale: 1,
-        halfX: MARKER_EXTENTS.halfX,
-        halfY: MARKER_EXTENTS.halfY,
-        halfZ: MARKER_EXTENTS.halfZ,
-      };
-      root.add(object);
-      registerObstacle(record);
-      items.push({ object, record });
-    }
+    const fillPool = (
+      pool: ObjectPool<Group>,
+      kind: ObstacleKind,
+      count: number,
+      idOffset: number,
+    ) => {
+      for (let index = 0; index < count; index += 1) {
+        const object = pool.acquire();
+        const record = createObstacleRecord(idOffset + index, kind);
+        root.add(object);
+        registerObstacle(record);
+        items.push({ object, record });
+      }
+    };
+
+    fillPool(markerPool, "marker", OBSTACLE_SPAWN.poolSize, 0);
+    fillPool(rockPool, "rock", OBSTACLE_SPAWN.rockPoolSize, 100);
 
     itemsRef.current = items;
     distanceRef.current = OBSTACLE_SPAWN.interval * 0.35;
@@ -108,12 +141,13 @@ export function ObstacleSpawner() {
         item.record.active = false;
         root.remove(item.object);
       });
-      pool.drain(() => undefined);
+      markerPool.drain(() => undefined);
+      rockPool.drain(() => undefined);
       disposeMarkerResources(resources);
       clearObstacles();
       itemsRef.current = null;
     };
-  }, []);
+  }, [rockScene]);
 
   useFrame((_, delta) => {
     const items = itemsRef.current;
@@ -139,18 +173,27 @@ export function ObstacleSpawner() {
 
     while (distanceRef.current >= OBSTACLE_SPAWN.interval) {
       distanceRef.current -= OBSTACLE_SPAWN.interval;
-      const slot = acquireIdleObstacle("marker");
+      spawnCountRef.current += 1;
+      const preferred = pickSpawnKind(spawnCountRef.current);
+      const slot =
+        acquireIdleObstacle(preferred) ??
+        acquireIdleObstacle(preferred === "rock" ? "marker" : "rock");
       if (!slot) {
         break;
       }
-      spawnCountRef.current += 1;
-      placeMarker(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+      if (slot.kind === "rock") {
+        placeRock(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+      } else {
+        placeMarker(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+      }
     }
 
     for (let index = 0; index < items.length; index += 1) {
-      syncMarker(items[index]);
+      syncObstacle(items[index]);
     }
   });
 
   return <group ref={rootRef} />;
 }
+
+useGLTF.preload(ROCK_MODEL.path);
