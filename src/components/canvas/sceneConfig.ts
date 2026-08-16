@@ -92,6 +92,12 @@ export const ROCK_MODEL = {
   embedY: -0.16,
 } as const;
 
+export const LOG_OBSTACLE = {
+  length: 3.9,
+  radius: 0.26,
+  y: 0.22,
+} as const;
+
 export const SCENERY = {
   treeCount: 24,
   hutCount: 8,
@@ -125,8 +131,9 @@ export const OBSTACLE_SPAWN = {
   interval: 16,
   spawnZ: -96,
   recycleZ: 22,
-  poolSize: 8,
+  poolSize: 6,
   rockPoolSize: 8,
+  logPoolSize: 8,
   y: 0.1,
   laneScale: 0.86,
   rockLaneScale: 0.52,

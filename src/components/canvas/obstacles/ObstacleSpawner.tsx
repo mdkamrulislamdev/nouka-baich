@@ -6,10 +6,17 @@ import { useEffect, useRef } from "react";
 import { Group, Vector3 } from "three";
 
 import {
+  LOG_OBSTACLE,
   OBSTACLE_SPAWN,
   ROCK_MODEL,
   getLaneLimit,
 } from "@/components/canvas/sceneConfig";
+import {
+  createLogObstacle,
+  createLogResources,
+  disposeLogResources,
+  LOG_EXTENTS,
+} from "@/components/canvas/obstacles/logFactory";
 import {
   createMarkerObstacle,
   createMarkerResources,
@@ -18,8 +25,9 @@ import {
 } from "@/components/canvas/obstacles/markerFactory";
 import { prepareRock } from "@/components/canvas/obstacles/rockFactory";
 import { ObjectPool } from "@/lib/ObjectPool";
+import { clamp } from "@/lib/clamp";
 import {
-  acquireIdleObstacle,
+  acquirePreferredObstacle,
   clearObstacles,
   createObstacleRecord,
   forEachActiveObstacle,
@@ -42,7 +50,14 @@ function seededRandom(seed: number): number {
 }
 
 function pickSpawnKind(seed: number): ObstacleKind {
-  return seededRandom(seed * 1.7) < 0.72 ? "rock" : "marker";
+  const roll = seededRandom(seed * 1.7);
+  if (roll < 0.4) {
+    return "rock";
+  }
+  if (roll < 0.78) {
+    return "log";
+  }
+  return "marker";
 }
 
 function syncObstacle(item: PooledObstacle): void {
@@ -90,6 +105,29 @@ function placeRock(record: ObstacleRecord, seed: number, z: number): void {
   record.scale = 0.78 + seededRandom(seed * 5.2) * 0.4;
 }
 
+function placeLog(record: ObstacleRecord, seed: number, z: number): void {
+  const laneLimit = getLaneLimit();
+  const scale = 0.85 + seededRandom(seed * 4.8) * 0.3;
+  const halfLength = LOG_EXTENTS.halfX * scale;
+  const travelLimit = Math.max(0.6, laneLimit - halfLength);
+  const amplitude = 1.35 + seededRandom(seed * 2.6) * 1.7;
+  const maxOrigin = Math.max(0, travelLimit - amplitude);
+
+  record.active = true;
+  record.scale = scale;
+  record.originX = (seededRandom(seed) * 2 - 1) * maxOrigin;
+  record.amplitude = Math.min(amplitude, travelLimit);
+  record.phase = seededRandom(seed * 6.1) * Math.PI * 2;
+  record.angularSpeed = 0.65 + seededRandom(seed * 3.3) * 0.7;
+  record.y = LOG_OBSTACLE.y;
+  record.z = z;
+  record.rotY = (seededRandom(seed * 8.2) - 0.5) * 0.35;
+  record.x = record.originX + Math.sin(record.phase) * record.amplitude;
+  record.halfX = halfLength;
+  record.halfY = LOG_EXTENTS.halfY * scale;
+  record.halfZ = LOG_EXTENTS.halfZ * scale;
+}
+
 export function ObstacleSpawner() {
   const { scene: rockScene } = useGLTF(ROCK_MODEL.path);
   const rootRef = useRef<Group>(null);
@@ -104,6 +142,7 @@ export function ObstacleSpawner() {
     }
 
     const resources = createMarkerResources();
+    const logResources = createLogResources();
     const markerPool = new ObjectPool(
       () => createMarkerObstacle(resources),
       OBSTACLE_SPAWN.poolSize,
@@ -111,6 +150,10 @@ export function ObstacleSpawner() {
     const rockPool = new ObjectPool(
       () => prepareRock(rockScene),
       OBSTACLE_SPAWN.rockPoolSize,
+    );
+    const logPool = new ObjectPool(
+      () => createLogObstacle(logResources),
+      OBSTACLE_SPAWN.logPoolSize,
     );
     const items: PooledObstacle[] = [];
 
@@ -131,6 +174,7 @@ export function ObstacleSpawner() {
 
     fillPool(markerPool, "marker", OBSTACLE_SPAWN.poolSize, 0);
     fillPool(rockPool, "rock", OBSTACLE_SPAWN.rockPoolSize, 100);
+    fillPool(logPool, "log", OBSTACLE_SPAWN.logPoolSize, 200);
 
     itemsRef.current = items;
     distanceRef.current = OBSTACLE_SPAWN.interval * 0.35;
@@ -143,7 +187,9 @@ export function ObstacleSpawner() {
       });
       markerPool.drain(() => undefined);
       rockPool.drain(() => undefined);
+      logPool.drain(() => undefined);
       disposeMarkerResources(resources);
+      disposeLogResources(logResources);
       clearObstacles();
       itemsRef.current = null;
     };
@@ -166,6 +212,19 @@ export function ObstacleSpawner() {
 
     forEachActiveObstacle((obstacle) => {
       obstacle.z += dz;
+      if (obstacle.kind === "log") {
+        obstacle.phase += obstacle.angularSpeed * dt;
+        const laneLimit = getLaneLimit();
+        const travelLimit = Math.max(
+          0.4,
+          laneLimit - obstacle.halfX,
+        );
+        obstacle.x = clamp(
+          obstacle.originX + Math.sin(obstacle.phase) * obstacle.amplitude,
+          -travelLimit,
+          travelLimit,
+        );
+      }
       if (obstacle.z > OBSTACLE_SPAWN.recycleZ) {
         obstacle.active = false;
       }
@@ -174,15 +233,16 @@ export function ObstacleSpawner() {
     while (distanceRef.current >= OBSTACLE_SPAWN.interval) {
       distanceRef.current -= OBSTACLE_SPAWN.interval;
       spawnCountRef.current += 1;
-      const preferred = pickSpawnKind(spawnCountRef.current);
-      const slot =
-        acquireIdleObstacle(preferred) ??
-        acquireIdleObstacle(preferred === "rock" ? "marker" : "rock");
+      const slot = acquirePreferredObstacle(
+        pickSpawnKind(spawnCountRef.current),
+      );
       if (!slot) {
         break;
       }
       if (slot.kind === "rock") {
         placeRock(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+      } else if (slot.kind === "log") {
+        placeLog(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
       } else {
         placeMarker(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
       }

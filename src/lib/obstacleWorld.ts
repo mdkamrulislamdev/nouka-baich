@@ -1,6 +1,6 @@
 import { Box3 } from "three";
 
-export type ObstacleKind = "marker" | "rock";
+export type ObstacleKind = "marker" | "rock" | "log";
 
 export type ObstacleRecord = {
   id: number;
@@ -15,9 +15,17 @@ export type ObstacleRecord = {
   halfY: number;
   halfZ: number;
   worldBox: Box3 | null;
+  originX: number;
+  phase: number;
+  amplitude: number;
+  angularSpeed: number;
 };
 
 const obstacles: ObstacleRecord[] = [];
+
+function usesWorldBox(kind: ObstacleKind): boolean {
+  return kind === "rock" || kind === "log";
+}
 
 export function getObstacles(): readonly ObstacleRecord[] {
   return obstacles;
@@ -39,7 +47,11 @@ export function createObstacleRecord(
     halfX: 0.5,
     halfY: 0.5,
     halfZ: 0.5,
-    worldBox: kind === "rock" ? new Box3() : null,
+    worldBox: usesWorldBox(kind) ? new Box3() : null,
+    originX: 0,
+    phase: 0,
+    amplitude: 0,
+    angularSpeed: 0,
   };
 }
 
@@ -71,5 +83,26 @@ export function acquireIdleObstacle(
       return obstacle;
     }
   }
+  return null;
+}
+
+export function acquirePreferredObstacle(
+  preferred: ObstacleKind,
+): ObstacleRecord | null {
+  const fallback: ObstacleKind[] = [preferred, "log", "rock", "marker"];
+  const tried = new Set<ObstacleKind>();
+
+  for (let index = 0; index < fallback.length; index += 1) {
+    const kind = fallback[index];
+    if (tried.has(kind)) {
+      continue;
+    }
+    tried.add(kind);
+    const slot = acquireIdleObstacle(kind);
+    if (slot) {
+      return slot;
+    }
+  }
+
   return null;
 }
