@@ -1,16 +1,28 @@
-export const BOAT_SPAWN: [number, number, number] = [0, 0.02, 0];
+export const BOAT_SPAWN: [number, number, number] = [0, 0.06, 0];
+
+export const BOAT_MODEL = {
+  path: "/models/venus_a_shetland_fourareen/scene.gltf",
+  targetLength: 7.2,
+} as const;
 
 export const CAMERA = {
-  fov: 42,
+  fov: 40,
   near: 0.1,
-  far: 220,
-  position: [2.4, 3.6, 8.4] as [number, number, number],
-  lookAt: [0, 0.45, -1.4] as [number, number, number],
+  far: 260,
+  position: [5.4, 4.6, 13.2] as [number, number, number],
+  lookAt: [0, 0.7, -1.6] as [number, number, number],
 };
 
 export const SUN_POSITION: [number, number, number] = [28, 32, 12];
 
 export const FOG = {
   color: "#6d5c4a",
-  density: 0.012,
+  density: 0.01,
+} as const;
+
+export const WORLD_SCROLL = {
+  segmentLength: 42,
+  segmentCount: 5,
+  recycleZ: 30,
+  riverWidth: 16,
 } as const;

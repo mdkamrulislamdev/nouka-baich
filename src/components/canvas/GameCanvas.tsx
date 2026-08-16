@@ -1,10 +1,11 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { type ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { PCFShadowMap } from "three";
 
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
+import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
 import { CAMERA, FOG } from "@/components/canvas/sceneConfig";
@@ -50,7 +51,9 @@ export function GameCanvas({ children }: GameCanvasProps) {
       >
         <ChaseCamera />
         <SceneLighting />
-        <PlaceholderBoat />
+        <Suspense fallback={<PlaceholderBoat />}>
+          <PlayerBoat />
+        </Suspense>
         {children}
       </Canvas>
     </div>
