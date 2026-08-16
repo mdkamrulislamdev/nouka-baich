@@ -3,6 +3,9 @@
 import { Canvas } from "@react-three/fiber";
 import { type ReactNode } from "react";
 
+import { ChaseCamera } from "@/components/canvas/ChaseCamera";
+import { SceneLighting } from "@/components/canvas/SceneLighting";
+import { FOG } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
 
 type GameCanvasProps = {
@@ -15,6 +18,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
   return (
     <div className="absolute inset-0 h-full w-full">
       <Canvas
+        shadows
         dpr={dpr}
         frameloop="always"
         gl={{
@@ -31,9 +35,12 @@ export function GameCanvas({ children }: GameCanvasProps) {
           </div>
         }
         onCreated={({ gl }) => {
-          gl.setClearColor("#0a0a0a");
+          gl.setClearColor(FOG.color);
+          gl.toneMappingExposure = 1.08;
         }}
       >
+        <ChaseCamera />
+        <SceneLighting />
         {children}
       </Canvas>
     </div>
