@@ -28,6 +28,15 @@ export const OARS = {
   stagger: 0.36,
 } as const;
 
+export const WAKE = {
+  count: 220,
+  y: 0.07,
+  sternZ: 2.55,
+  emitPerSecond: 48,
+  life: 1.15,
+  splashSpread: 1.05,
+} as const;
+
 export const BOAT_BOUNDS = {
   width: BOAT_MODEL.halfWidth * 1.55,
   height: 1.15,

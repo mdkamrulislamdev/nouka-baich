@@ -12,6 +12,7 @@ import { BoatController } from "@/components/canvas/boat/BoatController";
 import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
+import { WaterWake } from "@/components/canvas/fx/WaterWake";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { CAMERA, getAtmosphere } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
@@ -68,6 +69,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
             <PlayerBoat />
           </Suspense>
         </BoatController>
+        <WaterWake />
         <CollisionSystem />
         <ScoreEngine />
         <ProgressionSystem />
