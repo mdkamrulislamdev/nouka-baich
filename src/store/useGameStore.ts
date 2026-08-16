@@ -99,36 +99,3 @@ export const useGameStore = create<GameStore>()(
       })),
   })),
 );
-
-export function getGameState(): GameState {
-  const {
-    status,
-    score,
-    distance,
-    speed,
-    laneOffset,
-    level,
-    highScore,
-    isNewHighScore,
-    musicMuted,
-    sfxMuted,
-    graphicsQuality,
-    settingsOpen,
-    adaptiveLow,
-  } = useGameStore.getState();
-  return {
-    status,
-    score,
-    distance,
-    speed,
-    laneOffset,
-    level,
-    highScore,
-    isNewHighScore,
-    musicMuted,
-    sfxMuted,
-    graphicsQuality,
-    settingsOpen,
-    adaptiveLow,
-  };
-}
