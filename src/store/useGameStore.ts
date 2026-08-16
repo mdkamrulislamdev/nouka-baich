@@ -10,6 +10,7 @@ export type GameState = {
   speed: number;
   laneOffset: number;
   level: number;
+  highScore: number;
 };
 
 export type GameActions = {
@@ -19,6 +20,7 @@ export type GameActions = {
   setSpeed: (speed: number) => void;
   setLaneOffset: (laneOffset: number) => void;
   setLevel: (level: number) => void;
+  setHighScore: (highScore: number) => void;
   startGame: () => void;
   endGame: () => void;
   resetGame: () => void;
@@ -33,6 +35,7 @@ const INITIAL_STATE: GameState = {
   speed: 12,
   laneOffset: 0,
   level: 1,
+  highScore: 0,
 };
 
 export const useGameStore = create<GameStore>()(
@@ -44,18 +47,24 @@ export const useGameStore = create<GameStore>()(
     setSpeed: (speed) => set({ speed }),
     setLaneOffset: (laneOffset) => set({ laneOffset }),
     setLevel: (level) => set({ level }),
+    setHighScore: (highScore) => set({ highScore }),
     startGame: () =>
-      set({
+      set((state) => ({
         ...INITIAL_STATE,
+        highScore: state.highScore,
         status: "PLAYING",
-      }),
-    endGame: () => set({ status: "GAMEOVER" }),
+      })),
+    endGame: () =>
+      set((state) => ({
+        status: "GAMEOVER",
+        highScore: Math.max(state.highScore, state.score),
+      })),
     resetGame: () => set(INITIAL_STATE),
   })),
 );
 
 export function getGameState(): GameState {
-  const { status, score, distance, speed, laneOffset, level } =
+  const { status, score, distance, speed, laneOffset, level, highScore } =
     useGameStore.getState();
-  return { status, score, distance, speed, laneOffset, level };
+  return { status, score, distance, speed, laneOffset, level, highScore };
 }
