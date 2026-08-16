@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense, type ReactNode, useEffect } from "react";
 import { PCFShadowMap } from "three";
 
+import { CollisionSystem } from "@/components/canvas/obstacles/CollisionSystem";
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
 import { BoatController } from "@/components/canvas/boat/BoatController";
 import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
@@ -69,6 +70,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
             <PlayerBoat />
           </Suspense>
         </BoatController>
+        <CollisionSystem />
         {children}
       </Canvas>
     </div>

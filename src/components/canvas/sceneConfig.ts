@@ -6,6 +6,13 @@ export const BOAT_MODEL = {
   halfWidth: 1.2,
 } as const;
 
+export const BOAT_BOUNDS = {
+  width: BOAT_MODEL.halfWidth * 1.55,
+  height: 1.15,
+  length: BOAT_MODEL.targetLength * 0.5,
+  centerY: 0.62,
+} as const;
+
 export const CAMERA = {
   fov: 40,
   near: 0.1,
