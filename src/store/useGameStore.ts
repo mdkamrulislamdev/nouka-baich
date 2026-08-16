@@ -89,7 +89,14 @@ export const useGameStore = create<GameStore>()(
         isNewHighScore: state.score > state.highScore,
         highScore: Math.max(state.highScore, state.score),
       })),
-    resetGame: () => set(INITIAL_STATE),
+    resetGame: () =>
+      set((state) => ({
+        ...INITIAL_STATE,
+        highScore: state.highScore,
+        musicMuted: state.musicMuted,
+        sfxMuted: state.sfxMuted,
+        graphicsQuality: state.graphicsQuality,
+      })),
   })),
 );
 
