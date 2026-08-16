@@ -27,6 +27,12 @@ export const WORLD_SCROLL = {
   recycleZ: 30,
   riverWidth: 16,
   bankWidth: 0.55,
+  bankExtent: 7.2,
+} as const;
+
+export const PALM_MODEL = {
+  path: "/models/palm_tree/scene.gltf",
+  targetHeight: 5.2,
 } as const;
 
 export function getLaneLimit(): number {
