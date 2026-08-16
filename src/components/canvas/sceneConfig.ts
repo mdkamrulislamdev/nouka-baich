@@ -13,6 +13,21 @@ export const LONGBOAT_RIG = {
   keelY: 0.18,
 } as const;
 
+export const OARS = {
+  length: 2.2,
+  shaftRadius: 0.032,
+  bladeWidth: 0.2,
+  bladeLength: 0.52,
+  pivotX: 0.82,
+  pivotY: 0.54,
+  stroke: 0.7,
+  lift: 0.2,
+  restTilt: 0.16,
+  baseRate: 1.05,
+  speedRate: 0.11,
+  stagger: 0.36,
+} as const;
+
 export const BOAT_BOUNDS = {
   width: BOAT_MODEL.halfWidth * 1.55,
   height: 1.15,

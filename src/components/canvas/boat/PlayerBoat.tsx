@@ -5,6 +5,7 @@ import { Box3, Group, Vector3 } from "three";
 
 import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
 import { LongboatSeats } from "@/components/canvas/boat/LongboatSeats";
+import { OarRig } from "@/components/canvas/boat/OarRig";
 import {
   cloneGltfScene,
   enableGltfShadows,
@@ -49,6 +50,7 @@ export function PlayerBoat() {
     <group>
       <primitive object={boat} />
       <LongboatSeats />
+      <OarRig />
     </group>
   );
 }
