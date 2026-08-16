@@ -1,15 +1,17 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, type ReactNode, useEffect } from "react";
 import { PCFShadowMap } from "three";
 
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
 import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
+import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { CAMERA, FOG } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
+import { useGameStore } from "@/store/useGameStore";
 
 type GameCanvasProps = {
   children?: ReactNode;
@@ -17,6 +19,10 @@ type GameCanvasProps = {
 
 export function GameCanvas({ children }: GameCanvasProps) {
   const dpr = useGameDpr();
+
+  useEffect(() => {
+    useGameStore.getState().startGame();
+  }, []);
 
   return (
     <div className="absolute inset-0 h-full w-full">
@@ -51,6 +57,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
       >
         <ChaseCamera />
         <SceneLighting />
+        <ScrollingWorld />
         <Suspense fallback={<PlaceholderBoat />}>
           <PlayerBoat />
         </Suspense>
