@@ -27,7 +27,7 @@ export function AudioDirector() {
 
     return () => {
       unsubscribe();
-      audio.stopBgm();
+      audio.unload();
     };
   }, []);
 

@@ -31,6 +31,7 @@ import {
   MARKER_EXTENTS,
 } from "@/components/canvas/obstacles/markerFactory";
 import { prepareRock } from "@/components/canvas/obstacles/rockFactory";
+import { detachObject } from "@/lib/dispose";
 import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
 import { clamp } from "@/lib/clamp";
@@ -222,12 +223,12 @@ export function ObstacleSpawner() {
     return () => {
       items.forEach((item) => {
         item.record.active = false;
-        root.remove(item.object);
+        detachObject(item.object);
       });
-      markerPool.drain(() => undefined);
-      rockPool.drain(() => undefined);
-      logPool.drain(() => undefined);
-      dinghyPool.drain(() => undefined);
+      markerPool.drain(detachObject);
+      rockPool.drain(detachObject);
+      logPool.drain(detachObject);
+      dinghyPool.drain(detachObject);
       disposeMarkerResources(resources);
       disposeLogResources(logResources);
       disposeDinghyResources(dinghyResources);

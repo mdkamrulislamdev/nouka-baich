@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Box3, Group, Vector3 } from "three";
 
 import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
 import { LongboatSeats } from "@/components/canvas/boat/LongboatSeats";
 import { OarRig } from "@/components/canvas/boat/OarRig";
+import { detachObject } from "@/lib/dispose";
 import {
   cloneGltfScene,
   enableGltfShadows,
@@ -45,6 +46,12 @@ function prepareBoatScene(source: Group): Group {
 export function PlayerBoat() {
   const { scene } = useGltfModel(BOAT_MODEL.path);
   const boat = useMemo(() => prepareBoatScene(scene), [scene]);
+
+  useEffect(() => {
+    return () => {
+      detachObject(boat);
+    };
+  }, [boat]);
 
   return (
     <group>

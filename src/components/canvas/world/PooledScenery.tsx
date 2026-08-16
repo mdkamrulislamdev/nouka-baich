@@ -6,6 +6,7 @@ import { Group } from "three";
 
 import { PALM_MODEL, SCENERY, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
 import { preparePalm } from "@/components/canvas/world/PalmProp";
+import { detachObject } from "@/lib/dispose";
 import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
 import { useGameStore } from "@/store/useGameStore";
@@ -68,9 +69,9 @@ export function PooledScenery() {
 
     return () => {
       props.forEach((prop) => {
-        root.remove(prop.object);
+        detachObject(prop.object);
       });
-      palmPool.drain(() => undefined);
+      palmPool.drain(detachObject);
       propsRef.current = null;
     };
   }, [palmScene]);

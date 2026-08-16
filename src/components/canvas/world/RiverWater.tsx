@@ -17,6 +17,7 @@ import {
   WATER,
   WORLD_SCROLL,
 } from "@/components/canvas/sceneConfig";
+import { disposeWater } from "@/lib/dispose";
 import { useGameStore } from "@/store/useGameStore";
 
 const WATER_LENGTH =
@@ -129,12 +130,7 @@ export function RiverWater() {
 
     return () => {
       waterRef.current = null;
-      const waterNormals = water.material.uniforms.normalSampler.value;
-      water.geometry.dispose();
-      water.material.dispose();
-      if (waterNormals instanceof Texture) {
-        waterNormals.dispose();
-      }
+      disposeWater(water);
     };
   }, [water]);
 

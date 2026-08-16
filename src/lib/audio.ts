@@ -93,6 +93,16 @@ class SoundManager {
     );
   }
 
+  unload(): void {
+    this.bgm?.unload();
+    this.bgm = null;
+    this.sfx.forEach((sound) => {
+      sound.unload();
+    });
+    this.sfx.clear();
+    this.lastPlayed.clear();
+  }
+
   playSfx(id: SfxId, options?: { rate?: number; volume?: number }): void {
     if (this.sfxMuted) {
       return;
