@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Box3, Group, Vector3 } from "three";
+import { Box3, Group, Mesh, Vector3, type Material } from "three";
 
 import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
 import { LongboatSeats } from "@/components/canvas/boat/LongboatSeats";
@@ -13,32 +13,60 @@ import {
   useGltfModel,
 } from "@/lib/gltf";
 
+const fitBox = new Box3();
+const fitSize = new Vector3();
+const fitCenter = new Vector3();
+
+function cloneMeshMaterials(root: Group): void {
+  root.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return;
+    }
+
+    if (Array.isArray(child.material)) {
+      child.material = child.material.map((material: Material) =>
+        material.clone(),
+      );
+    } else if (child.material) {
+      child.material = child.material.clone();
+    }
+  });
+}
+
 function prepareBoatScene(source: Group): Group {
   const wrapper = new Group();
   const boat = cloneGltfScene(source);
+  cloneMeshMaterials(boat);
   wrapper.add(boat);
-  enableGltfShadows(wrapper, 1.1);
+  enableGltfShadows(wrapper, 0.95);
 
-  wrapper.updateMatrixWorld(true);
-  let box = new Box3().setFromObject(wrapper);
-  let size = box.getSize(new Vector3());
+  boat.updateMatrixWorld(true);
+  fitBox.setFromObject(boat);
+  fitBox.getSize(fitSize);
 
-  if (size.x > size.z) {
+  // Sketchfab fourareen is authored longest along X — yaw so length runs on Z.
+  if (fitSize.x > fitSize.z) {
     boat.rotation.y = Math.PI / 2;
-    wrapper.updateMatrixWorld(true);
-    box = new Box3().setFromObject(wrapper);
-    size = box.getSize(new Vector3());
+    boat.updateMatrixWorld(true);
+    fitBox.setFromObject(boat);
+    fitBox.getSize(fitSize);
   }
 
-  const scale = BOAT_MODEL.targetLength / Math.max(size.z, 0.001);
-  boat.scale.setScalar(scale);
-  wrapper.updateMatrixWorld(true);
-  box = new Box3().setFromObject(wrapper);
+  const length = Math.max(fitSize.z, 0.001);
+  boat.scale.setScalar(BOAT_MODEL.targetLength / length);
 
-  const center = box.getCenter(new Vector3());
-  boat.position.x -= center.x;
-  boat.position.y -= box.min.y;
-  boat.position.z -= center.z;
+  boat.updateMatrixWorld(true);
+  fitBox.setFromObject(boat);
+  fitBox.getCenter(fitCenter);
+  fitBox.getSize(fitSize);
+
+  // Center on XZ; sink only a fraction of the hull under the opaque water plane.
+  const submerged = fitSize.y * BOAT_MODEL.waterlineRatio;
+  boat.position.set(
+    -fitCenter.x,
+    -fitBox.min.y - submerged,
+    -fitCenter.z,
+  );
 
   return wrapper;
 }

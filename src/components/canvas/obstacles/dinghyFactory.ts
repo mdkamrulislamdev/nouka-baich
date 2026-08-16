@@ -90,20 +90,20 @@ function addMesh(
 
 export function createDinghyObstacle(resources: DinghyResources): Group {
   const group = new Group();
-  addMesh(group, resources.hull, resources.hullMat, 0, 0.22, 0.15);
+  addMesh(group, resources.hull, resources.hullMat, 0, 0.08, 0.15);
   addMesh(
     group,
     resources.bow,
     resources.hullMat,
     0,
-    0.22,
+    0.08,
     -DINGHY_OBSTACLE.length * 0.38,
     Math.PI / 4,
     Math.PI / 2,
   );
-  addMesh(group, resources.cabin, resources.cabinMat, 0, 0.62, 0.35);
-  addMesh(group, resources.roof, resources.roofMat, 0, 0.9, 0.35);
-  addMesh(group, resources.mast, resources.trimMat, 0.28, 0.85, 0.55);
+  addMesh(group, resources.cabin, resources.cabinMat, 0, 0.48, 0.35);
+  addMesh(group, resources.roof, resources.roofMat, 0, 0.76, 0.35);
+  addMesh(group, resources.mast, resources.trimMat, 0.28, 0.7, 0.55);
   group.visible = false;
   return group;
 }

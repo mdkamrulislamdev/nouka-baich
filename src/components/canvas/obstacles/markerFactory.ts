@@ -49,13 +49,13 @@ export function createMarkerObstacle(resources: MarkerResources): Group {
   const group = new Group();
 
   const floatMesh = new Mesh(resources.float, resources.floatMat);
-  floatMesh.position.y = 0.26;
+  floatMesh.position.y = 0.12;
   floatMesh.castShadow = true;
   floatMesh.receiveShadow = true;
   group.add(floatMesh);
 
   const pole = new Mesh(resources.pole, resources.poleMat);
-  pole.position.y = 0.95;
+  pole.position.y = 0.72;
   pole.castShadow = true;
   pole.receiveShadow = true;
   group.add(pole);

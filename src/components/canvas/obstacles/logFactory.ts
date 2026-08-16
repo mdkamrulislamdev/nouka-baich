@@ -75,6 +75,7 @@ export function createLogObstacle(resources: LogResources): Group {
   addPart(group, resources.body, resources.barkMat, 0);
   addPart(group, resources.cap, resources.capMat, LOG_OBSTACLE.length * 0.48);
   addPart(group, resources.cap, resources.capMat, -LOG_OBSTACLE.length * 0.48);
+  group.position.y = -LOG_OBSTACLE.radius * 0.35;
   group.visible = false;
   return group;
 }

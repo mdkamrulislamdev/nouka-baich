@@ -3,10 +3,10 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import {
-  AdditiveBlending,
   BufferAttribute,
   BufferGeometry,
   Color,
+  NormalBlending,
   Points,
   ShaderMaterial,
 } from "three";
@@ -22,7 +22,7 @@ const VERTEX = /* glsl */ `
   void main() {
     vLife = aLife;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = aSize * (220.0 / max(0.8, -mvPosition.z));
+    gl_PointSize = aSize * (140.0 / max(1.0, -mvPosition.z));
     gl_Position = projectionMatrix * mvPosition;
   }
 `;
@@ -35,12 +35,17 @@ const FRAGMENT = /* glsl */ `
   void main() {
     vec2 centered = gl_PointCoord - vec2(0.5);
     float dist = length(centered);
-    if (dist > 0.48) {
+    if (dist > 0.5) {
       discard;
     }
-    float edge = 1.0 - smoothstep(0.18, 0.48, dist);
-    vec3 color = mix(uDeep, uFoam, vLife);
-    gl_FragColor = vec4(color, vLife * edge * 0.85);
+    float soft = 1.0 - smoothstep(0.15, 0.5, dist);
+    float fade = smoothstep(0.0, 0.2, vLife) * smoothstep(0.0, 0.45, vLife);
+    vec3 color = mix(uDeep, uFoam, pow(vLife, 0.65));
+    float alpha = soft * fade * 0.55;
+    if (alpha < 0.02) {
+      discard;
+    }
+    gl_FragColor = vec4(color, alpha);
   }
 `;
 
@@ -67,10 +72,12 @@ export function WaterWake() {
       new ShaderMaterial({
         transparent: true,
         depthWrite: false,
-        blending: AdditiveBlending,
+        depthTest: true,
+        blending: NormalBlending,
+        toneMapped: true,
         uniforms: {
-          uFoam: { value: new Color("#eef8fb") },
-          uDeep: { value: new Color("#3a8a96") },
+          uFoam: { value: new Color("#c5e4ea") },
+          uDeep: { value: new Color("#2f6d78") },
         },
         vertexShader: VERTEX,
         fragmentShader: FRAGMENT,
@@ -101,27 +108,27 @@ export function WaterWake() {
     if (status === "PLAYING") {
       const qualityScale =
         graphicsQuality === "high" && !adaptiveLow ? 1 : 0.35;
-      const emitRate = WAKE.emitPerSecond * (0.55 + speed / 18) * qualityScale;
+      const emitRate = WAKE.emitPerSecond * (0.45 + speed / 22) * qualityScale;
       emitAccRef.current += emitRate * dt;
       while (emitAccRef.current >= 1) {
         emitAccRef.current -= 1;
         const index = cursorRef.current;
         cursorRef.current = (index + 1) % WAKE.count;
-        const splash = Math.random() > 0.62;
+        const splash = Math.random() > 0.7;
         const side = Math.random() > 0.5 ? 1 : -1;
         const i3 = index * 3;
         positions[i3] =
           laneOffset +
           (splash
-            ? side * (0.55 + Math.random() * WAKE.splashSpread)
-            : (Math.random() - 0.5) * 0.55);
-        positions[i3 + 1] = WAKE.y + Math.random() * 0.08;
-        positions[i3 + 2] = WAKE.sternZ + Math.random() * 0.7;
-        velocities[i3] = (Math.random() - 0.5) * 0.7;
-        velocities[i3 + 1] = splash ? 0.55 + Math.random() * 0.7 : 0.05;
-        velocities[i3 + 2] = 1.6 + Math.random() * 2.4;
+            ? side * (0.35 + Math.random() * WAKE.splashSpread)
+            : (Math.random() - 0.5) * 0.4);
+        positions[i3 + 1] = WAKE.y + Math.random() * 0.05;
+        positions[i3 + 2] = WAKE.sternZ + Math.random() * 0.55;
+        velocities[i3] = (Math.random() - 0.5) * 0.55;
+        velocities[i3 + 1] = splash ? 0.35 + Math.random() * 0.45 : 0.04;
+        velocities[i3 + 2] = 1.1 + Math.random() * 1.8;
         lives[index] = 1;
-        sizes[index] = splash ? 14 + Math.random() * 10 : 7 + Math.random() * 6;
+        sizes[index] = splash ? 6 + Math.random() * 5 : 3.5 + Math.random() * 3;
       }
     } else if (status === "MENU") {
       lives.fill(0);
@@ -137,10 +144,12 @@ export function WaterWake() {
       positions[i3] += velocities[i3] * dt;
       positions[i3 + 1] += velocities[i3 + 1] * dt;
       positions[i3 + 2] += velocities[i3 + 2] * dt;
-      velocities[i3 + 1] -= 1.8 * dt;
+      velocities[i3 + 1] -= 2.4 * dt;
       if (positions[i3 + 1] < WAKE.y) {
         positions[i3 + 1] = WAKE.y;
-        velocities[i3 + 1] *= -0.18;
+        velocities[i3 + 1] *= -0.12;
+        velocities[i3] *= 0.92;
+        velocities[i3 + 2] *= 0.92;
       }
       lives[index] = Math.max(0, lives[index] - decay);
     }
@@ -156,6 +165,7 @@ export function WaterWake() {
       geometry={geometry}
       material={material}
       frustumCulled={false}
+      renderOrder={2}
     />
   );
 }

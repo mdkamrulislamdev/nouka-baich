@@ -1,47 +1,54 @@
-export const BOAT_SPAWN: [number, number, number] = [0, 0.06, 0];
+export const BOAT_SPAWN: [number, number, number] = [0, 0, 0];
 
 export const BOAT_MODEL = {
   path: "/models/venus_a_shetland_fourareen/scene.gltf",
-  targetLength: 7.2,
-  halfWidth: 1.2,
+  targetLength: 4.4,
+  halfWidth: 0.68,
+  /**
+   * Fraction of hull height sunk below the water plane.
+   * Keep low — water is opaque, so too much hides the textured deck.
+   */
+  waterlineRatio: 0.18,
+  /** Used by procedural placeholder / gunwale composites. */
+  embedY: -0.08,
 } as const;
 
 export const LONGBOAT_RIG = {
-  thwartZ: [2.05, 1.05, 0.05, -0.95, -1.95] as const,
-  seatY: 0.4,
-  seatWidth: 1.42,
-  keelY: 0.18,
+  thwartZ: [0.95, 0.05, -0.9] as const,
+  seatY: 0.42,
+  seatWidth: 0.95,
+  keelY: 0.12,
 } as const;
 
 export const OARS = {
-  length: 2.2,
-  shaftRadius: 0.032,
-  bladeWidth: 0.2,
-  bladeLength: 0.52,
-  pivotX: 0.82,
-  pivotY: 0.54,
-  stroke: 0.7,
-  lift: 0.2,
-  restTilt: 0.16,
+  length: 1.15,
+  shaftRadius: 0.02,
+  bladeWidth: 0.11,
+  bladeLength: 0.28,
+  pivotX: 0.52,
+  pivotY: 0.48,
+  stroke: 0.5,
+  lift: 0.18,
+  restTilt: 0.28,
   baseRate: 1.05,
   speedRate: 0.11,
-  stagger: 0.36,
+  stagger: 0.4,
 } as const;
 
 export const WAKE = {
-  count: 220,
-  y: 0.07,
-  sternZ: 2.55,
-  emitPerSecond: 48,
-  life: 1.15,
-  splashSpread: 1.05,
+  count: 160,
+  y: 0.05,
+  sternZ: 1.85,
+  emitPerSecond: 36,
+  life: 0.85,
+  splashSpread: 0.55,
 } as const;
 
 export const BOAT_BOUNDS = {
-  width: BOAT_MODEL.halfWidth * 1.55,
-  height: 1.15,
-  length: BOAT_MODEL.targetLength * 0.5,
-  centerY: 0.62,
+  width: BOAT_MODEL.halfWidth * 1.35,
+  height: 0.95,
+  length: BOAT_MODEL.targetLength * 0.55,
+  centerY: 0.4,
 } as const;
 
 export const CAMERA = {
@@ -119,20 +126,20 @@ export const PALM_MODEL = {
 
 export const ROCK_MODEL = {
   path: "/models/stylized_rocks/scene.gltf",
-  targetWidth: 2.7,
-  embedY: -0.16,
+  targetWidth: 2.2,
+  embedY: -0.35,
 } as const;
 
 export const LOG_OBSTACLE = {
-  length: 3.9,
-  radius: 0.26,
-  y: 0.22,
+  length: 3.2,
+  radius: 0.24,
+  y: 0.02,
 } as const;
 
 export const DINGHY_OBSTACLE = {
-  length: 3.2,
-  beam: 1.35,
-  y: 0.08,
+  length: 2.8,
+  beam: 1.15,
+  y: -0.06,
   minSpeed: 3.2,
   maxSpeed: 5.4,
 } as const;
@@ -184,10 +191,10 @@ export const SCORE = {
 
 export const PROGRESSION = {
   metersPerLevel: 500,
-  baseSpeed: 12,
-  speedPerLevel: 2.2,
-  minInterval: 7.5,
-  intervalDecay: 0.9,
+  baseSpeed: 11,
+  speedPerLevel: 1.8,
+  minInterval: 12,
+  intervalDecay: 0.88,
   speedDamping: 1.35,
 } as const;
 
@@ -207,15 +214,15 @@ export function getSpawnInterval(level: number): number {
 }
 
 export const OBSTACLE_SPAWN = {
-  interval: 16,
+  interval: 34,
   spawnZ: -96,
   recycleZ: 22,
   poolSize: 6,
   rockPoolSize: 8,
   logPoolSize: 8,
   dinghyPoolSize: 6,
-  y: 0.1,
-  laneScale: 0.86,
-  rockLaneScale: 0.52,
-  dinghyLaneScale: 0.7,
+  y: -0.2,
+  laneScale: 0.78,
+  rockLaneScale: 0.48,
+  dinghyLaneScale: 0.64,
 } as const;

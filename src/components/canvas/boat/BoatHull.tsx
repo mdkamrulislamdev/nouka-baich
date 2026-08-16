@@ -15,13 +15,22 @@ export function BoatHull() {
   }, [geometry]);
 
   return (
-    <mesh geometry={geometry} castShadow receiveShadow>
+    <mesh
+      geometry={geometry}
+      castShadow
+      receiveShadow
+      frustumCulled={false}
+      renderOrder={1}
+    >
       <meshStandardMaterial
-        color="#6b3f22"
-        roughness={0.62}
-        metalness={0.04}
-        envMapIntensity={0.85}
+        color="#8a5530"
+        roughness={0.7}
+        metalness={0.02}
+        envMapIntensity={0.45}
         side={DoubleSide}
+        polygonOffset
+        polygonOffsetFactor={-1}
+        polygonOffsetUnits={-1}
       />
     </mesh>
   );

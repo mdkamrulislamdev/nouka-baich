@@ -11,7 +11,7 @@ export function prepareRock(source: Group): Group {
   const wrapper = new Group();
   const rock = cloneGltfScene(source);
   wrapper.add(rock);
-  enableGltfShadows(wrapper, 0.75);
+  enableGltfShadows(wrapper, 0.65);
 
   wrapper.updateMatrixWorld(true);
   fitBox.setFromObject(wrapper);
@@ -24,7 +24,8 @@ export function prepareRock(source: Group): Group {
   fitBox.setFromObject(wrapper);
   fitBox.getCenter(fitCenter);
   rock.position.x -= fitCenter.x;
-  rock.position.y -= fitBox.min.y;
+  // Leave part of the rock below the local origin so embedY sinks it.
+  rock.position.y -= fitBox.min.y + Math.abs(ROCK_MODEL.embedY) * 0.35;
   rock.position.z -= fitCenter.z;
 
   wrapper.visible = false;

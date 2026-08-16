@@ -44,7 +44,7 @@ const INITIAL_STATE: GameState = {
   status: "MENU",
   score: 0,
   distance: 0,
-  speed: 12,
+  speed: 11,
   laneOffset: 0,
   level: 1,
   highScore: 0,
