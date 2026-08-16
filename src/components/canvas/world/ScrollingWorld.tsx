@@ -7,7 +7,8 @@ import { type Group } from "three";
 import { WORLD_SCROLL } from "@/components/canvas/sceneConfig";
 import { useGameStore } from "@/store/useGameStore";
 
-const { segmentCount, segmentLength, recycleZ, riverWidth } = WORLD_SCROLL;
+const { segmentCount, segmentLength, recycleZ, riverWidth, bankWidth } =
+  WORLD_SCROLL;
 
 function initialSegmentZ(index: number): number {
   return (1 - index) * segmentLength - segmentLength * 0.5;
@@ -59,7 +60,7 @@ export function ScrollingWorld() {
             />
           </mesh>
           <mesh position={[-riverWidth / 2, 0.04, 0]} receiveShadow>
-            <boxGeometry args={[0.55, 0.08, segmentLength]} />
+            <boxGeometry args={[bankWidth, 0.08, segmentLength]} />
             <meshStandardMaterial
               color="#3d2a18"
               roughness={0.78}
@@ -67,7 +68,7 @@ export function ScrollingWorld() {
             />
           </mesh>
           <mesh position={[riverWidth / 2, 0.04, 0]} receiveShadow>
-            <boxGeometry args={[0.55, 0.08, segmentLength]} />
+            <boxGeometry args={[bankWidth, 0.08, segmentLength]} />
             <meshStandardMaterial
               color="#3d2a18"
               roughness={0.78}

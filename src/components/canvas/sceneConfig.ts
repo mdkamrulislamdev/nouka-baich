@@ -3,6 +3,7 @@ export const BOAT_SPAWN: [number, number, number] = [0, 0.06, 0];
 export const BOAT_MODEL = {
   path: "/models/venus_a_shetland_fourareen/scene.gltf",
   targetLength: 7.2,
+  halfWidth: 1.2,
 } as const;
 
 export const CAMERA = {
@@ -25,10 +26,16 @@ export const WORLD_SCROLL = {
   segmentCount: 5,
   recycleZ: 30,
   riverWidth: 16,
+  bankWidth: 0.55,
 } as const;
 
+export function getLaneLimit(): number {
+  const riverHalf = WORLD_SCROLL.riverWidth / 2;
+  const bankInset = WORLD_SCROLL.bankWidth / 2;
+  return Math.max(0, riverHalf - bankInset - BOAT_MODEL.halfWidth);
+}
+
 export const STEER = {
-  maxOffset: 6,
   damping: 8,
   dragPixelsForFullSteer: 140,
 } as const;
