@@ -169,6 +169,7 @@ export const STEER = {
 export const AUDIO = {
   musicVolume: 0.4,
   sfxVolume: 0.72,
+  bgmPath: "/audio/folk-loop.wav",
 } as const;
 
 export const SCORE = {
