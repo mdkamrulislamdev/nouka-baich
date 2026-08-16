@@ -3,8 +3,8 @@
 export function BoatGunwales() {
   return (
     <group>
-      <mesh position={[-0.7, 0.28, 0.05]} rotation={[0, 0, 0.08]} castShadow>
-        <boxGeometry args={[0.08, 0.1, 6.4]} />
+      <mesh position={[-0.9, 0.4, -0.12]} rotation={[0, 0, 0.06]} castShadow>
+        <boxGeometry args={[0.1, 0.12, 6.7]} />
         <meshStandardMaterial
           color="#8a4f28"
           roughness={0.5}
@@ -12,8 +12,8 @@ export function BoatGunwales() {
           envMapIntensity={0.9}
         />
       </mesh>
-      <mesh position={[0.7, 0.28, 0.05]} rotation={[0, 0, -0.08]} castShadow>
-        <boxGeometry args={[0.08, 0.1, 6.4]} />
+      <mesh position={[0.9, 0.4, -0.12]} rotation={[0, 0, -0.06]} castShadow>
+        <boxGeometry args={[0.1, 0.12, 6.7]} />
         <meshStandardMaterial
           color="#8a4f28"
           roughness={0.5}
@@ -21,8 +21,8 @@ export function BoatGunwales() {
           envMapIntensity={0.9}
         />
       </mesh>
-      <mesh position={[-0.7, 0.34, 0.05]} rotation={[0, 0, 0.08]}>
-        <boxGeometry args={[0.09, 0.035, 6.35]} />
+      <mesh position={[-0.9, 0.47, -0.12]} rotation={[0, 0, 0.06]}>
+        <boxGeometry args={[0.11, 0.04, 6.65]} />
         <meshStandardMaterial
           color="#c45c2a"
           roughness={0.45}
@@ -30,8 +30,8 @@ export function BoatGunwales() {
           envMapIntensity={1}
         />
       </mesh>
-      <mesh position={[0.7, 0.34, 0.05]} rotation={[0, 0, -0.08]}>
-        <boxGeometry args={[0.09, 0.035, 6.35]} />
+      <mesh position={[0.9, 0.47, -0.12]} rotation={[0, 0, -0.06]}>
+        <boxGeometry args={[0.11, 0.04, 6.65]} />
         <meshStandardMaterial
           color="#c45c2a"
           roughness={0.45}

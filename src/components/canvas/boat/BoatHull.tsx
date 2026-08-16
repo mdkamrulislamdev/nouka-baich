@@ -1,5 +1,6 @@
 "use client";
 
+import { DoubleSide } from "three";
 import { useEffect, useMemo } from "react";
 
 import { createLongboatHullGeometry } from "@/components/canvas/boat/hullGeometry";
@@ -20,6 +21,7 @@ export function BoatHull() {
         roughness={0.62}
         metalness={0.04}
         envMapIntensity={0.85}
+        side={DoubleSide}
       />
     </mesh>
   );

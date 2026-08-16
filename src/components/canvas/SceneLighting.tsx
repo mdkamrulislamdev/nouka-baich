@@ -1,6 +1,6 @@
 "use client";
 
-import { Environment } from "@react-three/drei";
+import { Environment, Sky } from "@react-three/drei";
 import { Suspense } from "react";
 
 import { FOG, SUN_POSITION } from "@/components/canvas/sceneConfig";
@@ -33,14 +33,16 @@ export function SceneLighting() {
         shadow-camera-bottom={-16}
       />
 
+      <Sky
+        sunPosition={SUN_POSITION}
+        turbidity={2.4}
+        rayleigh={0.55}
+        mieCoefficient={0.005}
+        mieDirectionalG={0.8}
+      />
+
       <Suspense fallback={null}>
-        <Environment
-          preset="sunset"
-          background
-          backgroundBlurriness={0.35}
-          backgroundIntensity={0.42}
-          environmentIntensity={0.7}
-        />
+        <Environment preset="sunset" environmentIntensity={0.7} />
       </Suspense>
     </>
   );
