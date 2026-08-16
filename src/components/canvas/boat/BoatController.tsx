@@ -13,6 +13,15 @@ type BoatControllerProps = {
   children: ReactNode;
 };
 
+function dampToward(
+  current: number,
+  target: number,
+  damping: number,
+  dt: number,
+): number {
+  return current + (target - current) * (1 - Math.exp(-damping * dt));
+}
+
 export function BoatController({ children }: BoatControllerProps) {
   const groupRef = useRef<Group>(null);
   const getSteerAxis = useSteeringAxis();
@@ -26,14 +35,16 @@ export function BoatController({ children }: BoatControllerProps) {
     const { status, laneOffset, setLaneOffset } = useGameStore.getState();
     if (status !== "PLAYING") {
       group.position.set(...BOAT_SPAWN);
+      group.rotation.set(0, 0, 0);
       return;
     }
 
     const dt = Math.min(delta, 0.05);
+    const axis = getSteerAxis();
     const laneLimit = getLaneLimit();
-    const target = clamp(getSteerAxis() * laneLimit, -laneLimit, laneLimit);
+    const target = clamp(axis * laneLimit, -laneLimit, laneLimit);
     const nextOffset = clamp(
-      laneOffset + (target - laneOffset) * (1 - Math.exp(-STEER.damping * dt)),
+      dampToward(laneOffset, target, STEER.damping, dt),
       -laneLimit,
       laneLimit,
     );
@@ -43,6 +54,18 @@ export function BoatController({ children }: BoatControllerProps) {
     }
 
     group.position.set(nextOffset, BOAT_SPAWN[1], BOAT_SPAWN[2]);
+    group.rotation.y = dampToward(
+      group.rotation.y,
+      -axis * STEER.yawMax,
+      STEER.tiltDamping,
+      dt,
+    );
+    group.rotation.z = dampToward(
+      group.rotation.z,
+      -axis * STEER.rollMax,
+      STEER.tiltDamping,
+      dt,
+    );
   });
 
   return (

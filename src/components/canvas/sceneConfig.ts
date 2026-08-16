@@ -38,4 +38,7 @@ export function getLaneLimit(): number {
 export const STEER = {
   damping: 8,
   dragPixelsForFullSteer: 140,
+  yawMax: 0.18,
+  rollMax: 0.22,
+  tiltDamping: 10,
 } as const;
