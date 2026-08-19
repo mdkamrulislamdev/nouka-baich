@@ -1,6 +1,7 @@
 "use client";
 
-import { beginRun } from "@/lib/gameSession";
+import { beginRun, beginSprintRun } from "@/lib/gameSession";
+import { SPRINT } from "@/components/canvas/sceneConfig";
 import { SettingsButton } from "@/components/ui/SettingsModal";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -39,10 +40,6 @@ export function MainMenu() {
     return null;
   }
 
-  const handleStart = () => {
-    beginRun();
-  };
-
   return (
     <div className="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center bg-[#1a0c08]/55 px-4 backdrop-blur-[2px]">
       <div className="relative w-full max-w-lg overflow-hidden rounded-sm border border-[#e4c36a]/70 bg-linear-to-b from-[#4a1414]/92 via-[#2a1a12]/94 to-[#132416]/92 px-8 py-10 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:px-12 sm:py-12">
@@ -68,16 +65,28 @@ export function MainMenu() {
           <p className="font-bengali mt-5 max-w-xs text-sm leading-relaxed text-[#f0d9b0]/85">
             নদীর স্রোতে হাল ধরো। পাথর, কাঠ ও অন্য নৌকা এড়িয়ে এগিয়ে যাও।
           </p>
-          <button
-            type="button"
-            onClick={handleStart}
-            className="font-bengali mt-8 min-w-44 rounded-sm border border-[#e4c36a] bg-[#9b1c1c] px-8 py-3 text-lg font-semibold tracking-wide text-[#f6e6c2] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition hover:bg-[#b32626] focus-visible:ring-2 focus-visible:ring-[#e4c36a] focus-visible:outline-none"
-          >
-            খেলুন
-          </button>
-          <p className="mt-3 text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
-            Play
-          </p>
+          <div className="mt-8 flex w-full max-w-xs flex-col gap-3 sm:max-w-sm">
+            <button
+              type="button"
+              onClick={() => beginRun()}
+              className="font-bengali min-w-44 rounded-sm border border-[#e4c36a] bg-[#9b1c1c] px-8 py-3 text-lg font-semibold tracking-wide text-[#f6e6c2] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition hover:bg-[#b32626] focus-visible:ring-2 focus-visible:ring-[#e4c36a] focus-visible:outline-none"
+            >
+              অনন্ত দৌড়
+            </button>
+            <p className="text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
+              Endless River
+            </p>
+            <button
+              type="button"
+              onClick={() => beginSprintRun()}
+              className="font-bengali min-w-44 rounded-sm border border-[#1f6b3a] bg-[#132416] px-8 py-3 text-lg font-semibold tracking-wide text-[#e4c36a] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:border-[#e4c36a] hover:bg-[#1a3020] focus-visible:ring-2 focus-visible:ring-[#e4c36a] focus-visible:outline-none"
+            >
+              স্প্রিন্ট · {SPRINT.targetDistance}মি
+            </button>
+            <p className="text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
+              Sprint to the Finish
+            </p>
+          </div>
           <SettingsButton className="mt-5" />
         </div>
       </div>

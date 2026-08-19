@@ -1,5 +1,6 @@
 "use client";
 
+import { SPRINT } from "@/components/canvas/sceneConfig";
 import { SettingsButton } from "@/components/ui/SettingsModal";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -27,11 +28,17 @@ function HudStat({ label, bangla, value }: HudStatProps) {
 
 export function GameHud() {
   const status = useGameStore((state) => state.status);
+  const gameMode = useGameStore((state) => state.gameMode);
   const speed = useGameStore((state) => Math.round(state.speed));
   const distance = useGameStore((state) => Math.floor(state.distance));
   const score = useGameStore((state) => Math.floor(state.score));
   const level = useGameStore((state) => state.level);
   const highScore = useGameStore((state) => state.highScore);
+
+  const sprintRemaining =
+    gameMode === "sprint"
+      ? Math.max(0, SPRINT.targetDistance - distance)
+      : null;
 
   if (status !== "PLAYING" && status !== "PAUSED") {
     return null;
@@ -44,8 +51,21 @@ export function GameHud() {
         <div className="w-px self-stretch bg-[#e4c36a]/25" />
         <HudStat bangla="গতি" label="Speed" value={`${speed}`} />
         <div className="w-px self-stretch bg-[#e4c36a]/25" />
-        <HudStat bangla="দূরত্ব" label="Distance" value={`${distance}m`} />
-        <div className="w-px self-stretch bg-[#e4c36a]/25" />
+        {sprintRemaining !== null ? (
+          <>
+            <HudStat
+              bangla="বাকি"
+              label="To Finish"
+              value={`${sprintRemaining}m`}
+            />
+            <div className="w-px self-stretch bg-[#e4c36a]/25" />
+          </>
+        ) : (
+          <>
+            <HudStat bangla="দূরত্ব" label="Distance" value={`${distance}m`} />
+            <div className="w-px self-stretch bg-[#e4c36a]/25" />
+          </>
+        )}
         <HudStat bangla="স্তর" label="Level" value={`${level}`} />
         <div className="w-px self-stretch bg-[#e4c36a]/25" />
         <HudStat bangla="সেরা" label="Best" value={highScore.toLocaleString()} />

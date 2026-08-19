@@ -8,6 +8,7 @@ import { CollisionSystem } from "@/components/canvas/obstacles/CollisionSystem";
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
 import { ProgressionSystem } from "@/components/canvas/ProgressionSystem";
 import { QualityScaler } from "@/components/canvas/QualityScaler";
+import { RaceSystem } from "@/components/canvas/RaceSystem";
 import { ScoreEngine } from "@/components/canvas/ScoreEngine";
 import { SfxSystem } from "@/components/canvas/SfxSystem";
 import { BoatController } from "@/components/canvas/boat/BoatController";
@@ -74,6 +75,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
         <SfxSystem />
         <ScoreEngine />
         <ProgressionSystem />
+        <RaceSystem />
         <QualityScaler />
         <ScenePostProcessing enabled={highFx} />
         {children}

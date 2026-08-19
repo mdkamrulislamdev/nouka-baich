@@ -21,6 +21,15 @@ export function beginSprintRun(): void {
   beginRunWithMode("sprint");
 }
 
+export function replayRun(): void {
+  const mode = useGameStore.getState().gameMode;
+  if (mode === "sprint") {
+    beginSprintRun();
+  } else {
+    beginRun();
+  }
+}
+
 export function returnToMenu(): void {
   deactivateAllObstacles();
   resetCrashShake();

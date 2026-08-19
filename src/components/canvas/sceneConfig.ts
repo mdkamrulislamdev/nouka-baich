@@ -1,7 +1,9 @@
 export const BOAT_SPAWN: [number, number, number] = [0, 0, 0];
 
 export const BOAT_MODEL = {
-  path: "/models/venus_a_shetland_fourareen/scene.gltf",
+  path:
+    process.env.NEXT_PUBLIC_BOAT_MODEL_PATH ??
+    "/models/venus_a_shetland_fourareen/scene.gltf",
   targetLength: 4.4,
   halfWidth: 0.68,
   /**
@@ -128,6 +130,14 @@ export const ROCK_MODEL = {
   path: "/models/stylized_rocks/scene.gltf",
   targetWidth: 2.2,
   embedY: -0.35,
+} as const;
+
+export const RIVERBANK_MODEL = {
+  /** Set to true after adding public/models/riverbank/scene.gltf */
+  enabled: false,
+  path: "/models/riverbank/scene.gltf",
+  targetWidth: WORLD_SCROLL.bankWidth + 2.4,
+  outwardOffset: 0.35,
 } as const;
 
 export const LOG_OBSTACLE = {
