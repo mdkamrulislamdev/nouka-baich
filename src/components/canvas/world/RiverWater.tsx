@@ -24,6 +24,13 @@ import { useGameStore } from "@/store/useGameStore";
 const WATER_LENGTH =
   WORLD_SCROLL.segmentLength * WORLD_SCROLL.segmentCount;
 const WATER_Z = -WATER_LENGTH * 0.28;
+const MIN_WATER_SIZE = 0.001;
+const MAX_SIMULATION_DELTA = 0.05;
+const MIN_SIMULATION_DELTA = 1e-4;
+
+function clampSimulationDelta(delta: number): number {
+  return Math.max(MIN_SIMULATION_DELTA, Math.min(delta, MAX_SIMULATION_DELTA));
+}
 
 const FOAM_VERTEX = /* glsl */ `
   varying vec2 vUv;
@@ -39,10 +46,11 @@ const FOAM_FRAGMENT = /* glsl */ `
   varying vec2 vUv;
 
   void main() {
+    float y = max(vUv.y, 0.0001);
     float x = mix(vUv.x, 1.0 - vUv.x, uFlip);
     float band = smoothstep(0.0, 0.18, x) * smoothstep(0.62, 0.12, x);
-    float foamA = sin(vUv.y * 32.0 - uTime * 7.5) * 0.5 + 0.5;
-    float foamB = sin(vUv.y * 13.0 + uTime * 5.0) * 0.5 + 0.5;
+    float foamA = sin(y * 32.0 - uTime * 7.5) * 0.5 + 0.5;
+    float foamB = sin(y * 13.0 + uTime * 5.0) * 0.5 + 0.5;
     float alpha = band * (0.18 + 0.62 * foamA * foamB);
     gl_FragColor = vec4(0.93, 0.97, 1.0, alpha);
   }
@@ -66,7 +74,8 @@ function FoamStrip({ x, flip }: { x: number; flip: number }) {
 
     const state = useGameStore.getState();
     const flow = isGameplayActive(state) ? state.speed : 4;
-    material.uniforms.uTime.value += delta * (2.8 + flow * 0.22);
+    const dt = clampSimulationDelta(delta);
+    material.uniforms.uTime.value += dt * (2.8 + flow * 0.22);
   });
 
   return (
