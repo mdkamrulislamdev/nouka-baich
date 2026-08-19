@@ -48,9 +48,11 @@ import {
 import { useGameStore } from "@/store/useGameStore";
 
 type PooledObstacle = {
-  object: Group;
+  object: Group | null;
   record: ObstacleRecord;
 };
+
+type ObstaclePools = Record<ObstacleKind, ObjectPool<Group>>;
 
 const worldSize = new Vector3();
 
@@ -73,8 +75,53 @@ function pickSpawnKind(seed: number): ObstacleKind {
   return "marker";
 }
 
+function getPool(pools: ObstaclePools, kind: ObstacleKind): ObjectPool<Group> {
+  return pools[kind];
+}
+
+function findItem(
+  items: PooledObstacle[],
+  record: ObstacleRecord,
+): PooledObstacle | undefined {
+  return items.find((item) => item.record === record);
+}
+
+function activateObstacle(
+  item: PooledObstacle,
+  pools: ObstaclePools,
+  root: Group,
+): void {
+  if (item.object) {
+    return;
+  }
+
+  item.object = getPool(pools, item.record.kind).acquire();
+  item.object.visible = true;
+  root.add(item.object);
+}
+
+function recycleObstacle(item: PooledObstacle, pools: ObstaclePools): void {
+  item.record.active = false;
+
+  const object = item.object;
+  if (!object) {
+    return;
+  }
+
+  object.visible = false;
+  object.position.set(0, -999, 0);
+  object.rotation.set(0, 0, 0);
+  object.scale.setScalar(1);
+  getPool(pools, item.record.kind).release(object);
+  item.object = null;
+}
+
 function syncObstacle(item: PooledObstacle): void {
   const { record, object } = item;
+  if (!object) {
+    return;
+  }
+
   object.visible = record.active;
   if (!record.active) {
     return;
@@ -167,6 +214,7 @@ export function ObstacleSpawner() {
   const { scene: rockScene } = useGltfModel(ROCK_MODEL.path);
   const rootRef = useRef<Group>(null);
   const itemsRef = useRef<PooledObstacle[] | null>(null);
+  const poolsRef = useRef<ObstaclePools | null>(null);
   const distanceRef = useRef(0);
   const spawnCountRef = useRef(0);
 
@@ -195,36 +243,41 @@ export function ObstacleSpawner() {
       () => createDinghyObstacle(dinghyResources),
       OBSTACLE_SPAWN.dinghyPoolSize,
     );
+    const pools: ObstaclePools = {
+      marker: markerPool,
+      rock: rockPool,
+      log: logPool,
+      dinghy: dinghyPool,
+    };
     const items: PooledObstacle[] = [];
 
-    const fillPool = (
-      pool: ObjectPool<Group>,
+    const reserveSlots = (
       kind: ObstacleKind,
       count: number,
       idOffset: number,
     ) => {
       for (let index = 0; index < count; index += 1) {
-        const object = pool.acquire();
         const record = createObstacleRecord(idOffset + index, kind);
-        root.add(object);
         registerObstacle(record);
-        items.push({ object, record });
+        items.push({ object: null, record });
       }
     };
 
-    fillPool(markerPool, "marker", OBSTACLE_SPAWN.poolSize, 0);
-    fillPool(rockPool, "rock", OBSTACLE_SPAWN.rockPoolSize, 100);
-    fillPool(logPool, "log", OBSTACLE_SPAWN.logPoolSize, 200);
-    fillPool(dinghyPool, "dinghy", OBSTACLE_SPAWN.dinghyPoolSize, 300);
+    reserveSlots("marker", OBSTACLE_SPAWN.poolSize, 0);
+    reserveSlots("rock", OBSTACLE_SPAWN.rockPoolSize, 100);
+    reserveSlots("log", OBSTACLE_SPAWN.logPoolSize, 200);
+    reserveSlots("dinghy", OBSTACLE_SPAWN.dinghyPoolSize, 300);
 
+    poolsRef.current = pools;
     itemsRef.current = items;
     distanceRef.current = OBSTACLE_SPAWN.interval * 0.35;
     spawnCountRef.current = 0;
 
     return () => {
       items.forEach((item) => {
-        item.record.active = false;
-        detachObject(item.object);
+        if (item.object) {
+          detachObject(item.object);
+        }
       });
       markerPool.drain(detachObject);
       rockPool.drain(detachObject);
@@ -235,12 +288,15 @@ export function ObstacleSpawner() {
       disposeDinghyResources(dinghyResources);
       clearObstacles();
       itemsRef.current = null;
+      poolsRef.current = null;
     };
   }, [rockScene]);
 
   useFrame((_, delta) => {
     const items = itemsRef.current;
-    if (!items) {
+    const pools = poolsRef.current;
+    const root = rootRef.current;
+    if (!items || !pools || !root) {
       return;
     }
 
@@ -248,9 +304,7 @@ export function ObstacleSpawner() {
     const { status, speed, level } = state;
     if (status === "MENU") {
       for (let index = 0; index < items.length; index += 1) {
-        const item = items[index];
-        item.record.active = false;
-        item.object.visible = false;
+        recycleObstacle(items[index], pools);
       }
       distanceRef.current = OBSTACLE_SPAWN.interval * 0.35;
       spawnCountRef.current = 0;
@@ -282,7 +336,10 @@ export function ObstacleSpawner() {
         );
       }
       if (obstacle.z > OBSTACLE_SPAWN.recycleZ) {
-        obstacle.active = false;
+        const item = findItem(items, obstacle);
+        if (item) {
+          recycleObstacle(item, pools);
+        }
       }
     });
 
@@ -296,6 +353,12 @@ export function ObstacleSpawner() {
       if (!slot) {
         break;
       }
+
+      const item = findItem(items, slot);
+      if (item) {
+        activateObstacle(item, pools, root);
+      }
+
       if (slot.kind === "rock") {
         placeRock(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
       } else if (slot.kind === "log") {
