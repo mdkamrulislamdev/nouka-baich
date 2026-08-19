@@ -1,0 +1,26 @@
+{
+  "name": "Nouka Baich 3D",
+  "short_name": "Nouka Baich",
+  "description": "A 3D boat racing game inspired by traditional Bangladeshi Nouka Baich.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0a0a0a",
+  "theme_color": "#132416",
+  "lang": "bn",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"]
+}

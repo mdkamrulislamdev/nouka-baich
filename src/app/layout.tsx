@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   title: "Nouka Baich 3D",
   description:
     "A 3D boat racing game inspired by traditional Bangladeshi Nouka Baich.",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    apple: "/icons/icon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
