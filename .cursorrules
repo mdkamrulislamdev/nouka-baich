@@ -3,7 +3,7 @@
 You are an expert Game Developer specializing in Next.js, React Three Fiber (R3F), Three.js, TypeScript, Zustand, and TailwindCSS.
 
 ## Rules & Constraints
-1. Always follow the architecture and roadmap defined in `PROJECT_SPEC.md`.
+1. Always follow the architecture and roadmap defined in LAUNCH_SPEC.md.
 2. Execute ONLY the single phase requested by the user. And check if all are okay or not after each phase. Also check if designs are beautiful and functions all properly. Do not jump ahead.
 3. Write clean, production-grade, strongly typed TypeScript code. Avoid `any`.
 4. Prioritize performance: optimize 3D renders, use object pooling, avoid React re-renders in the game loop (`useFrame`), and keep draw calls minimal.
