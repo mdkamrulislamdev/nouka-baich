@@ -1,8 +1,14 @@
 "use client";
 
 import { Environment } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { Suspense, useRef } from "react";
-import { type HemisphereLight } from "three";
+import {
+  AmbientLight,
+  Color,
+  DirectionalLight,
+  type HemisphereLight,
+} from "three";
 
 import { GradientSky } from "@/components/canvas/Atmosphere";
 import { SUN_POSITION, getAtmosphere } from "@/components/canvas/sceneConfig";
@@ -10,15 +16,43 @@ import { useGameStore } from "@/store/useGameStore";
 
 const INITIAL = getAtmosphere(1);
 
+function dampColor(
+  current: Color,
+  target: Color,
+  dt: number,
+  damping: number,
+): void {
+  current.lerp(target, 1 - Math.exp(-damping * dt));
+}
+
 export function SceneLighting() {
   const hemisphereRef = useRef<HemisphereLight>(null);
+  const ambientRef = useRef<AmbientLight>(null);
+  const sunRef = useRef<DirectionalLight>(null);
+  const currentAmbient = useRef(new Color(INITIAL.ambient));
+  const currentSun = useRef(new Color(INITIAL.sunColor));
+  const targetAmbient = useRef(new Color());
+  const targetSun = useRef(new Color());
   const graphicsQuality = useGameStore((state) => state.graphicsQuality);
   const adaptiveLow = useGameStore((state) => state.adaptiveLow);
   const highFx = graphicsQuality === "high" && !adaptiveLow;
 
+  useFrame((_, delta) => {
+    const dt = Math.min(delta, 0.05);
+    const palette = getAtmosphere(useGameStore.getState().level);
+    targetAmbient.current.set(palette.ambient);
+    targetSun.current.set(palette.sunColor);
+
+    dampColor(currentAmbient.current, targetAmbient.current, dt, 1.6);
+    dampColor(currentSun.current, targetSun.current, dt, 1.6);
+
+    ambientRef.current?.color.copy(currentAmbient.current);
+    sunRef.current?.color.copy(currentSun.current);
+  });
+
   return (
     <>
-      <ambientLight color={INITIAL.ambient} intensity={0.38} />
+      <ambientLight ref={ambientRef} color={INITIAL.ambient} intensity={0.38} />
       <hemisphereLight
         ref={hemisphereRef}
         color={INITIAL.ambient}
@@ -26,6 +60,7 @@ export function SceneLighting() {
         intensity={0.28}
       />
       <directionalLight
+        ref={sunRef}
         color={INITIAL.sunColor}
         intensity={highFx ? 1.85 : 1.35}
         position={SUN_POSITION}
