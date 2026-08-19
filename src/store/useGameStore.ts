@@ -1,13 +1,16 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-import { SCORE } from "@/components/canvas/sceneConfig";
+import { SCORE, type GameMode } from "@/components/canvas/sceneConfig";
 
 export type GameStatus = "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER";
 export type GraphicsQuality = "high" | "low";
+export type RunOutcome = "playing" | "crash" | "finish";
 
 export type GameState = {
   status: GameStatus;
+  gameMode: GameMode;
+  runOutcome: RunOutcome;
   score: number;
   distance: number;
   speed: number;
@@ -21,6 +24,9 @@ export type GameState = {
   settingsOpen: boolean;
   adaptiveLow: boolean;
   closeCallFlash: number;
+  closeCallBonus: number;
+  nearMissCombo: number;
+  lastNearMissAt: number;
 };
 
 export type GameActions = {
@@ -39,8 +45,9 @@ export type GameActions = {
   closeSettings: () => void;
   setAdaptiveLow: (adaptiveLow: boolean) => void;
   triggerCloseCall: () => void;
-  startGame: () => void;
+  startGame: (gameMode?: GameMode) => void;
   endGame: () => void;
+  finishRace: () => void;
   resetGame: () => void;
 };
 
@@ -48,6 +55,8 @@ export type GameStore = GameState & GameActions;
 
 const INITIAL_STATE: GameState = {
   status: "MENU",
+  gameMode: "endless",
+  runOutcome: "playing",
   score: 0,
   distance: 0,
   speed: 11,
@@ -61,6 +70,9 @@ const INITIAL_STATE: GameState = {
   settingsOpen: false,
   adaptiveLow: false,
   closeCallFlash: 0,
+  closeCallBonus: 0,
+  nearMissCombo: 0,
+  lastNearMissAt: 0,
 };
 
 export const useGameStore = create<GameStore>()(
@@ -93,11 +105,24 @@ export const useGameStore = create<GameStore>()(
       }),
     setAdaptiveLow: (adaptiveLow) => set({ adaptiveLow }),
     triggerCloseCall: () =>
-      set((state) => ({
-        score: state.score + SCORE.nearMissBonus,
-        closeCallFlash: state.closeCallFlash + 1,
-      })),
-    startGame: () =>
+      set((state) => {
+        const now = Date.now();
+        const withinCombo =
+          state.lastNearMissAt > 0 &&
+          now - state.lastNearMissAt < SCORE.nearMissComboWindowMs;
+        const combo = withinCombo
+          ? Math.min(state.nearMissCombo + 1, SCORE.nearMissComboMax)
+          : 1;
+        const bonus = SCORE.nearMissBonus * combo;
+        return {
+          nearMissCombo: combo,
+          lastNearMissAt: now,
+          closeCallBonus: bonus,
+          score: state.score + bonus,
+          closeCallFlash: state.closeCallFlash + 1,
+        };
+      }),
+    startGame: (gameMode = "endless") =>
       set((state) => ({
         ...INITIAL_STATE,
         highScore: state.highScore,
@@ -107,6 +132,8 @@ export const useGameStore = create<GameStore>()(
         adaptiveLow: false,
         isNewHighScore: false,
         settingsOpen: false,
+        gameMode,
+        runOutcome: "playing",
         status: "PLAYING",
       })),
     endGame: () =>
@@ -114,6 +141,18 @@ export const useGameStore = create<GameStore>()(
         const finalScore = Math.floor(state.score);
         return {
           status: "GAMEOVER",
+          runOutcome: "crash",
+          score: finalScore,
+          isNewHighScore: finalScore > state.highScore,
+          highScore: Math.max(state.highScore, finalScore),
+        };
+      }),
+    finishRace: () =>
+      set((state) => {
+        const finalScore = Math.floor(state.score);
+        return {
+          status: "GAMEOVER",
+          runOutcome: "finish",
           score: finalScore,
           isNewHighScore: finalScore > state.highScore,
           highScore: Math.max(state.highScore, finalScore),

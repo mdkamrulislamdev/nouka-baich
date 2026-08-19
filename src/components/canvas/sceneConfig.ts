@@ -188,6 +188,14 @@ export const AUDIO = {
 export const SCORE = {
   referenceSpeed: 12,
   nearMissBonus: 35,
+  nearMissComboWindowMs: 4000,
+  nearMissComboMax: 5,
+} as const;
+
+export type GameMode = "endless" | "sprint";
+
+export const SPRINT = {
+  targetDistance: 1200,
 } as const;
 
 export const PROGRESSION = {

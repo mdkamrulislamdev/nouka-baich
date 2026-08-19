@@ -6,6 +6,8 @@ import { useGameStore } from "@/store/useGameStore";
 export function CloseCallToast() {
   const status = useGameStore((state) => state.status);
   const closeCallFlash = useGameStore((state) => state.closeCallFlash);
+  const closeCallBonus = useGameStore((state) => Math.floor(state.closeCallBonus));
+  const nearMissCombo = useGameStore((state) => state.nearMissCombo);
 
   if (
     (status !== "PLAYING" && status !== "PAUSED") ||
@@ -24,7 +26,8 @@ export function CloseCallToast() {
           খুব কাছে!
         </p>
         <p className="text-[0.65rem] tracking-[0.28em] text-[#e4c36a] uppercase">
-          Close Call! +{SCORE.nearMissBonus}
+          Close Call! +{closeCallBonus.toLocaleString()}
+          {nearMissCombo > 1 ? ` · x${nearMissCombo} combo` : ""}
         </p>
       </div>
     </div>
