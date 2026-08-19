@@ -82,7 +82,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
         <ScoreEngine />
         <ProgressionSystem />
         <QualityScaler />
-        <ScenePostProcessing />
+        <ScenePostProcessing enabled={highFx} />
         {children}
       </Canvas>
     </div>

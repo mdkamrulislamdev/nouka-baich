@@ -9,7 +9,15 @@ import {
 
 import { CAMERA } from "@/components/canvas/sceneConfig";
 
-export function ScenePostProcessing() {
+type ScenePostProcessingProps = {
+  enabled: boolean;
+};
+
+export function ScenePostProcessing({ enabled }: ScenePostProcessingProps) {
+  if (!enabled) {
+    return null;
+  }
+
   return (
     <EffectComposer multisampling={0}>
       <DepthOfField
