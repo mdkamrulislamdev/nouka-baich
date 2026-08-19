@@ -2,10 +2,6 @@ import { OARS } from "@/components/canvas/sceneConfig";
 
 let phase = 0;
 
-export function resetRowingClock(): void {
-  phase = 0;
-}
-
 export function updateRowingClock(
   dt: number,
   status: "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER",

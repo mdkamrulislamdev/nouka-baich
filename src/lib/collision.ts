@@ -19,14 +19,6 @@ const obstacleSize = new Vector3();
 
 let lastHit: ObstacleRecord | null = null;
 
-export function getPlayerBox(): Box3 {
-  return playerBox;
-}
-
-export function getLastCollision(): ObstacleRecord | null {
-  return lastHit;
-}
-
 export function clearLastCollision(): void {
   lastHit = null;
 }

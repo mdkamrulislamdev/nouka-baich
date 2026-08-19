@@ -1,15 +1,7 @@
-"use client";
-
-import { useEffect, useMemo } from "react";
 import { Box3, Group, Vector3 } from "three";
 
 import { PALM_MODEL } from "@/components/canvas/sceneConfig";
-import { detachObject } from "@/lib/dispose";
-import {
-  cloneGltfScene,
-  enableGltfShadows,
-  useGltfModel,
-} from "@/lib/gltf";
+import { cloneGltfScene, enableGltfShadows } from "@/lib/gltf";
 
 export function preparePalm(source: Group): Group {
   const wrapper = new Group();
@@ -30,21 +22,4 @@ export function preparePalm(source: Group): Group {
   palm.position.z -= center.z;
 
   return wrapper;
-}
-
-type PalmPropProps = {
-  scale?: number;
-};
-
-export function PalmProp({ scale = 1 }: PalmPropProps) {
-  const { scene } = useGltfModel(PALM_MODEL.path);
-  const palm = useMemo(() => preparePalm(scene), [scene]);
-
-  useEffect(() => {
-    return () => {
-      detachObject(palm);
-    };
-  }, [palm]);
-
-  return <primitive object={palm} scale={scale} />;
 }
