@@ -48,6 +48,7 @@ export function SfxSystem() {
       heardNearMiss.add(near.id);
       audio.playSfx("nearMiss", { volume: 0.45 });
       triggerNearMissShake(laneOffset - near.x);
+      useGameStore.getState().triggerCloseCall();
     }
   });
 

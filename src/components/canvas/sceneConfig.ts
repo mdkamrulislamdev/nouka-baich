@@ -187,6 +187,7 @@ export const AUDIO = {
 
 export const SCORE = {
   referenceSpeed: 12,
+  nearMissBonus: 35,
 } as const;
 
 export const PROGRESSION = {

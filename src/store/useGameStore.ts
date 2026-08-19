@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
+import { SCORE } from "@/components/canvas/sceneConfig";
+
 export type GameStatus = "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER";
 export type GraphicsQuality = "high" | "low";
 
@@ -18,6 +20,7 @@ export type GameState = {
   graphicsQuality: GraphicsQuality;
   settingsOpen: boolean;
   adaptiveLow: boolean;
+  closeCallFlash: number;
 };
 
 export type GameActions = {
@@ -35,6 +38,7 @@ export type GameActions = {
   openSettings: () => void;
   closeSettings: () => void;
   setAdaptiveLow: (adaptiveLow: boolean) => void;
+  triggerCloseCall: () => void;
   startGame: () => void;
   endGame: () => void;
   resetGame: () => void;
@@ -56,6 +60,7 @@ const INITIAL_STATE: GameState = {
   graphicsQuality: "high",
   settingsOpen: false,
   adaptiveLow: false,
+  closeCallFlash: 0,
 };
 
 export const useGameStore = create<GameStore>()(
@@ -87,6 +92,11 @@ export const useGameStore = create<GameStore>()(
         return { settingsOpen: false };
       }),
     setAdaptiveLow: (adaptiveLow) => set({ adaptiveLow }),
+    triggerCloseCall: () =>
+      set((state) => ({
+        score: state.score + SCORE.nearMissBonus,
+        closeCallFlash: state.closeCallFlash + 1,
+      })),
     startGame: () =>
       set((state) => ({
         ...INITIAL_STATE,
