@@ -47,7 +47,7 @@ export const WAKE = {
 export const BOAT_BOUNDS = {
   width: BOAT_MODEL.halfWidth * 1.35,
   height: 0.95,
-  length: BOAT_MODEL.targetLength * 0.55,
+  length: BOAT_MODEL.targetLength * 0.8,
   centerY: 0.4,
 } as const;
 
