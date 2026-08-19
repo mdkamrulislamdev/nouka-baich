@@ -1,25 +1,26 @@
 # Nouka Baich 3D — Project Status & Code Audit
 
-**Date:** 19 August 2026 (launch complete through phase 60)  
+**Date:** 19 August 2026 (launch + post-launch enhancements)  
 **Specs:** `PROJECT_SPEC.md` (40 phases) · `LAUNCH_SPEC.md` (20 phases, 41–60)  
 **Runtime check:** `npm run lint` pass · `tsc --noEmit` pass · `npm run build` pass · `npm run dev` at `http://localhost:3000`
 
-This document maps what is implemented, what the launch polish pass delivered, and what optional work remains after the 60-phase roadmap.
+This document maps what is implemented, what the launch polish pass delivered, and what optional work remains.
 
 ---
 
 ## Verdict
 
-All **40 core phases** and all **20 launch phases (41–60)** are implemented and committed locally. The game is launch-ready as an endless river racer with post-processing, compressed assets, fixed logic bugs, near-miss scoring, tuned collision, and a verified production build.
+All **40 core phases** and all **20 launch phases (41–60)** are complete. Post-launch quick wins and several medium-scope items are also implemented locally. The game supports **Endless** and **Sprint (1200 m)** modes, near-miss combo scoring, ground mist, GLTF drop-in pipelines for boat and riverbanks, PWA manifest, and deploy docs.
 
 | Area | Rating | Notes |
 | --- | --- | --- |
 | Core roadmap (1–40) | **Complete** | Engine, gameplay, audio, UI, persistence |
 | Launch polish (41–60) | **Complete** | Logic fixes, graphics pipeline, perf, content polish |
-| Playable loop | **Strong** | Menu → play → pause → score → crash → replay/menu |
-| Visual fidelity | **Strong** | Bloom, Vignette, DoF, level-synced lighting; exponential fog only |
+| Post-launch enhancements | **Complete** | See table below |
+| Playable loop | **Strong** | Menu → mode pick → play → pause → score → finish/crash → replay/menu |
+| Visual fidelity | **Strong** | Bloom, Vignette, DoF, ground mist, exponential fog |
 | Coding practices | **Good** | Typed, no `any`, Zustand off-render in `useFrame` |
-| Scalability | **Good** | Pools + instancing; boat texture ~480 KB WebP |
+| Scalability | **Good** | Pools + instancing; compressed WebP textures |
 | Remote sync | **Blocked** | Local commits ahead of `origin/main`; push needs correct GitHub account |
 
 ---
@@ -40,65 +41,46 @@ npx tsc --noEmit
 npm run build
 ```
 
+Deploy: see `DEPLOY.md`. Asset checklist: see `ASSETS_NEEDED.md`.
+
+---
+
+## Post-launch enhancements — complete
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| GitHub push guide | **Done** | `DEPLOY.md` — fix `mdkamrulislamdev` vs `mkamrul9` auth |
+| Vercel / CI config | **Done** | `vercel.json`, `.github/workflows/ci.yml` |
+| Skip scenery updates on menu | **Done** | `InstancedScenery` matrix commit skip when idle |
+| Compress palm/rock textures | **Done** | PNG → WebP in GLTF paths |
+| Near-miss combo multiplier | **Done** | Up to 5× within 4 s; toast shows combo |
+| Ground mist (volumetric-ish) | **Done** | `GroundMist.tsx` on high graphics |
+| Sprint race mode | **Done** | 1200 m finish, HUD “To Finish”, victory modal |
+| GLTF riverbank pipeline | **Done** | `RiverBankMesh` + `RIVERBANK_MODEL.enabled` flag |
+| Boat env override | **Done** | `NEXT_PUBLIC_BOAT_MODEL_PATH` |
+| PWA manifest | **Done** | `public/manifest.webmanifest`, SVG icon, layout metadata |
+| Asset requirements doc | **Done** | `ASSETS_NEEDED.md` |
+
 ---
 
 ## Launch roadmap (phases 41–60) — complete
 
-### Milestone 9 — Core logic & UI (41–45) ✅
-
-| Phase | Item | Status |
-| --- | --- | --- |
-| 41 | Score accumulation | **Done** |
-| 42 | Live score HUD | **Done** |
-| 43 | Pause for settings | **Done** — `PAUSED` status |
-| 44 | Game over → menu | **Done** |
-| 45 | Adaptive quality recovery | **Done** |
-
-### Milestone 10 — Visual fidelity (46–50) ✅
-
-| Phase | Item | Status |
-| --- | --- | --- |
-| 46 | Post-processing stack | **Done** |
-| 47 | Bloom | **Done** |
-| 48 | Vignette + DoF | **Done** |
-| 49 | Low-graphics toggle | **Done** |
-| 50 | Lighting palette sync | **Done** |
-
-**Extra fix:** DoF focus corrected to remove startup blur.
-
-### Milestone 11 — Assets & performance (51–55) ✅
-
-| Phase | Item | Status |
-| --- | --- | --- |
-| 51 | Texture compression | **Done** — PNG → WebP (~480 KB) |
-| 52 | Split Suspense | **Done** |
-| 53 | Object pool cleanup | **Done** — acquire/release lifecycle |
-| 54 | Remove dead code | **Done** |
-| 55 | Consolidate utilities | **Done** — `src/lib/mathUtils.ts` |
-
-### Milestone 12 — Final polish (56–60) ✅
-
-| Phase | Item | Status |
-| --- | --- | --- |
-| 56 | Collision box tuning | **Done** — hull hitbox 80% of `targetLength` |
-| 57 | Marker buoy clusters | **Done** — 2–4 buoy patterns per spawn |
-| 58 | Near-miss scoring | **Done** — +35 bonus + “Close Call!” toast |
-| 59 | Shader precision fixes | **Done** — clamped delta/size, highp, foam UV guard |
-| 60 | Final launch build | **Done** — lint/types/build pass; removed `GltfFallback` |
+All 20 launch phases remain **Done** (score HUD, pause, post-processing, texture compression, pools, near-miss scoring, collision tuning, etc.). See prior sections in git history for per-phase detail.
 
 ---
 
 ## Core roadmap (phases 1–40)
 
-All **40 original phases remain Done**. Store states: `MENU` · `PLAYING` · `PAUSED` · `GAMEOVER`.
+All **40 original phases remain Done**. Store states: `MENU` · `PLAYING` · `PAUSED` · `GAMEOVER`. Game modes: `endless` · `sprint`.
 
-Still **Partial** from original long-term vision (not blocking launch):
+Still **Partial** until you supply art:
 
 | Item | Status |
 | --- | --- |
-| Nouka Baich boat mesh | Shetland fourareen GLTF stand-in — needs authentic Bangladeshi longboat asset |
-| Volumetric fog | Exponential `FogExp2` only |
-| GLTF coverage | Boat, palms, rocks are GLTF; banks and most obstacles procedural |
+| Nouka Baich boat mesh | Shetland fourareen GLTF stand-in — drop-in path ready |
+| Riverbank art | Procedural fallback; enable GLTF when asset added |
+| True volumetric fog | Ground mist + `FogExp2` (not full ray-marched volume) |
+| Native app wrapper | PWA only; Capacitor not started |
 
 ---
 
@@ -107,10 +89,10 @@ Still **Partial** from original long-term vision (not blocking launch):
 | Mandate | Status |
 | --- | --- |
 | `@react-three/drei` `<Environment>` or skybox | **Done** |
-| Volumetric fog | **Partial** |
+| Volumetric fog | **Partial** — ground mist + exponential fog |
 | Post-processing: Bloom, Vignette, DoF | **Done** — gated by high graphics |
 | Dynamic water (`Water`, normals, Fresnel, foam) | **Done** |
-| GLTF pipeline | **Partial** — core assets loaded via `useGLTF` |
+| GLTF pipeline | **Partial** — boat, palms, rocks loaded; banks/obstacles procedural |
 
 ---
 
@@ -118,40 +100,37 @@ Still **Partial** from original long-term vision (not blocking launch):
 
 ```
 src/
-  app/                      Next.js App Router + CloseCallToast
-  store/useGameStore        Zustand (score, pause, close-call flash)
-  lib/                      gameplay, mathUtils, audio, collision, pools
+  app/                      Next.js App Router + PWA manifest link
+  store/useGameStore        Zustand (score, pause, combo, gameMode, runOutcome)
+  lib/                      gameplay, mathUtils, audio, collision, pools, gameSession
   components/
-    canvas/                 R3F scene + ScenePostProcessing
-    ui/                     HUD, menu, modals, toasts
+    canvas/                 R3F scene + RaceSystem + GroundMist + FinishLine
+    ui/                     HUD, menu (2 modes), modals, toasts
+public/
+  manifest.webmanifest      Add-to-home-screen
+  icons/icon.svg            PWA icon (replace with PNG for iOS polish)
 ```
 
-Key helpers: `beginRun()`, `returnToMenu()`, `isGameplayActive()`, `triggerCloseCall()`.
+Key helpers: `beginRun()`, `beginSprintRun()`, `replayRun()`, `returnToMenu()`, `finishRace()`, `triggerCloseCall()`.
 
 ---
 
-## What could be done next (optional, post-launch)
+## What you need to do next
 
-### High value, no new 3D assets
+### Your actions (no code)
 
-| Item | Effort | Notes |
-| --- | --- | --- |
-| **Deploy to Vercel / hosting** | Small | Static Next.js export or standard deploy |
-| **Fix GitHub push** | Small | Authenticate as repo owner `mdkamrulislamdev` |
-| **Skip scenery updates on menu** | Small | Perf: don't rewrite instanced matrices when idle |
-| **Compress palm/rock textures** | Small | Further load-time wins |
-| **Level-based race / finish line mode** | Medium | New game mode + UI |
-| **Near-miss combo multiplier** | Small | Stack bonus for consecutive close calls |
+1. **Push to GitHub** — authenticate as `mdkamrulislamdev` (see `DEPLOY.md`).
+2. **Deploy to Vercel** — `vercel login` → `vercel --prod` for a public play URL.
+3. **Bring assets** — see `ASSETS_NEEDED.md` (boat `.glb`, riverbank GLTF, PNG icons optional).
 
-### Needs external input or larger scope
+### Optional future code work
 
 | Item | Blocker |
 | --- | --- |
-| Authentic Nouka Baich 3D model | Custom `.glb` asset |
-| True volumetric fog | Heavier shader / post stack |
-| GLTF riverbanks | Art pipeline |
-| Two-player / timed tournament | Game design + netcode or local split |
-| Mobile app wrapper | Capacitor / PWA polish |
+| Capacitor / Play Store wrapper | Store accounts + build pipeline |
+| Timed tournament / multiplayer | Game design + netcode |
+| Full ray-marched volumetric fog | GPU budget / art direction |
+| Additional obstacle GLTFs | Art assets |
 
 ---
 
@@ -160,44 +139,16 @@ Key helpers: `beginRun()`, `returnToMenu()`, `isGameplayActive()`, `triggerClose
 | Item | Notes |
 | --- | --- |
 | `PalmProp.tsx` filename | Contains `preparePalm` only (component removed) |
-| Instanced scenery on menu | Still updates matrices every frame |
 | Rock `worldBox` | Rebuilt per active rock per frame |
-| Water shader warnings | Mitigated; some GPU drivers may still log from `three-stdlib` internals |
+| PWA icons | SVG shipped; PNG 192/512 recommended for iOS |
+| Water shader warnings | Mitigated; some GPU drivers may still log from `three-stdlib` |
 
 ---
 
-## Resolved issues (full audit trail)
+## Resolved issues (audit trail)
 
-| Issue | Fixed in |
-| --- | --- |
-| Score recalculated on level-up | Phase 41 |
-| No live score HUD | Phase 42 |
-| Settings did not pause | Phase 43 |
-| No return to menu | Phase 44 |
-| Adaptive quality one-way | Phase 45 |
-| Missing post-processing | Phases 46–49 |
-| Lighting stuck on level 1 | Phase 50 |
-| 19 MB boat texture | Phase 51 |
-| Suspense hid entire river | Phase 52 |
-| Pool `release()` unused | Phase 53 |
-| Dead exports / duplicated utils | Phases 54–55 |
-| Unfair collision box | Phase 56 |
-| Isolated marker buoys | Phase 57 |
-| Near-miss audio only | Phase 58 |
-| Water shader console noise | Phase 59 |
-| Unused `GltfFallback` | Phase 60 |
+Includes all phase 41–60 fixes plus: menu scenery perf skip, palm/rock WebP, near-miss combo, DoF startup blur, ground mist layer, sprint finish mode, riverbank GLTF pipeline, PWA manifest.
 
 ---
 
-## Suggested next session
-
-The **60-phase roadmap (40 core + 20 launch) is complete**. Recommended next steps:
-
-1. Fix GitHub credentials and **push** all local commits.  
-2. **Deploy** to a public URL for playtesting.  
-3. Source or commission a **real Nouka Baich boat** model when ready.  
-4. Add a **finish-line / timed race** mode if you want beyond endless mode.
-
----
-
-**Roadmap status: CLOSED (phases 1–60).** Further work is content, deployment, and optional enhancements — not missing engine features.
+**Roadmap status: CLOSED (phases 1–60).** Remaining work is deployment, authentic art assets, and optional platform wrappers — not missing engine features.
