@@ -11,6 +11,7 @@ import {
 } from "three";
 
 import { GradientSky } from "@/components/canvas/Atmosphere";
+import { GroundMist } from "@/components/canvas/fx/GroundMist";
 import { SUN_POSITION, getAtmosphere } from "@/components/canvas/sceneConfig";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -77,6 +78,8 @@ export function SceneLighting() {
       />
 
       <GradientSky hemisphereRef={hemisphereRef} />
+
+      {highFx ? <GroundMist /> : null}
 
       <Suspense fallback={null}>
         <Environment preset="sunset" environmentIntensity={0.7} />
