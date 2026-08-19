@@ -94,7 +94,7 @@ export const useGameStore = create<GameStore>()(
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
         graphicsQuality: state.graphicsQuality,
-        adaptiveLow: state.adaptiveLow,
+        adaptiveLow: false,
         isNewHighScore: false,
         settingsOpen: false,
         status: "PLAYING",
@@ -116,6 +116,7 @@ export const useGameStore = create<GameStore>()(
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
         graphicsQuality: state.graphicsQuality,
+        adaptiveLow: false,
       })),
   })),
 );
