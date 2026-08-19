@@ -127,6 +127,7 @@ export function InstancedScenery() {
   const treesRef = useRef<ScenerySlot[] | null>(null);
   const hutsRef = useRef<ScenerySlot[] | null>(null);
   const grassRefSlots = useRef<ScenerySlot[] | null>(null);
+  const instancesCommittedRef = useRef(false);
 
   useFrame((_, delta) => {
     if (!treesRef.current) {
@@ -141,6 +142,7 @@ export function InstancedScenery() {
 
     const state = useGameStore.getState();
     if (isGameplayActive(state)) {
+      instancesCommittedRef.current = false;
       const dz = state.speed * Math.min(delta, 0.05);
       scrollSlots(treesRef.current, dz, 0, (slot, seed, z) => {
         placeOnBank(slot, seed, 2.1, 3.6, 0.72, 0.78, 0.4, z);
@@ -151,6 +153,8 @@ export function InstancedScenery() {
       scrollSlots(grassRefSlots.current, dz, 400, (slot, seed, z) => {
         placeOnBank(slot, seed, 0.55, 5.8, 0.62, 0.55, 0.7, z);
       });
+    } else if (instancesCommittedRef.current) {
+      return;
     }
 
     const trees = treesRef.current;
@@ -197,6 +201,8 @@ export function InstancedScenery() {
       }
       commitInstances(grass);
     }
+
+    instancesCommittedRef.current = true;
   });
 
   return (
