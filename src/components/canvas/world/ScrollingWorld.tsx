@@ -4,7 +4,6 @@ import { useFrame } from "@react-three/fiber";
 import { Suspense, useRef } from "react";
 import { type Group } from "three";
 
-import { GltfFallback } from "@/components/canvas/assets/GltfFallback";
 import { ObstacleSpawner } from "@/components/canvas/obstacles/ObstacleSpawner";
 import { InstancedScenery } from "@/components/canvas/world/InstancedScenery";
 import { PooledScenery } from "@/components/canvas/world/PooledScenery";
@@ -48,23 +47,27 @@ export function ScrollingWorld() {
 
   return (
     <group>
-      <Suspense fallback={<GltfFallback />}>
+      <InstancedScenery />
+      {Array.from({ length: segmentCount }, (_, index) => (
+        <group
+          key={index}
+          ref={(node) => {
+            segmentsRef.current[index] = node;
+          }}
+          position={[0, 0, initialSegmentZ(index)]}
+        >
+          <RiverBank side={-1} />
+          <RiverBank side={1} />
+        </group>
+      ))}
+
+      <Suspense fallback={null}>
         <RiverWater />
-        <InstancedScenery />
+      </Suspense>
+
+      <Suspense fallback={null}>
         <PooledScenery />
         <ObstacleSpawner />
-        {Array.from({ length: segmentCount }, (_, index) => (
-          <group
-            key={index}
-            ref={(node) => {
-              segmentsRef.current[index] = node;
-            }}
-            position={[0, 0, initialSegmentZ(index)]}
-          >
-            <RiverBank side={-1} />
-            <RiverBank side={1} />
-          </group>
-        ))}
       </Suspense>
     </group>
   );
