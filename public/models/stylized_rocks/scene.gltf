@@ -122,13 +122,13 @@
   ],
   "images": [
     {
-      "uri": "textures/material_baseColor.png"
+      "uri": "textures/material_baseColor.webp"
     },
     {
-      "uri": "textures/material_metallicRoughness.png"
+      "uri": "textures/material_metallicRoughness.webp"
     },
     {
-      "uri": "textures/material_normal.png"
+      "uri": "textures/material_normal.webp"
     }
   ],
   "materials": [

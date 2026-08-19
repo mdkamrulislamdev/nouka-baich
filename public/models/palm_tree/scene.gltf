@@ -1426,13 +1426,13 @@
   ],
   "images": [
     {
-      "uri": "textures/lambert4_baseColor.png"
+      "uri": "textures/lambert4_baseColor.webp"
     },
     {
-      "uri": "textures/lambert1_baseColor.png"
+      "uri": "textures/lambert1_baseColor.webp"
     },
     {
-      "uri": "textures/lambert5_baseColor.png"
+      "uri": "textures/lambert5_baseColor.webp"
     }
   ],
   "materials": [
