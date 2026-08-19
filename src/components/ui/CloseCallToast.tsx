@@ -1,6 +1,5 @@
 "use client";
 
-import { SCORE } from "@/components/canvas/sceneConfig";
 import { useGameStore } from "@/store/useGameStore";
 
 export function CloseCallToast() {

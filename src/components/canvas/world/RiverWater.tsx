@@ -122,7 +122,8 @@ function createRiverWater(sourceNormals: Texture): Water {
 
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.set(0, 0, WATER_Z);
-  mesh.material.uniforms.size.value = WATER.size;
+  mesh.material.precision = "highp";
+  mesh.material.uniforms.size.value = Math.max(WATER.size, MIN_WATER_SIZE);
 
   return mesh;
 }
@@ -152,11 +153,19 @@ export function RiverWater() {
 
     const state = useGameStore.getState();
     const flow = isGameplayActive(state) ? state.speed : 4;
-    mesh.material.uniforms.time.value += delta * (0.45 + flow * 0.06);
+    const dt = clampSimulationDelta(delta);
+    const timeUniform = mesh.material.uniforms.time;
+    timeUniform.value += dt * (0.45 + flow * 0.06);
+    timeUniform.value = Math.max(timeUniform.value, MIN_SIMULATION_DELTA);
+
+    const sizeUniform = mesh.material.uniforms.size;
+    if (sizeUniform) {
+      sizeUniform.value = Math.max(sizeUniform.value, MIN_WATER_SIZE);
+    }
 
     const waterNormals = mesh.material.uniforms.normalSampler.value;
     if (waterNormals instanceof Texture) {
-      waterNormals.offset.y += delta * (0.018 + flow * 0.007);
+      waterNormals.offset.y += dt * (0.018 + flow * 0.007);
     }
   });
 
