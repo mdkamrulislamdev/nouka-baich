@@ -6,8 +6,9 @@ import { type Group } from "three";
 
 import { ObstacleSpawner } from "@/components/canvas/obstacles/ObstacleSpawner";
 import { InstancedScenery } from "@/components/canvas/world/InstancedScenery";
+import { FinishLine } from "@/components/canvas/world/FinishLine";
 import { PooledScenery } from "@/components/canvas/world/PooledScenery";
-import { RiverBank } from "@/components/canvas/world/RiverBank";
+import { RiverBankMesh } from "@/components/canvas/world/RiverBankMesh";
 import { RiverWater } from "@/components/canvas/world/RiverWater";
 import { WORLD_SCROLL } from "@/components/canvas/sceneConfig";
 import { isGameplayActive } from "@/lib/gameplay";
@@ -56,8 +57,8 @@ export function ScrollingWorld() {
           }}
           position={[0, 0, initialSegmentZ(index)]}
         >
-          <RiverBank side={-1} />
-          <RiverBank side={1} />
+          <RiverBankMesh side={-1} />
+          <RiverBankMesh side={1} />
         </group>
       ))}
 
@@ -69,6 +70,8 @@ export function ScrollingWorld() {
         <PooledScenery />
         <ObstacleSpawner />
       </Suspense>
+
+      <FinishLine />
     </group>
   );
 }
