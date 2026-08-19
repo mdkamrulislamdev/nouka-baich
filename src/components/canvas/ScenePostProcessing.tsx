@@ -19,13 +19,12 @@ export function ScenePostProcessing({ enabled }: ScenePostProcessingProps) {
   }
 
   return (
-    <EffectComposer multisampling={0}>
+    <EffectComposer multisampling={4}>
       <DepthOfField
         target={CAMERA.lookAt}
-        focusDistance={0.02}
-        focalLength={0.024}
-        bokehScale={2.4}
-        height={480}
+        focusRange={7.5}
+        focalLength={0.012}
+        bokehScale={1.1}
       />
       <Bloom
         intensity={0.45}
