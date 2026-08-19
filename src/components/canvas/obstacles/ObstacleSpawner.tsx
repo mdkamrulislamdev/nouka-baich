@@ -38,6 +38,7 @@ import { clamp } from "@/lib/clamp";
 import { isGameplayActive } from "@/lib/gameplay";
 import { seededRandom } from "@/lib/mathUtils";
 import {
+  acquireIdleObstacle,
   acquirePreferredObstacle,
   clearObstacles,
   createObstacleRecord,
@@ -137,18 +138,81 @@ function syncObstacle(item: PooledObstacle): void {
   }
 }
 
-function placeMarker(record: ObstacleRecord, seed: number, z: number): void {
-  const laneLimit = getLaneLimit();
+function placeMarkerAt(
+  record: ObstacleRecord,
+  seed: number,
+  x: number,
+  z: number,
+  scaleFactor = 1,
+): void {
   record.active = true;
-  record.x = (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale;
+  record.x = x;
   record.y = OBSTACLE_SPAWN.y;
   record.z = z;
   record.rotY = seededRandom(seed * 2.2) * Math.PI * 2;
-  record.scale = 0.9 + seededRandom(seed * 4.1) * 0.25;
+  record.scale = (0.9 + seededRandom(seed * 4.1) * 0.25) * scaleFactor;
   record.halfX = MARKER_EXTENTS.halfX * record.scale;
   record.halfY = MARKER_EXTENTS.halfY * record.scale;
   record.halfZ = MARKER_EXTENTS.halfZ * record.scale;
   record.forwardSpeed = 0;
+}
+
+function placeMarker(record: ObstacleRecord, seed: number, z: number): void {
+  const laneLimit = getLaneLimit();
+  const x = (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale;
+  placeMarkerAt(record, seed, x, z);
+}
+
+const MARKER_CLUSTER_OFFSETS: readonly number[][] = [
+  [-1.05, 1.05],
+  [-1.2, 0, 1.2],
+  [-1.35, -0.45, 0.45, 1.35],
+];
+
+function spawnMarkerCluster(
+  items: PooledObstacle[],
+  pools: ObstaclePools,
+  root: Group,
+  seed: number,
+  z: number,
+): boolean {
+  const pattern =
+    MARKER_CLUSTER_OFFSETS[
+      Math.floor(seededRandom(seed * 11.3) * MARKER_CLUSTER_OFFSETS.length)
+    ];
+  const laneLimit = getLaneLimit();
+  const centerX =
+    (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale;
+  const slots: ObstacleRecord[] = [];
+
+  for (let index = 0; index < pattern.length; index += 1) {
+    const slot = acquireIdleObstacle("marker");
+    if (!slot) {
+      break;
+    }
+    slots.push(slot);
+  }
+
+  if (slots.length < 2) {
+    return false;
+  }
+
+  for (let index = 0; index < slots.length; index += 1) {
+    const slot = slots[index];
+    const item = findItem(items, slot);
+    if (item) {
+      activateObstacle(item, pools, root);
+    }
+    placeMarkerAt(
+      slot,
+      seed + index * 17,
+      clamp(centerX + pattern[index], -laneLimit, laneLimit),
+      z + (seededRandom(seed * 3.7 + index) - 0.5) * 1.4,
+      0.92 + seededRandom(seed * 5.9 + index) * 0.12,
+    );
+  }
+
+  return true;
 }
 
 function placeRock(record: ObstacleRecord, seed: number, z: number): void {
@@ -343,9 +407,32 @@ export function ObstacleSpawner() {
     while (distanceRef.current >= interval) {
       distanceRef.current -= interval;
       spawnCountRef.current += 1;
-      const slot = acquirePreferredObstacle(
-        pickSpawnKind(spawnCountRef.current),
-      );
+      const kind = pickSpawnKind(spawnCountRef.current);
+
+      if (kind === "marker") {
+        if (
+          !spawnMarkerCluster(
+            items,
+            pools,
+            root,
+            spawnCountRef.current,
+            OBSTACLE_SPAWN.spawnZ,
+          )
+        ) {
+          const fallback = acquirePreferredObstacle("log");
+          if (!fallback) {
+            break;
+          }
+          const fallbackItem = findItem(items, fallback);
+          if (fallbackItem) {
+            activateObstacle(fallbackItem, pools, root);
+          }
+          placeLog(fallback, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+        }
+        continue;
+      }
+
+      const slot = acquirePreferredObstacle(kind);
       if (!slot) {
         break;
       }
@@ -359,10 +446,8 @@ export function ObstacleSpawner() {
         placeRock(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
       } else if (slot.kind === "log") {
         placeLog(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
-      } else if (slot.kind === "dinghy") {
-        placeDinghy(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
       } else {
-        placeMarker(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+        placeDinghy(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
       }
     }
 
