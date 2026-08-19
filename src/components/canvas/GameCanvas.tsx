@@ -14,6 +14,7 @@ import { BoatController } from "@/components/canvas/boat/BoatController";
 import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
 import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
+import { ScenePostProcessing } from "@/components/canvas/ScenePostProcessing";
 import { WaterWake } from "@/components/canvas/fx/WaterWake";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { CAMERA, getAtmosphere } from "@/components/canvas/sceneConfig";
@@ -81,6 +82,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
         <ScoreEngine />
         <ProgressionSystem />
         <QualityScaler />
+        <ScenePostProcessing />
         {children}
       </Canvas>
     </div>
