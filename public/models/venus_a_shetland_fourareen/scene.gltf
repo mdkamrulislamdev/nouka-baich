@@ -227,10 +227,10 @@
   ],
   "images": [
     {
-      "uri": "textures/Material_25_baseColor.png"
+      "uri": "textures/Material_25_baseColor.webp"
     },
     {
-      "uri": "textures/Material_25_normal.png"
+      "uri": "textures/Material_25_normal.webp"
     }
   ],
   "materials": [
