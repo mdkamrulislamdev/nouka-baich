@@ -35,3 +35,20 @@ body {
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
 }
+
+@keyframes close-call-fade {
+  0%,
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
+
+.close-call-toast {
+  animation: close-call-fade 1.6s ease-out forwards;
+}

@@ -157,12 +157,6 @@ function placeMarkerAt(
   record.forwardSpeed = 0;
 }
 
-function placeMarker(record: ObstacleRecord, seed: number, z: number): void {
-  const laneLimit = getLaneLimit();
-  const x = (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale;
-  placeMarkerAt(record, seed, x, z);
-}
-
 const MARKER_CLUSTER_OFFSETS: readonly number[][] = [
   [-1.05, 1.05],
   [-1.2, 0, 1.2],

@@ -17,7 +17,7 @@ import { SceneLighting } from "@/components/canvas/SceneLighting";
 import { ScenePostProcessing } from "@/components/canvas/ScenePostProcessing";
 import { WaterWake } from "@/components/canvas/fx/WaterWake";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
-import { CAMERA, getAtmosphere } from "@/components/canvas/sceneConfig";
+import { getAtmosphere } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
 import { useGameStore } from "@/store/useGameStore";
 import "@/lib/gltf";
@@ -38,12 +38,6 @@ export function GameCanvas({ children }: GameCanvasProps) {
         shadows={highFx ? { type: PCFShadowMap } : false}
         dpr={highFx ? dpr : [1, 1]}
         frameloop="always"
-        camera={{
-          fov: CAMERA.fov,
-          near: CAMERA.near,
-          far: CAMERA.far,
-          position: CAMERA.position,
-        }}
         gl={{
           antialias: highFx,
           alpha: false,
@@ -62,10 +56,9 @@ export function GameCanvas({ children }: GameCanvasProps) {
             WebGL is required to play Nouka Baich 3D.
           </div>
         }
-        onCreated={({ gl, camera }) => {
+        onCreated={({ gl }) => {
           gl.setClearColor(getAtmosphere(1).horizon);
           gl.toneMappingExposure = 0.78;
-          camera.lookAt(...CAMERA.lookAt);
         }}
       >
         <ChaseCamera />
