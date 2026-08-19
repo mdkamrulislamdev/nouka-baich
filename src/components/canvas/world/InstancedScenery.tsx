@@ -7,6 +7,7 @@ import { InstancedMesh, Object3D } from "three";
 import { SCENERY, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
 import { HUT_LOCAL, TREE_LOCAL } from "@/components/canvas/world/sceneryFactory";
 import { isGameplayActive } from "@/lib/gameplay";
+import { recycleZPosition, seededRandom } from "@/lib/mathUtils";
 import { useGameStore } from "@/store/useGameStore";
 
 const { segmentCount, segmentLength, recycleZ, riverWidth } = WORLD_SCROLL;
@@ -24,15 +25,6 @@ type ScenerySlot = {
   scale: number;
   lean: number;
 };
-
-function seededRandom(seed: number): number {
-  const value = Math.sin(seed * 12.9898) * 43758.5453;
-  return value - Math.floor(value);
-}
-
-function recycleZPosition(currentZ: number): number {
-  return currentZ - WORLD_LENGTH;
-}
 
 function placeOnBank(
   slot: ScenerySlot,
@@ -116,7 +108,7 @@ function scrollSlots(slots: ScenerySlot[], dz: number, startSeed: number, place:
     const slot = slots[index];
     slot.z += dz;
     if (slot.z > recycleZ) {
-      const nextZ = recycleZPosition(slot.z);
+      const nextZ = recycleZPosition(slot.z, WORLD_LENGTH);
       place(slot, startSeed + index + Math.floor(nextZ), nextZ);
     }
   }

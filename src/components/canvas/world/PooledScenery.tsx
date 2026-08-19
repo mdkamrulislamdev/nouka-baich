@@ -10,6 +10,7 @@ import { detachObject } from "@/lib/dispose";
 import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
 import { isGameplayActive } from "@/lib/gameplay";
+import { recycleZPosition, seededRandom } from "@/lib/mathUtils";
 import { useGameStore } from "@/store/useGameStore";
 
 const { segmentCount, segmentLength, recycleZ, riverWidth } = WORLD_SCROLL;
@@ -20,11 +21,6 @@ type PooledPalm = {
   object: Group;
 };
 
-function seededRandom(seed: number): number {
-  const value = Math.sin(seed * 12.9898) * 43758.5453;
-  return value - Math.floor(value);
-}
-
 function placePalm(prop: PooledPalm, slot: number, z: number): void {
   const side: -1 | 1 = seededRandom(slot * 3.1) < 0.5 ? -1 : 1;
   const outward = 2.1 + seededRandom(slot * 5.7) * 3.6;
@@ -34,10 +30,6 @@ function placePalm(prop: PooledPalm, slot: number, z: number): void {
   prop.object.rotation.set(0, seededRandom(slot * 9.1) * Math.PI * 2, 0);
   prop.object.scale.setScalar(scale);
   prop.object.visible = true;
-}
-
-function recycleZPosition(currentZ: number): number {
-  return currentZ - WORLD_LENGTH;
 }
 
 export function PooledScenery() {
@@ -95,7 +87,7 @@ export function PooledScenery() {
       prop.object.position.z += dz;
 
       if (prop.object.position.z > recycleZ) {
-        const nextZ = recycleZPosition(prop.object.position.z);
+        const nextZ = recycleZPosition(prop.object.position.z, WORLD_LENGTH);
         placePalm(prop, index + Math.floor(nextZ), nextZ);
       }
     }

@@ -36,6 +36,7 @@ import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
 import { clamp } from "@/lib/clamp";
 import { isGameplayActive } from "@/lib/gameplay";
+import { seededRandom } from "@/lib/mathUtils";
 import {
   acquirePreferredObstacle,
   clearObstacles,
@@ -55,11 +56,6 @@ type PooledObstacle = {
 type ObstaclePools = Record<ObstacleKind, ObjectPool<Group>>;
 
 const worldSize = new Vector3();
-
-function seededRandom(seed: number): number {
-  const value = Math.sin(seed * 12.9898) * 43758.5453;
-  return value - Math.floor(value);
-}
 
 function pickSpawnKind(seed: number): ObstacleKind {
   const roll = seededRandom(seed * 1.7);
