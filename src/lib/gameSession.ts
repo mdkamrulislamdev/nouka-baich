@@ -11,3 +11,9 @@ export function beginRun(): void {
   resetCrashShake();
   useGameStore.getState().startGame();
 }
+
+export function returnToMenu(): void {
+  deactivateAllObstacles();
+  resetCrashShake();
+  useGameStore.getState().resetGame();
+}

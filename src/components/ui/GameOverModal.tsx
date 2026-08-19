@@ -1,11 +1,11 @@
 "use client";
 
-import { beginRun } from "@/lib/gameSession";
+import { beginRun, returnToMenu } from "@/lib/gameSession";
 import { useGameStore } from "@/store/useGameStore";
 
 export function GameOverModal() {
   const status = useGameStore((state) => state.status);
-  const score = useGameStore((state) => state.score);
+  const score = useGameStore((state) => Math.floor(state.score));
   const highScore = useGameStore((state) => state.highScore);
   const distance = useGameStore((state) => Math.floor(state.distance));
   const level = useGameStore((state) => state.level);
@@ -78,6 +78,17 @@ export function GameOverModal() {
           </button>
           <p className="mt-2 text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
             Replay
+          </p>
+
+          <button
+            type="button"
+            onClick={returnToMenu}
+            className="font-bengali mt-5 min-w-44 rounded-sm border border-[#e4c36a]/55 bg-[#1a0c08]/60 px-8 py-2.5 text-base font-semibold tracking-wide text-[#e4c36a] transition hover:border-[#e4c36a] hover:bg-[#1a0c08]/90 focus-visible:ring-2 focus-visible:ring-[#e4c36a] focus-visible:outline-none"
+          >
+            মূল মেনু
+          </button>
+          <p className="mt-2 text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
+            Main Menu
           </p>
         </div>
       </div>
