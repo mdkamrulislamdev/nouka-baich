@@ -35,6 +35,7 @@ import { detachObject } from "@/lib/dispose";
 import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
 import { clamp } from "@/lib/clamp";
+import { isGameplayActive } from "@/lib/gameplay";
 import {
   acquirePreferredObstacle,
   clearObstacles,
@@ -243,7 +244,8 @@ export function ObstacleSpawner() {
       return;
     }
 
-    const { status, speed, level } = useGameStore.getState();
+    const state = useGameStore.getState();
+    const { status, speed, level } = state;
     if (status === "MENU") {
       for (let index = 0; index < items.length; index += 1) {
         const item = items[index];
@@ -255,7 +257,7 @@ export function ObstacleSpawner() {
       return;
     }
 
-    if (status !== "PLAYING") {
+    if (!isGameplayActive(state)) {
       return;
     }
 

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-export type GameStatus = "MENU" | "PLAYING" | "GAMEOVER";
+export type GameStatus = "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER";
 export type GraphicsQuality = "high" | "low";
 
 export type GameState = {
@@ -32,6 +32,8 @@ export type GameActions = {
   setSfxMuted: (sfxMuted: boolean) => void;
   setGraphicsQuality: (graphicsQuality: GraphicsQuality) => void;
   setSettingsOpen: (settingsOpen: boolean) => void;
+  openSettings: () => void;
+  closeSettings: () => void;
   setAdaptiveLow: (adaptiveLow: boolean) => void;
   startGame: () => void;
   endGame: () => void;
@@ -70,6 +72,20 @@ export const useGameStore = create<GameStore>()(
     setSfxMuted: (sfxMuted) => set({ sfxMuted }),
     setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
     setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+    openSettings: () =>
+      set((state) => {
+        if (state.status === "PLAYING") {
+          return { settingsOpen: true, status: "PAUSED" };
+        }
+        return { settingsOpen: true };
+      }),
+    closeSettings: () =>
+      set((state) => {
+        if (state.status === "PAUSED") {
+          return { settingsOpen: false, status: "PLAYING" };
+        }
+        return { settingsOpen: false };
+      }),
     setAdaptiveLow: (adaptiveLow) => set({ adaptiveLow }),
     startGame: () =>
       set((state) => ({

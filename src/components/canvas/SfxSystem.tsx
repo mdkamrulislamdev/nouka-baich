@@ -7,6 +7,7 @@ import { audio } from "@/lib/audio";
 import { queryNearMiss } from "@/lib/collision";
 import { triggerNearMissShake } from "@/lib/crashFeedback";
 import { getRowingPhase } from "@/lib/rowingClock";
+import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 const heardNearMiss = new Set<number>();
@@ -16,13 +17,15 @@ export function SfxSystem() {
   const lastSplashRef = useRef(0);
 
   useFrame(() => {
-    const { status, laneOffset } = useGameStore.getState();
-    if (status !== "PLAYING") {
+    const state = useGameStore.getState();
+    if (!isGameplayActive(state)) {
       heardNearMiss.clear();
       lastStrokeRef.current = 0;
       lastSplashRef.current = 0;
       return;
     }
+
+    const { laneOffset } = state;
 
     const phase = getRowingPhase();
     const stroke = Math.sin(phase);

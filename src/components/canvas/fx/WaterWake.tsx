@@ -12,6 +12,7 @@ import {
 } from "three";
 
 import { WAKE } from "@/components/canvas/sceneConfig";
+import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 const VERTEX = /* glsl */ `
@@ -99,13 +100,13 @@ export function WaterWake() {
     }
 
     const dt = Math.min(delta, 0.05);
-    const { status, speed, laneOffset, graphicsQuality, adaptiveLow } =
-      useGameStore.getState();
+    const state = useGameStore.getState();
+    const { speed, laneOffset, graphicsQuality, adaptiveLow } = state;
     const positionAttr = geometry.getAttribute("position");
     const lifeAttr = geometry.getAttribute("aLife");
     const sizeAttr = geometry.getAttribute("aSize");
 
-    if (status === "PLAYING") {
+    if (isGameplayActive(state)) {
       const qualityScale =
         graphicsQuality === "high" && !adaptiveLow ? 1 : 0.35;
       const emitRate = WAKE.emitPerSecond * (0.45 + speed / 22) * qualityScale;

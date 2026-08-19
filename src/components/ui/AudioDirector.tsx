@@ -17,7 +17,7 @@ export function AudioDirector() {
     const unsubscribe = useGameStore.subscribe(
       (state) => state.status,
       (status) => {
-        if (status === "PLAYING") {
+        if (status === "PLAYING" || status === "PAUSED") {
           audio.playBgm();
           return;
         }

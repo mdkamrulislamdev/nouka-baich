@@ -94,7 +94,7 @@ export function SettingsModal() {
 
         <button
           type="button"
-          onClick={() => useGameStore.getState().setSettingsOpen(false)}
+          onClick={() => useGameStore.getState().closeSettings()}
           className="font-bengali mt-6 w-full rounded-sm border border-[#e4c36a] bg-[#9b1c1c] px-4 py-2.5 font-semibold text-[#f6e6c2] transition hover:bg-[#b32626]"
         >
           বন্ধ করুন
@@ -108,7 +108,7 @@ export function SettingsButton({ className = "" }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={() => useGameStore.getState().setSettingsOpen(true)}
+      onClick={() => useGameStore.getState().openSettings()}
       className={`pointer-events-auto rounded-sm border border-[#e4c36a]/70 bg-[#1a0c08]/80 px-3 py-1.5 text-[0.65rem] tracking-[0.2em] text-[#e4c36a] uppercase transition hover:bg-[#9b1c1c] hover:text-[#f6e6c2] ${className}`}
     >
       Settings

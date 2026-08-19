@@ -8,7 +8,7 @@ export function resetRowingClock(): void {
 
 export function updateRowingClock(
   dt: number,
-  status: "MENU" | "PLAYING" | "GAMEOVER",
+  status: "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER",
   speed: number,
 ): number {
   if (status === "MENU") {

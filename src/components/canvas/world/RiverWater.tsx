@@ -18,6 +18,7 @@ import {
   WORLD_SCROLL,
 } from "@/components/canvas/sceneConfig";
 import { disposeWater } from "@/lib/dispose";
+import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 const WATER_LENGTH =
@@ -63,8 +64,8 @@ function FoamStrip({ x, flip }: { x: number; flip: number }) {
       return;
     }
 
-    const { status, speed } = useGameStore.getState();
-    const flow = status === "PLAYING" ? speed : 4;
+    const state = useGameStore.getState();
+    const flow = isGameplayActive(state) ? state.speed : 4;
     material.uniforms.uTime.value += delta * (2.8 + flow * 0.22);
   });
 
@@ -140,8 +141,8 @@ export function RiverWater() {
       return;
     }
 
-    const { status, speed } = useGameStore.getState();
-    const flow = status === "PLAYING" ? speed : 4;
+    const state = useGameStore.getState();
+    const flow = isGameplayActive(state) ? state.speed : 4;
     mesh.material.uniforms.time.value += delta * (0.45 + flow * 0.06);
 
     const waterNormals = mesh.material.uniforms.normalSampler.value;

@@ -11,6 +11,7 @@ import { PooledScenery } from "@/components/canvas/world/PooledScenery";
 import { RiverBank } from "@/components/canvas/world/RiverBank";
 import { RiverWater } from "@/components/canvas/world/RiverWater";
 import { WORLD_SCROLL } from "@/components/canvas/sceneConfig";
+import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 const { segmentCount, segmentLength, recycleZ } = WORLD_SCROLL;
@@ -25,12 +26,12 @@ export function ScrollingWorld() {
   );
 
   useFrame((_, delta) => {
-    const { status, speed } = useGameStore.getState();
-    if (status !== "PLAYING") {
+    const state = useGameStore.getState();
+    if (!isGameplayActive(state)) {
       return;
     }
 
-    const dz = speed * Math.min(delta, 0.05);
+    const dz = state.speed * Math.min(delta, 0.05);
 
     for (let index = 0; index < segmentCount; index += 1) {
       const segment = segmentsRef.current[index];

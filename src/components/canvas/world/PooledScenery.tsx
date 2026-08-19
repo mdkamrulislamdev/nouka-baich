@@ -9,6 +9,7 @@ import { preparePalm } from "@/components/canvas/world/PalmProp";
 import { detachObject } from "@/lib/dispose";
 import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
+import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 const { segmentCount, segmentLength, recycleZ, riverWidth } = WORLD_SCROLL;
@@ -82,12 +83,12 @@ export function PooledScenery() {
       return;
     }
 
-    const { status, speed } = useGameStore.getState();
-    if (status !== "PLAYING") {
+    const state = useGameStore.getState();
+    if (!isGameplayActive(state)) {
       return;
     }
 
-    const dz = speed * Math.min(delta, 0.05);
+    const dz = state.speed * Math.min(delta, 0.05);
 
     for (let index = 0; index < props.length; index += 1) {
       const prop = props[index];

@@ -33,7 +33,7 @@ export function GameHud() {
   const level = useGameStore((state) => state.level);
   const highScore = useGameStore((state) => state.highScore);
 
-  if (status !== "PLAYING") {
+  if (status !== "PLAYING" && status !== "PAUSED") {
     return null;
   }
 

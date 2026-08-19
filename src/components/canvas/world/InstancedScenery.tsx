@@ -6,6 +6,7 @@ import { InstancedMesh, Object3D } from "three";
 
 import { SCENERY, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
 import { HUT_LOCAL, TREE_LOCAL } from "@/components/canvas/world/sceneryFactory";
+import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 const { segmentCount, segmentLength, recycleZ, riverWidth } = WORLD_SCROLL;
@@ -146,9 +147,9 @@ export function InstancedScenery() {
       grassRefSlots.current = createSlots(SCENERY.grassCount, 400, 0.55, 5.8, 0.62, 0.55, 0.7);
     }
 
-    const { status, speed } = useGameStore.getState();
-    if (status === "PLAYING") {
-      const dz = speed * Math.min(delta, 0.05);
+    const state = useGameStore.getState();
+    if (isGameplayActive(state)) {
+      const dz = state.speed * Math.min(delta, 0.05);
       scrollSlots(treesRef.current, dz, 0, (slot, seed, z) => {
         placeOnBank(slot, seed, 2.1, 3.6, 0.72, 0.78, 0.4, z);
       });

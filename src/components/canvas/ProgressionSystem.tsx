@@ -7,15 +7,17 @@ import {
   getLevelForDistance,
   getTargetSpeed,
 } from "@/components/canvas/sceneConfig";
+import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 export function ProgressionSystem() {
   useFrame((_, delta) => {
-    const { status, distance, level, speed, setLevel, setSpeed } =
-      useGameStore.getState();
-    if (status !== "PLAYING") {
+    const state = useGameStore.getState();
+    if (!isGameplayActive(state)) {
       return;
     }
+
+    const { distance, level, speed, setLevel, setSpeed } = state;
 
     const nextLevel = getLevelForDistance(distance);
     if (nextLevel !== level) {
