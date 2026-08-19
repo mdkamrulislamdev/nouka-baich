@@ -14,14 +14,15 @@ export function ScoreEngine() {
     }
 
     const dt = Math.min(delta, 0.05);
-    const nextDistance = distance + speed * dt;
+    const deltaDistance = speed * dt;
     const multiplier = speed / SCORE.referenceSpeed;
-    const nextScore = Math.floor(nextDistance * multiplier);
+    const nextDistance = distance + deltaDistance;
+    const nextScore = score + deltaDistance * multiplier;
 
     if (Math.abs(nextDistance - distance) > 0.0001) {
       setDistance(nextDistance);
     }
-    if (nextScore !== score) {
+    if (Math.abs(nextScore - score) > 0.0001) {
       setScore(nextScore);
     }
   });

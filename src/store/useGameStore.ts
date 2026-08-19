@@ -84,11 +84,15 @@ export const useGameStore = create<GameStore>()(
         status: "PLAYING",
       })),
     endGame: () =>
-      set((state) => ({
-        status: "GAMEOVER",
-        isNewHighScore: state.score > state.highScore,
-        highScore: Math.max(state.highScore, state.score),
-      })),
+      set((state) => {
+        const finalScore = Math.floor(state.score);
+        return {
+          status: "GAMEOVER",
+          score: finalScore,
+          isNewHighScore: finalScore > state.highScore,
+          highScore: Math.max(state.highScore, finalScore),
+        };
+      }),
     resetGame: () =>
       set((state) => ({
         ...INITIAL_STATE,
