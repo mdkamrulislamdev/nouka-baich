@@ -66,7 +66,7 @@ export function patchFoliageAlphaMaterials(root: Object3D): void {
       : [child.material];
 
     for (const material of materials) {
-      if (!isFoliageMaterial(material, child.name)) {
+      if (!material || !isFoliageMaterial(material, child.name)) {
         continue;
       }
       patchFoliageMaterial(material);

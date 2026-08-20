@@ -37,7 +37,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
   const highFx = graphicsQuality === "high" && !adaptiveLow;
 
   return (
-    <div className="absolute inset-0 h-full w-full touch-none" data-game-canvas>
+    <div className="absolute inset-0 h-full w-full touch-none bg-[#1a0c08]" data-game-canvas>
       <Canvas
         shadows={highFx ? { type: PCFShadowMap } : false}
         dpr={highFx ? dpr : [1, 1]}

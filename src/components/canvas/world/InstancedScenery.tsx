@@ -121,7 +121,8 @@ function commitInstances(mesh: InstancedMesh | null): void {
     return;
   }
   mesh.instanceMatrix.needsUpdate = true;
-  mesh.computeBoundingSphere();
+  // Avoid per-frame computeBoundingSphere — it can throw on incomplete
+  // attributes and is unnecessary when frustumCulled is disabled.
 }
 
 function scrollSlots(slots: ScenerySlot[], dz: number, startSeed: number, place: (slot: ScenerySlot, seed: number, z: number) => void): void {
@@ -158,42 +159,60 @@ function gatherMeshes(source: Group): Mesh[] {
 }
 
 function getTriangleCount(mesh: Mesh): number {
-  const indexCount = mesh.geometry.index?.count ?? mesh.geometry.attributes.position.count;
+  const position = mesh.geometry?.attributes?.position;
+  if (!position || typeof position.count !== "number") {
+    return 0;
+  }
+  const indexCount = mesh.geometry.index?.count ?? position.count;
   return Math.floor(indexCount / 3);
 }
 
 function preparePartFromMesh(mesh: Mesh, targetHeight: number): PreparedPart | null {
-  const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-  if (!(material instanceof MeshStandardMaterial)) {
+  try {
+    const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    if (!(material instanceof MeshStandardMaterial) || !mesh.geometry) {
+      return null;
+    }
+
+    const position = mesh.geometry.attributes.position;
+    if (!position || typeof position.count !== "number" || position.count < 3) {
+      return null;
+    }
+
+    const geometry = mesh.geometry.clone();
+    geometry.applyMatrix4(mesh.matrixWorld);
+
+    fitMesh.geometry = geometry;
+    fitMesh.updateMatrixWorld(true);
+    box.setFromObject(fitMesh);
+    if (box.isEmpty()) {
+      geometry.dispose();
+      return null;
+    }
+    box.getSize(size);
+    const scale = targetHeight / Math.max(size.y, 0.001);
+    geometry.scale(scale, scale, scale);
+
+    fitMesh.geometry = geometry;
+    fitMesh.updateMatrixWorld(true);
+    box.setFromObject(fitMesh);
+    box.getCenter(center);
+    geometry.translate(-center.x, -box.min.y, -center.z);
+
+    const partMaterial = material.clone();
+    partMaterial.transparent = false;
+    partMaterial.depthWrite = true;
+    partMaterial.needsUpdate = true;
+
+    const localMatrix = new Matrix4();
+    localMatrix.compose(origin, mesh.quaternion, mesh.scale);
+    localMatrix.setPosition(0, 0, 0);
+
+    return { geometry, material: partMaterial, localMatrix };
+  } catch (error) {
+    console.warn("[InstancedScenery] skipped broken mesh part", mesh.name, error);
     return null;
   }
-
-  const geometry = mesh.geometry.clone();
-  geometry.applyMatrix4(mesh.matrixWorld);
-
-  fitMesh.geometry = geometry;
-  fitMesh.updateMatrixWorld(true);
-  box.setFromObject(fitMesh);
-  box.getSize(size);
-  const scale = targetHeight / Math.max(size.y, 0.001);
-  geometry.scale(scale, scale, scale);
-
-  fitMesh.geometry = geometry;
-  fitMesh.updateMatrixWorld(true);
-  box.setFromObject(fitMesh);
-  box.getCenter(center);
-  geometry.translate(-center.x, -box.min.y, -center.z);
-
-  const partMaterial = material.clone();
-  partMaterial.transparent = false;
-  partMaterial.depthWrite = true;
-  partMaterial.needsUpdate = true;
-
-  const localMatrix = new Matrix4();
-  localMatrix.compose(origin, mesh.quaternion, mesh.scale);
-  localMatrix.setPosition(0, 0, 0);
-
-  return { geometry, material: partMaterial, localMatrix };
 }
 
 function prepareInstancedParts(
@@ -201,23 +220,29 @@ function prepareInstancedParts(
   targetHeight: number,
   count: number,
 ): PreparedPart[] {
-  const cloned = cloneGltfScene(scene);
-  enableGltfShadows(cloned, 0.68);
-  patchFoliageAlphaMaterials(cloned);
-  cloned.updateMatrixWorld(true);
+  try {
+    const cloned = cloneGltfScene(scene);
+    enableGltfShadows(cloned, 0.68);
+    patchFoliageAlphaMaterials(cloned);
+    cloned.updateMatrixWorld(true);
 
-  const meshes = gatherMeshes(cloned)
-    .sort((a, b) => getTriangleCount(b) - getTriangleCount(a))
-    .slice(0, count);
+    const meshes = gatherMeshes(cloned)
+      .filter((mesh) => getTriangleCount(mesh) > 0)
+      .sort((a, b) => getTriangleCount(b) - getTriangleCount(a))
+      .slice(0, count);
 
-  const parts: PreparedPart[] = [];
-  for (const mesh of meshes) {
-    const part = preparePartFromMesh(mesh, targetHeight);
-    if (part) {
-      parts.push(part);
+    const parts: PreparedPart[] = [];
+    for (const mesh of meshes) {
+      const part = preparePartFromMesh(mesh, targetHeight);
+      if (part) {
+        parts.push(part);
+      }
     }
+    return parts;
+  } catch (error) {
+    console.warn("[InstancedScenery] failed to prepare parts", error);
+    return [];
   }
-  return parts;
 }
 
 export function InstancedScenery() {
@@ -354,6 +379,7 @@ export function InstancedScenery() {
           args={[part.geometry, part.material, SCENERY.treeCount]}
           castShadow
           receiveShadow
+          frustumCulled={false}
         />
       ))}
       {hutParts.map((part, index) => (
@@ -365,6 +391,7 @@ export function InstancedScenery() {
           args={[part.geometry, part.material, SCENERY.hutCount]}
           castShadow
           receiveShadow
+          frustumCulled={false}
         />
       ))}
       {grassParts[0] ? (
@@ -377,6 +404,7 @@ export function InstancedScenery() {
           ]}
           castShadow
           receiveShadow
+          frustumCulled={false}
         />
       ) : null}
     </group>

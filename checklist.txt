@@ -1,0 +1,45 @@
+2-minute gameplay checklist
+Load + menu warmup
+
+Open http://localhost:3001.
+Confirm you see Loading river ... % then Ready · river warmed.
+Ensure Play buttons stay disabled until ready, then enable.
+Start latency
+
+Click অনন্ত দৌড় (Endless).
+Verify gameplay starts immediately (no visible freeze/blank frame).
+Core controls
+
+Steer left/right for 10–15 seconds.
+Boat responds smoothly; camera follows; no jitter spikes.
+Obstacles + collisions
+
+Confirm rocks/logs/boats spawn frequently at level 1.
+Hit one obstacle intentionally: crash SFX, shake, and game-over should trigger once.
+Near-miss + scoring
+
+Pass very close to obstacles 2–3 times.
+Check near-miss feedback appears and score increases accordingly.
+NPC traffic
+
+Watch for moving civilian/racing boats.
+They should sway/advance naturally and collide properly.
+Weather progression
+
+Keep running long enough to level up.
+Expect: L1 clear, L2 light effects, L3 drizzle, L4+ heavy rain/lightning (on high graphics).
+Pause/settings flow
+
+Open settings during run; game pauses.
+Close settings; game resumes from same state.
+Sprint mode
+
+Return to menu, start Sprint.
+Distance-to-finish updates; finish triggers victory game-over (not crash outcome).
+Replay/reset
+
+From game-over, replay and return to menu both work.
+Returning to menu clears active gameplay effects cleanly.
+Quick pass/fail rule
+Pass if all 10 checks work with no console errors or obvious stutter.
+Fail if any check breaks; send me which step failed and what you saw, and I’ll patch it immediately. 

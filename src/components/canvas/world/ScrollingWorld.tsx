@@ -48,7 +48,9 @@ export function ScrollingWorld() {
 
   return (
     <group>
-      <InstancedScenery />
+      <Suspense fallback={null}>
+        <InstancedScenery />
+      </Suspense>
       {Array.from({ length: segmentCount }, (_, index) => (
         <group
           key={index}

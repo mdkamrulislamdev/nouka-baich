@@ -5,6 +5,7 @@ import {
   DoubleSide,
   Mesh,
   MeshStandardMaterial,
+  SkinnedMesh,
   type Group,
   type Material,
   type Object3D,
@@ -66,6 +67,44 @@ function sanitizeMaterial(
   }
 }
 
+function ensureStandardMaterial(
+  material: Material | Material[] | undefined | null,
+  envMapIntensity: number,
+): Material | Material[] | null {
+  if (!material) {
+    return null;
+  }
+
+  if (Array.isArray(material)) {
+    return material.map((entry) => {
+      if (entry instanceof MeshStandardMaterial) {
+        sanitizeMaterial(entry, envMapIntensity);
+        return entry;
+      }
+      const next = new MeshStandardMaterial({
+        color: "#6b3f22",
+        roughness: 0.75,
+        metalness: 0.05,
+      });
+      sanitizeMaterial(next, envMapIntensity);
+      return next;
+    });
+  }
+
+  if (material instanceof MeshStandardMaterial) {
+    sanitizeMaterial(material, envMapIntensity);
+    return material;
+  }
+
+  const next = new MeshStandardMaterial({
+    color: "#6b3f22",
+    roughness: 0.75,
+    metalness: 0.05,
+  });
+  sanitizeMaterial(next, envMapIntensity);
+  return next;
+}
+
 export function enableGltfShadows(
   object: Object3D,
   envMapIntensity = 1,
@@ -80,18 +119,36 @@ export function enableGltfShadows(
     child.receiveShadow = true;
     child.frustumCulled = false;
 
-    if (Array.isArray(child.material)) {
-      child.material.forEach((material) => {
-        sanitizeMaterial(material, envMapIntensity);
-      });
-    } else if (child.material) {
-      sanitizeMaterial(child.material, envMapIntensity);
+    const sanitized = ensureStandardMaterial(child.material, envMapIntensity);
+    if (sanitized) {
+      child.material = sanitized;
     }
   });
 }
 
+/**
+ * Prefer a deep Object3D clone for static scenery.
+ * SkeletonUtils.clone throws on some animated GLTFs when child graphs
+ * or skeletons are incomplete (common with Sketchfab specular-glossiness packs).
+ */
 export function cloneGltfScene(source: Group): Group {
-  return cloneSkinned(source) as Group;
+  let hasSkin = false;
+  source.traverse((child) => {
+    if (child instanceof SkinnedMesh) {
+      hasSkin = true;
+    }
+  });
+
+  if (!hasSkin) {
+    return source.clone(true) as Group;
+  }
+
+  try {
+    return cloneSkinned(source) as Group;
+  } catch (error) {
+    console.warn("[gltf] SkeletonUtils.clone failed; falling back to Object3D.clone", error);
+    return source.clone(true) as Group;
+  }
 }
 
 preloadGameGltfAssets();

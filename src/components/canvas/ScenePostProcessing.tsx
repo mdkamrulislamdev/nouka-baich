@@ -6,6 +6,8 @@ import {
   EffectComposer,
   Vignette,
 } from "@react-three/postprocessing";
+import { useMemo } from "react";
+import { Vector3 } from "three";
 
 import { CAMERA } from "@/components/canvas/sceneConfig";
 
@@ -14,14 +16,19 @@ type ScenePostProcessingProps = {
 };
 
 export function ScenePostProcessing({ enabled }: ScenePostProcessingProps) {
+  const focusTarget = useMemo(
+    () => new Vector3(CAMERA.lookAt[0], CAMERA.lookAt[1], CAMERA.lookAt[2]),
+    [],
+  );
+
   if (!enabled) {
     return null;
   }
 
   return (
-    <EffectComposer multisampling={4}>
+    <EffectComposer multisampling={0} enableNormalPass={false}>
       <DepthOfField
-        target={CAMERA.lookAt}
+        target={focusTarget}
         focusRange={7.5}
         focalLength={0.012}
         bokehScale={1.1}

@@ -25,14 +25,14 @@ export function AssetWarmup() {
     }
   }, [active, progress, setAssetProgress, setAssetsReady]);
 
-  // Fallback: if nothing is queued (cached visit), mark ready shortly.
+  // Fallback: mark ready even if a GLTF stalls / fails so menu is usable.
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (!readyOnceRef.current) {
         readyOnceRef.current = true;
         setAssetsReady(true);
       }
-    }, 4000);
+    }, 2500);
     return () => window.clearTimeout(timer);
   }, [setAssetsReady]);
 

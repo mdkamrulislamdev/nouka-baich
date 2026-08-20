@@ -45,8 +45,8 @@ export function MainMenu() {
   const playDisabled = !assetsReady;
 
   return (
-    <div className="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center bg-[#1a0c08]/55 px-4 backdrop-blur-[2px]">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-sm border border-[#e4c36a]/70 bg-linear-to-b from-[#4a1414]/92 via-[#2a1a12]/94 to-[#132416]/92 px-8 py-10 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:px-12 sm:py-12">
+    <div className="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center bg-[#1a0c08]/92 px-4">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-sm border border-[#e4c36a]/70 bg-linear-to-b from-[#4a1414] via-[#2a1a12] to-[#132416] px-8 py-10 shadow-[0_24px_80px_rgba(0,0,0,0.55)] sm:px-12 sm:py-12">
         <div className="pointer-events-none absolute inset-3 border border-[#e4c36a]/35" />
         <div className="pointer-events-none absolute inset-5 border border-[#1f6b3a]/40" />
 
