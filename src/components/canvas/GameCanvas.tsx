@@ -17,6 +17,7 @@ import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
 import { ScenePostProcessing } from "@/components/canvas/ScenePostProcessing";
 import { WaterWake } from "@/components/canvas/fx/WaterWake";
+import { OarSplashes } from "@/components/canvas/fx/OarSplashes";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { getAtmosphere } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
@@ -71,6 +72,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
           </Suspense>
         </BoatController>
         <WaterWake />
+        <OarSplashes />
         <CollisionSystem />
         <SfxSystem />
         <ScoreEngine />
