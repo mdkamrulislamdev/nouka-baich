@@ -161,6 +161,29 @@ export const SCENERY = {
   palmCount: 12,
 } as const;
 
+export const SCENERY_MODELS = {
+  tree: {
+    path: "/models/tree_animate/scene.gltf",
+    targetHeight: 4.8,
+  },
+  hut: {
+    path: "/models/low_poly_fishermans_hut/scene.gltf",
+    targetHeight: 1.9,
+  },
+  grass: {
+    path: "/models/grass/scene.gltf",
+    targetHeight: 0.68,
+  },
+  rower: {
+    path: "/models/a_man_sitting/scene.gltf",
+    targetHeight: 0.9,
+  },
+  cull: {
+    nearZ: -180,
+    farZ: 36,
+  },
+} as const;
+
 export function getLaneLimit(): number {
   const riverHalf = WORLD_SCROLL.riverWidth / 2;
   const bankInset = WORLD_SCROLL.bankWidth / 2;

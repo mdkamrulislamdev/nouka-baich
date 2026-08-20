@@ -1,12 +1,23 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
-import { InstancedMesh, Object3D } from "three";
+import { useMemo, useRef } from "react";
+import {
+  Box3,
+  BufferGeometry,
+  InstancedMesh,
+  Matrix4,
+  Mesh,
+  MeshStandardMaterial,
+  Object3D,
+  Vector3,
+  type Group,
+} from "three";
 
-import { SCENERY, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
-import { HUT_LOCAL, TREE_LOCAL } from "@/components/canvas/world/sceneryFactory";
+import { SCENERY, SCENERY_MODELS, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
+import { patchFoliageAlphaMaterials } from "@/lib/foliageMaterial";
 import { isGameplayActive } from "@/lib/gameplay";
+import { cloneGltfScene, enableGltfShadows, useGltfModel } from "@/lib/gltf";
 import { recycleZPosition, seededRandom } from "@/lib/mathUtils";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -15,7 +26,6 @@ const WORLD_LENGTH = segmentCount * segmentLength;
 const RIVER_EDGE = riverWidth / 2;
 
 const dummy = new Object3D();
-const local = new Object3D();
 
 type ScenerySlot = {
   x: number;
@@ -23,7 +33,7 @@ type ScenerySlot = {
   z: number;
   rotY: number;
   scale: number;
-  lean: number;
+  pitch: number;
 };
 
 function placeOnBank(
@@ -43,7 +53,7 @@ function placeOnBank(
   slot.z = z;
   slot.rotY = seededRandom(seed * 9.1) * Math.PI * 2;
   slot.scale = scaleMin + seededRandom(seed * 4.4) * scaleSpan;
-  slot.lean = (seededRandom(seed * 7.3) - 0.5) * 0.35;
+  slot.pitch = (seededRandom(seed * 7.3) - 0.5) * 0.18;
 }
 
 function createSlots(
@@ -63,7 +73,7 @@ function createSlots(
       z: 0,
       rotY: 0,
       scale: 1,
-      lean: 0,
+      pitch: 0,
     };
     const z =
       recycleZ - 8 - (index / Math.max(count - 1, 1)) * (WORLD_LENGTH - 16);
@@ -77,21 +87,23 @@ function writePart(
   mesh: InstancedMesh,
   index: number,
   slot: ScenerySlot,
-  localPosition: readonly [number, number, number],
-  localRotY = 0,
-  extraLean = 0,
+  localMatrix: Matrix4,
+  cullSlot: boolean,
 ): void {
+  if (cullSlot) {
+    dummy.position.set(0, -999, 0);
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.setScalar(0.0001);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(index, dummy.matrix);
+    return;
+  }
+
   dummy.position.set(slot.x, slot.y, slot.z);
-  dummy.rotation.set(0, slot.rotY, 0);
+  dummy.rotation.set(slot.pitch, slot.rotY, 0);
   dummy.scale.setScalar(slot.scale);
   dummy.updateMatrix();
-
-  local.position.set(localPosition[0], localPosition[1], localPosition[2]);
-  local.rotation.set(extraLean, localRotY, 0);
-  local.scale.set(1, 1, 1);
-  local.updateMatrix();
-
-  dummy.matrix.multiply(local.matrix);
+  dummy.matrix.multiply(localMatrix);
   mesh.setMatrixAt(index, dummy.matrix);
 }
 
@@ -114,15 +126,112 @@ function scrollSlots(slots: ScenerySlot[], dz: number, startSeed: number, place:
   }
 }
 
+type PreparedPart = {
+  geometry: BufferGeometry;
+  material: MeshStandardMaterial;
+  localMatrix: Matrix4;
+};
+
+const box = new Box3();
+const size = new Vector3();
+const center = new Vector3();
+const origin = new Vector3();
+const fitMesh = new Mesh();
+
+function gatherMeshes(source: Group): Mesh[] {
+  const meshes: Mesh[] = [];
+  source.traverse((node) => {
+    if (node instanceof Mesh && node.geometry) {
+      meshes.push(node);
+    }
+  });
+  return meshes;
+}
+
+function getTriangleCount(mesh: Mesh): number {
+  const indexCount = mesh.geometry.index?.count ?? mesh.geometry.attributes.position.count;
+  return Math.floor(indexCount / 3);
+}
+
+function preparePartFromMesh(mesh: Mesh, targetHeight: number): PreparedPart | null {
+  const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+  if (!(material instanceof MeshStandardMaterial)) {
+    return null;
+  }
+
+  const geometry = mesh.geometry.clone();
+  geometry.applyMatrix4(mesh.matrixWorld);
+
+  fitMesh.geometry = geometry;
+  fitMesh.updateMatrixWorld(true);
+  box.setFromObject(fitMesh);
+  box.getSize(size);
+  const scale = targetHeight / Math.max(size.y, 0.001);
+  geometry.scale(scale, scale, scale);
+
+  fitMesh.geometry = geometry;
+  fitMesh.updateMatrixWorld(true);
+  box.setFromObject(fitMesh);
+  box.getCenter(center);
+  geometry.translate(-center.x, -box.min.y, -center.z);
+
+  const partMaterial = material.clone();
+  partMaterial.transparent = false;
+  partMaterial.depthWrite = true;
+  partMaterial.needsUpdate = true;
+
+  const localMatrix = new Matrix4();
+  localMatrix.compose(origin, mesh.quaternion, mesh.scale);
+  localMatrix.setPosition(0, 0, 0);
+
+  return { geometry, material: partMaterial, localMatrix };
+}
+
+function prepareInstancedParts(
+  scene: Group,
+  targetHeight: number,
+  count: number,
+): PreparedPart[] {
+  const cloned = cloneGltfScene(scene);
+  enableGltfShadows(cloned, 0.68);
+  patchFoliageAlphaMaterials(cloned);
+  cloned.updateMatrixWorld(true);
+
+  const meshes = gatherMeshes(cloned)
+    .sort((a, b) => getTriangleCount(b) - getTriangleCount(a))
+    .slice(0, count);
+
+  const parts: PreparedPart[] = [];
+  for (const mesh of meshes) {
+    const part = preparePartFromMesh(mesh, targetHeight);
+    if (part) {
+      parts.push(part);
+    }
+  }
+  return parts;
+}
+
 export function InstancedScenery() {
-  const trunkRef = useRef<InstancedMesh>(null);
-  const crownRef = useRef<InstancedMesh>(null);
-  const topRef = useRef<InstancedMesh>(null);
-  const bushRef = useRef<InstancedMesh>(null);
-  const wallRef = useRef<InstancedMesh>(null);
-  const roofRef = useRef<InstancedMesh>(null);
-  const doorRef = useRef<InstancedMesh>(null);
+  const treeRefs = useRef<Array<InstancedMesh | null>>([null, null]);
+  const hutRefs = useRef<Array<InstancedMesh | null>>([null, null]);
   const grassRef = useRef<InstancedMesh>(null);
+
+  const { scene: treeScene } = useGltfModel(SCENERY_MODELS.tree.path);
+  const { scene: hutScene } = useGltfModel(SCENERY_MODELS.hut.path);
+  const { scene: grassScene } = useGltfModel(SCENERY_MODELS.grass.path);
+
+  const treeParts = useMemo(
+    () => prepareInstancedParts(treeScene, SCENERY_MODELS.tree.targetHeight, 2),
+    [treeScene],
+  );
+  const hutParts = useMemo(
+    () => prepareInstancedParts(hutScene, SCENERY_MODELS.hut.targetHeight, 2),
+    [hutScene],
+  );
+  const grassParts = useMemo(
+    () => prepareInstancedParts(grassScene, SCENERY_MODELS.grass.targetHeight, 1),
+    [grassScene],
+  );
 
   const treesRef = useRef<ScenerySlot[] | null>(null);
   const hutsRef = useRef<ScenerySlot[] | null>(null);
@@ -158,46 +267,43 @@ export function InstancedScenery() {
     }
 
     const trees = treesRef.current;
-    const trunk = trunkRef.current;
-    const crown = crownRef.current;
-    const top = topRef.current;
-    const bush = bushRef.current;
-    if (trunk && crown && top && bush) {
+    const huts = hutsRef.current;
+    const grassSlots = grassRefSlots.current;
+    const nearZ = SCENERY_MODELS.cull.nearZ;
+    const farZ = SCENERY_MODELS.cull.farZ;
+
+    for (let partIndex = 0; partIndex < treeParts.length; partIndex += 1) {
+      const mesh = treeRefs.current[partIndex];
+      if (!mesh) {
+        continue;
+      }
       for (let index = 0; index < trees.length; index += 1) {
         const slot = trees[index];
-        writePart(trunk, index, slot, TREE_LOCAL.trunk);
-        writePart(crown, index, slot, TREE_LOCAL.crown);
-        writePart(top, index, slot, TREE_LOCAL.top);
-        writePart(bush, index, slot, TREE_LOCAL.bush);
+        const culled = slot.z < nearZ || slot.z > farZ;
+        writePart(mesh, index, slot, treeParts[partIndex].localMatrix, culled);
       }
-      commitInstances(trunk);
-      commitInstances(crown);
-      commitInstances(top);
-      commitInstances(bush);
+      commitInstances(mesh);
     }
 
-    const huts = hutsRef.current;
-    const wall = wallRef.current;
-    const roof = roofRef.current;
-    const door = doorRef.current;
-    if (wall && roof && door) {
+    for (let partIndex = 0; partIndex < hutParts.length; partIndex += 1) {
+      const mesh = hutRefs.current[partIndex];
+      if (!mesh) {
+        continue;
+      }
       for (let index = 0; index < huts.length; index += 1) {
         const slot = huts[index];
-        writePart(wall, index, slot, HUT_LOCAL.wall);
-        writePart(roof, index, slot, HUT_LOCAL.roof, HUT_LOCAL.roofRotationY);
-        writePart(door, index, slot, HUT_LOCAL.door);
+        const culled = slot.z < nearZ || slot.z > farZ;
+        writePart(mesh, index, slot, hutParts[partIndex].localMatrix, culled);
       }
-      commitInstances(wall);
-      commitInstances(roof);
-      commitInstances(door);
+      commitInstances(mesh);
     }
 
-    const grassSlots = grassRefSlots.current;
     const grass = grassRef.current;
-    if (grass) {
+    if (grass && grassParts[0]) {
       for (let index = 0; index < grassSlots.length; index += 1) {
         const slot = grassSlots[index];
-        writePart(grass, index, slot, [0, 0.22, 0], 0, slot.lean);
+        const culled = slot.z < nearZ || slot.z > farZ;
+        writePart(grass, index, slot, grassParts[0].localMatrix, culled);
       }
       commitInstances(grass);
     }
@@ -207,78 +313,40 @@ export function InstancedScenery() {
 
   return (
     <group>
-      <instancedMesh
-        ref={trunkRef}
-        args={[undefined, undefined, SCENERY.treeCount]}
-        castShadow
-        receiveShadow
-      >
-        <cylinderGeometry args={[0.11, 0.18, 1.4, 5]} />
-        <meshStandardMaterial color="#5c3a22" roughness={0.88} metalness={0.02} />
-      </instancedMesh>
-      <instancedMesh
-        ref={crownRef}
-        args={[undefined, undefined, SCENERY.treeCount]}
-        castShadow
-        receiveShadow
-      >
-        <coneGeometry args={[1.15, 2.15, 6]} />
-        <meshStandardMaterial color="#2d6a33" roughness={0.78} metalness={0.03} />
-      </instancedMesh>
-      <instancedMesh
-        ref={topRef}
-        args={[undefined, undefined, SCENERY.treeCount]}
-        castShadow
-        receiveShadow
-      >
-        <coneGeometry args={[0.78, 1.45, 6]} />
-        <meshStandardMaterial color="#3d8c42" roughness={0.74} metalness={0.03} />
-      </instancedMesh>
-      <instancedMesh
-        ref={bushRef}
-        args={[undefined, undefined, SCENERY.treeCount]}
-        castShadow
-        receiveShadow
-      >
-        <icosahedronGeometry args={[0.42, 0]} />
-        <meshStandardMaterial color="#3a7a38" roughness={0.82} metalness={0.02} />
-      </instancedMesh>
-
-      <instancedMesh
-        ref={wallRef}
-        args={[undefined, undefined, SCENERY.hutCount]}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry args={[1.9, 1.15, 1.5]} />
-        <meshStandardMaterial color="#c9b07a" roughness={0.86} metalness={0.04} />
-      </instancedMesh>
-      <instancedMesh
-        ref={roofRef}
-        args={[undefined, undefined, SCENERY.hutCount]}
-        castShadow
-        receiveShadow
-      >
-        <coneGeometry args={[1.55, 0.95, 4]} />
-        <meshStandardMaterial color="#8a4e24" roughness={0.9} metalness={0.02} />
-      </instancedMesh>
-      <instancedMesh
-        ref={doorRef}
-        args={[undefined, undefined, SCENERY.hutCount]}
-        receiveShadow
-      >
-        <boxGeometry args={[0.38, 0.72, 0.08]} />
-        <meshStandardMaterial color="#3d2a18" roughness={0.8} metalness={0.05} />
-      </instancedMesh>
-
-      <instancedMesh
-        ref={grassRef}
-        args={[undefined, undefined, SCENERY.grassCount]}
-        receiveShadow
-      >
-        <coneGeometry args={[0.07, 0.48, 3]} />
-        <meshStandardMaterial color="#4d8a3c" roughness={0.9} metalness={0.02} />
-      </instancedMesh>
+      {treeParts.map((part, index) => (
+        <instancedMesh
+          key={`tree-part-${index}`}
+          ref={(node) => {
+            treeRefs.current[index] = node;
+          }}
+          args={[part.geometry, part.material, SCENERY.treeCount]}
+          castShadow
+          receiveShadow
+        />
+      ))}
+      {hutParts.map((part, index) => (
+        <instancedMesh
+          key={`hut-part-${index}`}
+          ref={(node) => {
+            hutRefs.current[index] = node;
+          }}
+          args={[part.geometry, part.material, SCENERY.hutCount]}
+          castShadow
+          receiveShadow
+        />
+      ))}
+      {grassParts[0] ? (
+        <instancedMesh
+          ref={grassRef}
+          args={[
+            grassParts[0].geometry,
+            grassParts[0].material,
+            SCENERY.grassCount,
+          ]}
+          castShadow
+          receiveShadow
+        />
+      ) : null}
     </group>
   );
 }

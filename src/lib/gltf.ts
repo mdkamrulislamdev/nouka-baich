@@ -15,12 +15,17 @@ import {
   BOAT_MODEL,
   PALM_MODEL,
   ROCK_MODEL,
+  SCENERY_MODELS,
 } from "@/components/canvas/sceneConfig";
 
 export const GLTF_ASSET_PATHS = [
   BOAT_MODEL.path,
   PALM_MODEL.path,
   ROCK_MODEL.path,
+  SCENERY_MODELS.tree.path,
+  SCENERY_MODELS.hut.path,
+  SCENERY_MODELS.grass.path,
+  SCENERY_MODELS.rower.path,
 ] as const;
 
 export function useGltfModel(path: string) {
