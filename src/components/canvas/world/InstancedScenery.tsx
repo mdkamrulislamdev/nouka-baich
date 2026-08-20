@@ -56,6 +56,15 @@ function placeOnBank(
   slot.pitch = (seededRandom(seed * 7.3) - 0.5) * 0.18;
 }
 
+function placeGrassOnBank(
+  slot: ScenerySlot,
+  seed: number,
+  z: number,
+): void {
+  placeOnBank(slot, seed, 0.45, 5.95, 0.58, 0.5, 0.85, z);
+  slot.pitch = (seededRandom(seed * 2.7) - 0.5) * 0.26;
+}
+
 function createSlots(
   count: number,
   startSeed: number,
@@ -246,7 +255,15 @@ export function InstancedScenery() {
       hutsRef.current = createSlots(SCENERY.hutCount, 200, 4.2, 2.2, 0.72, 0.85, 0.25);
     }
     if (!grassRefSlots.current) {
-      grassRefSlots.current = createSlots(SCENERY.grassCount, 400, 0.55, 5.8, 0.62, 0.55, 0.7);
+      grassRefSlots.current = createSlots(
+        SCENERY.grassCount,
+        400,
+        0.45,
+        5.95,
+        0.58,
+        0.5,
+        0.85,
+      );
     }
 
     const state = useGameStore.getState();
@@ -260,7 +277,7 @@ export function InstancedScenery() {
         placeOnBank(slot, seed, 4.2, 2.2, 0.72, 0.85, 0.25, z);
       });
       scrollSlots(grassRefSlots.current, dz, 400, (slot, seed, z) => {
-        placeOnBank(slot, seed, 0.55, 5.8, 0.62, 0.55, 0.7, z);
+        placeGrassOnBank(slot, seed, z);
       });
     } else if (instancesCommittedRef.current) {
       return;
@@ -277,11 +294,22 @@ export function InstancedScenery() {
       if (!mesh) {
         continue;
       }
+      let visibleCount = 0;
       for (let index = 0; index < trees.length; index += 1) {
         const slot = trees[index];
-        const culled = slot.z < nearZ || slot.z > farZ;
-        writePart(mesh, index, slot, treeParts[partIndex].localMatrix, culled);
+        if (slot.z < nearZ || slot.z > farZ) {
+          continue;
+        }
+        writePart(
+          mesh,
+          visibleCount,
+          slot,
+          treeParts[partIndex].localMatrix,
+          false,
+        );
+        visibleCount += 1;
       }
+      mesh.count = visibleCount;
       commitInstances(mesh);
     }
 
@@ -290,21 +318,37 @@ export function InstancedScenery() {
       if (!mesh) {
         continue;
       }
+      let visibleCount = 0;
       for (let index = 0; index < huts.length; index += 1) {
         const slot = huts[index];
-        const culled = slot.z < nearZ || slot.z > farZ;
-        writePart(mesh, index, slot, hutParts[partIndex].localMatrix, culled);
+        if (slot.z < nearZ || slot.z > farZ) {
+          continue;
+        }
+        writePart(
+          mesh,
+          visibleCount,
+          slot,
+          hutParts[partIndex].localMatrix,
+          false,
+        );
+        visibleCount += 1;
       }
+      mesh.count = visibleCount;
       commitInstances(mesh);
     }
 
     const grass = grassRef.current;
     if (grass && grassParts[0]) {
+      let visibleCount = 0;
       for (let index = 0; index < grassSlots.length; index += 1) {
         const slot = grassSlots[index];
-        const culled = slot.z < nearZ || slot.z > farZ;
-        writePart(grass, index, slot, grassParts[0].localMatrix, culled);
+        if (slot.z < nearZ || slot.z > farZ) {
+          continue;
+        }
+        writePart(grass, visibleCount, slot, grassParts[0].localMatrix, false);
+        visibleCount += 1;
       }
+      grass.count = visibleCount;
       commitInstances(grass);
     }
 
