@@ -59,8 +59,11 @@ export function OarRig() {
     phaseRef.current = updateRowingClock(dt, status, speed);
 
     for (let seat = 0; seat < LONGBOAT_RIG.thwartZ.length; seat += 1) {
-      const stroke = Math.sin(phaseRef.current + seat * OARS.stagger);
-      const lift = Math.cos(phaseRef.current + seat * OARS.stagger);
+      // Backward pull (Z < 0) should dip the blade into the water.
+      // Forward return lifts the blade back clear.
+      const zPhase = Math.sin(phaseRef.current + seat * OARS.stagger); // [-1..1]
+      const backward = Math.max(0, -zPhase); // 1 when zPhase is -1
+      const dip = Math.pow(backward, 0.65); // smooth curve for "elliptical" feel
 
       for (let sideIndex = 0; sideIndex < SIDES.length; sideIndex += 1) {
         const side = SIDES[sideIndex];
@@ -75,8 +78,9 @@ export function OarRig() {
           continue;
         }
 
-        pivot.rotation.y = side * stroke * OARS.stroke;
-        pivot.rotation.z = side * (OARS.restTilt + lift * OARS.lift);
+        pivot.rotation.y = side * zPhase * OARS.stroke;
+        // Dipping into water occurs on backward pull; lift clear on return.
+        pivot.rotation.z = side * (OARS.restTilt - dip * OARS.lift);
       }
     }
   });

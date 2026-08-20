@@ -29,19 +29,20 @@ export function SfxSystem() {
 
     const phase = getRowingPhase();
     const stroke = Math.sin(phase);
-    const lift = Math.cos(phase);
+    const backward = Math.max(0, -stroke);
+    const dip = Math.pow(backward, 0.65); // matches `OarRig` dip curve
 
     if (lastStrokeRef.current <= 0 && stroke > 0) {
       audio.playSfx("row", { rate: 0.92 + Math.random() * 0.18, volume: 0.38 });
     }
-    if (lastSplashRef.current > 0 && lift < 0) {
+    if (lastSplashRef.current <= 0.18 && dip > 0.18) {
       audio.playSfx("splash", {
         rate: 0.9 + Math.random() * 0.22,
         volume: 0.28,
       });
     }
     lastStrokeRef.current = stroke;
-    lastSplashRef.current = lift;
+    lastSplashRef.current = dip;
 
     const near = queryNearMiss(laneOffset);
     if (near && !heardNearMiss.has(near.id)) {
