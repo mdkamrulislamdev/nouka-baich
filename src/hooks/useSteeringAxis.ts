@@ -8,10 +8,13 @@ export function useSteeringAxis(): () => number {
   const pointer = usePointerSteering();
 
   return () => {
-    if (pointer.isActive()) {
+    const keyboard = getKeyboardAxis();
+    if (Math.abs(keyboard) > 0.001) {
+      return keyboard;
+    }
+    if (pointer.isPressed()) {
       return pointer.getAxis();
     }
-
-    return getKeyboardAxis();
+    return 0;
   };
 }

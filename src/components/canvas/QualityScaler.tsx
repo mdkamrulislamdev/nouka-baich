@@ -6,15 +6,18 @@ import { useRef } from "react";
 import { isRunActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
-const SAMPLE_SECONDS = 1;
-const DOWNGRADE_FPS = 30;
-const RECOVER_FPS = 50;
-const RECOVER_SAMPLES = 5;
+const SAMPLE_SECONDS = 1.25;
+const DOWNGRADE_FPS = 28;
+const RECOVER_FPS = 52;
+const RECOVER_SAMPLES = 8;
+/** Ignore the first seconds of a run — load hitch must not flip quality. */
+const WARMUP_SECONDS = 4;
 
 export function QualityScaler() {
   const framesRef = useRef(0);
   const elapsedRef = useRef(0);
   const healthySamplesRef = useRef(0);
+  const runElapsedRef = useRef(0);
 
   useFrame((_, delta) => {
     const state = useGameStore.getState();
@@ -24,9 +27,11 @@ export function QualityScaler() {
       framesRef.current = 0;
       elapsedRef.current = 0;
       healthySamplesRef.current = 0;
+      runElapsedRef.current = 0;
       return;
     }
 
+    runElapsedRef.current += delta;
     framesRef.current += 1;
     elapsedRef.current += delta;
 
@@ -37,6 +42,10 @@ export function QualityScaler() {
     const fps = framesRef.current / elapsedRef.current;
     framesRef.current = 0;
     elapsedRef.current = 0;
+
+    if (runElapsedRef.current < WARMUP_SECONDS) {
+      return;
+    }
 
     if (!adaptiveLow) {
       if (fps < DOWNGRADE_FPS) {

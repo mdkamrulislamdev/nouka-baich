@@ -29,7 +29,6 @@ export function BoatController({ children }: BoatControllerProps) {
   const groupRef = useRef<Group>(null);
   const getKeyboardAxis = useKeyboardSteering();
   const pointer = usePointerSteering();
-  /** Frame-local lane copy — avoids reading a stale store value mid-frame. */
   const laneRef = useRef(0);
   const prevStatusRef = useRef<string>("MENU");
 
@@ -73,19 +72,16 @@ export function BoatController({ children }: BoatControllerProps) {
       return;
     }
 
-    // Keep local lane in sync if something external resets it (new run).
-    if (Math.abs(state.laneOffset - laneRef.current) > 2) {
-      laneRef.current = state.laneOffset;
-    }
-
     const dt = clampGameDelta(delta);
     const laneLimit = getLaneLimit();
     const keyboardAxis = getKeyboardAxis();
-    const pointerActive = pointer.isActive();
+    const pointerPressed = pointer.isPressed();
+    const pointerAxis = pointer.getAxis();
 
-    // Keyboard always wins when pressed — prevents a stuck click/touch from
-    // locking the boat while the river keeps scrolling.
+    // Blend: keyboard is incremental; pointer maps screen X → lane target.
+    // Keyboard always applies when held. Pointer only while finger/mouse is down.
     let steerAxis = 0;
+
     if (Math.abs(keyboardAxis) > 0.001) {
       steerAxis = keyboardAxis;
       laneRef.current = clamp(
@@ -93,9 +89,9 @@ export function BoatController({ children }: BoatControllerProps) {
         -laneLimit,
         laneLimit,
       );
-    } else if (pointerActive) {
-      steerAxis = pointer.getAxis();
-      const target = clamp(steerAxis * laneLimit, -laneLimit, laneLimit);
+    } else if (pointerPressed) {
+      steerAxis = pointerAxis;
+      const target = clamp(pointerAxis * laneLimit, -laneLimit, laneLimit);
       laneRef.current = clamp(
         dampToward(laneRef.current, target, STEER.damping, dt),
         -laneLimit,

@@ -39,11 +39,13 @@ export function GameCanvas({ children }: GameCanvasProps) {
   return (
     <div className="absolute inset-0 h-full w-full touch-none bg-[#1a0c08]" data-game-canvas>
       <Canvas
-        shadows={highFx ? { type: PCFShadowMap } : false}
-        dpr={highFx ? dpr : [1, 1]}
+        // Keep Canvas props stable — toggling shadows/dpr/antialias remounts
+        // WebGL and wipes keyboard/pointer state (boat "freezes" then recovers).
+        shadows={{ type: PCFShadowMap }}
+        dpr={dpr}
         frameloop="always"
         gl={{
-          antialias: highFx,
+          antialias: true,
           alpha: false,
           powerPreference: "high-performance",
           stencil: false,

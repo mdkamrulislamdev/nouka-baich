@@ -2,86 +2,89 @@
 
 import { useEffect, useRef } from "react";
 
-import { STEER } from "@/components/canvas/sceneConfig";
-
-/** Ignore tiny press jitter until the player actually drags. */
-const ACTIVATE_DRAG_PX = 8;
-
+/**
+ * Touch/mouse steering for the river canvas.
+ * Maps finger/cursor X across the playfield to a -1..1 steer axis while pressed.
+ * Releases immediately on up/cancel — never leaves a stuck "active" lock.
+ */
 export function usePointerSteering(): {
+  /** Current steer axis, or 0 when not pressing. */
   getAxis: () => number;
-  isActive: () => boolean;
+  /** True only while a primary pointer is currently down on the canvas. */
+  isPressed: () => boolean;
 } {
   const axisRef = useRef(0);
-  const activeRef = useRef(false);
+  const pressedRef = useRef(false);
   const pointerIdRef = useRef<number | null>(null);
-  const originXRef = useRef(0);
-  const lastMoveAtRef = useRef(0);
 
   useEffect(() => {
     const reset = () => {
       pointerIdRef.current = null;
-      activeRef.current = false;
+      pressedRef.current = false;
       axisRef.current = 0;
-      lastMoveAtRef.current = 0;
+    };
+
+    const axisFromClientX = (clientX: number, canvas: Element): number => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 1) {
+        return 0;
+      }
+      // Map full canvas width to -1..1 with a soft dead-zone in the center.
+      const normalized = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const dead = 0.06;
+      if (Math.abs(normalized) < dead) {
+        return 0;
+      }
+      const signed =
+        Math.sign(normalized) *
+        Math.min(1, (Math.abs(normalized) - dead) / (1 - dead));
+      return signed;
     };
 
     const onPointerDown = (event: PointerEvent) => {
       if (pointerIdRef.current !== null) {
         return;
       }
-
       if (event.pointerType === "mouse" && event.button !== 0) {
         return;
       }
 
       const target = event.target;
-      if (
-        !(target instanceof Element) ||
-        !target.closest("[data-game-canvas]")
-      ) {
+      if (!(target instanceof Element)) {
         return;
       }
-
-      // Don't steal focus from UI buttons/settings inside overlays.
+      const canvas = target.closest("[data-game-canvas]");
+      if (!canvas) {
+        return;
+      }
       if (target.closest("button, a, input, [role='button']")) {
         return;
       }
 
       pointerIdRef.current = event.pointerId;
-      originXRef.current = event.clientX;
-      // Press alone must not lock out keyboard — wait for a real drag.
-      activeRef.current = false;
-      axisRef.current = 0;
-      lastMoveAtRef.current = performance.now();
+      pressedRef.current = true;
+      axisRef.current = axisFromClientX(event.clientX, canvas);
 
-      if (target instanceof Element) {
-        try {
-          target.setPointerCapture(event.pointerId);
-        } catch {
-          // Some hosts reject capture; window listeners still work.
-        }
+      try {
+        target.setPointerCapture(event.pointerId);
+      } catch {
+        // Capture is optional.
       }
     };
 
     const onPointerMove = (event: PointerEvent) => {
-      if (event.pointerId !== pointerIdRef.current) {
+      if (event.pointerId !== pointerIdRef.current || !pressedRef.current) {
         return;
       }
-
-      const deltaX = event.clientX - originXRef.current;
-      lastMoveAtRef.current = performance.now();
-
-      if (!activeRef.current) {
-        if (Math.abs(deltaX) < ACTIVATE_DRAG_PX) {
-          return;
-        }
-        activeRef.current = true;
+      const target = event.target;
+      const canvas =
+        (target instanceof Element &&
+          target.closest("[data-game-canvas]")) ||
+        document.querySelector("[data-game-canvas]");
+      if (!(canvas instanceof Element)) {
+        return;
       }
-
-      axisRef.current = Math.max(
-        -1,
-        Math.min(1, deltaX / STEER.dragPixelsForFullSteer),
-      );
+      axisRef.current = axisFromClientX(event.clientX, canvas);
     };
 
     const onPointerUp = (event: PointerEvent) => {
@@ -103,40 +106,28 @@ export function usePointerSteering(): {
       }
     };
 
-    window.addEventListener("pointerdown", onPointerDown);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerUp);
-    window.addEventListener("lostpointercapture", onLostCapture);
+    // Capture phase so we still clear even if something stops propagation.
+    window.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointermove", onPointerMove, true);
+    window.addEventListener("pointerup", onPointerUp, true);
+    window.addEventListener("pointercancel", onPointerUp, true);
+    window.addEventListener("lostpointercapture", onLostCapture, true);
     window.addEventListener("blur", reset);
     document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      window.removeEventListener("pointerdown", onPointerDown);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerUp);
-      window.removeEventListener("lostpointercapture", onLostCapture);
+      window.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("pointercancel", onPointerUp, true);
+      window.removeEventListener("lostpointercapture", onLostCapture, true);
       window.removeEventListener("blur", reset);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 
   return {
-    getAxis: () => axisRef.current,
-    isActive: () => {
-      // Safety: drop a stale drag if moves stop mid-gesture (common on mobile).
-      if (
-        activeRef.current &&
-        lastMoveAtRef.current > 0 &&
-        performance.now() - lastMoveAtRef.current > 2500
-      ) {
-        activeRef.current = false;
-        axisRef.current = 0;
-        pointerIdRef.current = null;
-        return false;
-      }
-      return activeRef.current;
-    },
+    getAxis: () => (pressedRef.current ? axisRef.current : 0),
+    isPressed: () => pressedRef.current,
   };
 }
