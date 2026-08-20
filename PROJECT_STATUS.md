@@ -62,6 +62,22 @@ Deploy: see `DEPLOY.md`. Asset checklist: see `ASSETS_NEEDED.md`.
 | Asset requirements doc | **Done** | `ASSETS_NEEDED.md` |
 
 ---
+## Upgrade Spec (`UPGRADE_SPEC.md`) — phases 1–10 complete
+
+| Phase | What you asked for | Status |
+| --- | --- | --- |
+| 1 | Organic subdivided riverbank geometry + shoreline trim | **Done** |
+| 2 | Palm leaf alpha halos / transparency artifacts | **Done** |
+| 3 | Instanced village huts + tropical foliage GLTFs | **Done** |
+| 4 | Instanced grass tufts on riverbanks | **Done** |
+| 5 | Replace seat cubes with 6 seated rowers | **Done** |
+| 6 | Elliptical oar dip physics + rower lean sync | **Done** |
+| 7 | Lateral water splash particles on oar strokes | **Done** |
+| 8 | Seamless horizon sky + distance haze blending | **Done** |
+| 9 | Procedural rain + thunder lightning engine | **Done** |
+| 10 | Level-linked weather progression (L1..L4+) | **Done** |
+
+---
 
 ## Launch roadmap (phases 41–60) — complete
 
