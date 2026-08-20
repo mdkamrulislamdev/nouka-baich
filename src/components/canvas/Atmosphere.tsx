@@ -27,12 +27,20 @@ const SKY_VERTEX = /* glsl */ `
 const SKY_FRAGMENT = /* glsl */ `
   uniform vec3 uZenith;
   uniform vec3 uHorizon;
+  uniform float uFogDensity;
   varying vec3 vWorldPos;
 
   void main() {
-    float height = normalize(vWorldPos).y;
+    // Height drives the zenith->horizon gradient.
+    float height = clamp(vWorldPos.y / 120.0, 0.0, 1.0);
     float t = clamp(height * 0.85 + 0.35, 0.0, 1.0);
+
+    // Distance haze blended using the same fogDensity we apply to the scene.
+    float dist = length(vWorldPos);
+    float haze = 1.0 - exp(-uFogDensity * dist * 0.08);
+
     vec3 color = mix(uHorizon, uZenith, pow(t, 1.15));
+    color = mix(color, uHorizon, haze);
     gl_FragColor = vec4(color, 1.0);
   }
 `;
@@ -63,6 +71,7 @@ export function GradientSky({ hemisphereRef }: GradientSkyProps) {
     () => ({
       uZenith: { value: new Color(INITIAL.zenith) },
       uHorizon: { value: new Color(INITIAL.horizon) },
+      uFogDensity: { value: INITIAL.fogDensity },
     }),
     [],
   );
@@ -86,11 +95,15 @@ export function GradientSky({ hemisphereRef }: GradientSkyProps) {
     if (material) {
       const zenithUniform = material.uniforms.uZenith.value;
       const horizonUniform = material.uniforms.uHorizon.value;
+      const fogDensityUniform = material.uniforms.uFogDensity.value;
       if (zenithUniform instanceof Color) {
         zenithUniform.copy(currentZenith.current);
       }
       if (horizonUniform instanceof Color) {
         horizonUniform.copy(currentHorizon.current);
+      }
+      if (typeof fogDensityUniform === "number") {
+        material.uniforms.uFogDensity.value = densityRef.current;
       }
     }
 
