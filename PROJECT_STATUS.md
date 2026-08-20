@@ -62,7 +62,7 @@ Deploy: see `DEPLOY.md`. Asset checklist: see `ASSETS_NEEDED.md`.
 | Asset requirements doc | **Done** | `ASSETS_NEEDED.md` |
 
 ---
-## Upgrade Spec (`UPGRADE_SPEC.md`) — phases 1–10 complete
+## Upgrade Spec (`UPGRADE_SPEC.md`) — phases 1–15 complete
 
 | Phase | What you asked for | Status |
 | --- | --- | --- |
@@ -76,6 +76,11 @@ Deploy: see `DEPLOY.md`. Asset checklist: see `ASSETS_NEEDED.md`.
 | 8 | Seamless horizon sky + distance haze blending | **Done** |
 | 9 | Procedural rain + thunder lightning engine | **Done** |
 | 10 | Level-linked weather progression (L1..L4+) | **Done** |
+| 11 | Level 1 difficulty & density rebalance | **Done** |
+| 12 | NPC racing & civilian river traffic | **Done** |
+| 13 | Multi-level speed & hazard scaling curve | **Done** |
+| 14 | Mobile & low-end GPU optimization pass | **Done** |
+| 15 | Full integration, type checking & build verification | **Done** |
 
 ---
 
