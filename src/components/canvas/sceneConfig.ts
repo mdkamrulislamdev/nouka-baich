@@ -1,9 +1,28 @@
 export const BOAT_SPAWN: [number, number, number] = [0, 0, 0];
 
+const DEFAULT_BOAT_PATH = "/models/venus_a_shetland_fourareen/scene.gltf";
+
+/**
+ * Only same-origin `/models/...` paths are accepted for the boat override.
+ * Blocks accidental remote GLTF injection via env misconfiguration.
+ */
+function resolveBoatModelPath(): string {
+  const candidate = process.env.NEXT_PUBLIC_BOAT_MODEL_PATH?.trim();
+  if (!candidate) {
+    return DEFAULT_BOAT_PATH;
+  }
+  if (
+    candidate.startsWith("/models/") &&
+    !candidate.includes("..") &&
+    (candidate.endsWith(".gltf") || candidate.endsWith(".glb"))
+  ) {
+    return candidate;
+  }
+  return DEFAULT_BOAT_PATH;
+}
+
 export const BOAT_MODEL = {
-  path:
-    process.env.NEXT_PUBLIC_BOAT_MODEL_PATH ??
-    "/models/venus_a_shetland_fourareen/scene.gltf",
+  path: resolveBoatModelPath(),
   targetLength: 4.4,
   halfWidth: 0.68,
   /**

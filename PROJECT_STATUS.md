@@ -21,7 +21,7 @@ All **40 core phases** and all **20 launch phases (41–60)** are complete. Post
 | Visual fidelity | **Strong** | Bloom, Vignette, DoF, ground mist, exponential fog |
 | Coding practices | **Good** | Typed, no `any`, Zustand off-render in `useFrame` |
 | Scalability | **Good** | Pools + instancing; compressed WebP textures |
-| Remote sync | **Blocked** | Local commits ahead of `origin/main`; push needs correct GitHub account |
+| Remote sync | **OK** | `main` pushed; CI uses Node 22 |
 
 ---
 
@@ -81,6 +81,17 @@ Deploy: see `DEPLOY.md`. Asset checklist: see `ASSETS_NEEDED.md`.
 | 13 | Multi-level speed & hazard scaling curve | **Done** |
 | 14 | Mobile & low-end GPU optimization pass | **Done** |
 | 15 | Full integration, type checking & build verification | **Done** |
+
+### Post-upgrade hardening (audit)
+
+| Item | Status |
+| --- | --- |
+| CI Node 22 + lockfile `@emnapi` sync | **Done** |
+| Remove unused `stones_and_grass` / duplicate tree assets (~80MB) | **Done** |
+| Menu-time WebGL/GLTF warmup + Play gating | **Done** |
+| WeatherStore + WaterWake status bugs | **Done** |
+| Collision frame ordering | **Done** |
+| `ARCHITECTURE.md` | **Done** |
 
 ---
 

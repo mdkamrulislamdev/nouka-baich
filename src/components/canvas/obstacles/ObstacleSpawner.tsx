@@ -446,46 +446,24 @@ export function ObstacleSpawner() {
     forEachActiveObstacle((obstacle) => {
       const relativeSpeed = Math.max(2.2, speed - obstacle.forwardSpeed);
       obstacle.z += relativeSpeed * dt;
-      if (obstacle.kind === "log") {
+      if (
+        obstacle.kind === "log" ||
+        obstacle.kind === "racing" ||
+        obstacle.kind === "dinghy"
+      ) {
         obstacle.phase += obstacle.angularSpeed * dt;
         const laneLimit = getLaneLimit();
-        const travelLimit = Math.max(
-          0.4,
-          laneLimit - obstacle.halfX,
-        );
+        const travelLimit = Math.max(0.4, laneLimit - obstacle.halfX);
         obstacle.x = clamp(
           obstacle.originX + Math.sin(obstacle.phase) * obstacle.amplitude,
           -travelLimit,
           travelLimit,
         );
-      }
-      if (obstacle.kind === "racing") {
-        obstacle.phase += obstacle.angularSpeed * dt;
-        const laneLimit = getLaneLimit();
-        const travelLimit = Math.max(
-          0.4,
-          laneLimit - obstacle.halfX,
-        );
-        obstacle.x = clamp(
-          obstacle.originX + Math.sin(obstacle.phase) * obstacle.amplitude,
-          -travelLimit,
-          travelLimit,
-        );
-        obstacle.rotY = Math.sin(obstacle.phase) * 0.08;
-      }
-      if (obstacle.kind === "dinghy") {
-        obstacle.phase += obstacle.angularSpeed * dt;
-        const laneLimit = getLaneLimit();
-        const travelLimit = Math.max(
-          0.4,
-          laneLimit - obstacle.halfX,
-        );
-        obstacle.x = clamp(
-          obstacle.originX + Math.sin(obstacle.phase) * obstacle.amplitude,
-          -travelLimit,
-          travelLimit,
-        );
-        obstacle.rotY = Math.sin(obstacle.phase) * 0.045;
+        if (obstacle.kind === "racing") {
+          obstacle.rotY = Math.sin(obstacle.phase) * 0.08;
+        } else if (obstacle.kind === "dinghy") {
+          obstacle.rotY = Math.sin(obstacle.phase) * 0.045;
+        }
       }
       if (obstacle.z > OBSTACLE_SPAWN.recycleZ) {
         const item = findItem(items, obstacle);
@@ -560,7 +538,7 @@ export function ObstacleSpawner() {
     for (let index = 0; index < items.length; index += 1) {
       syncObstacle(items[index]);
     }
-  });
+  }, 0);
 
   return <group ref={rootRef} />;
 }

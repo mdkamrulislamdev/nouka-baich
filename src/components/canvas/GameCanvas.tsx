@@ -5,6 +5,7 @@ import { Suspense, type ReactNode } from "react";
 import { PCFShadowMap } from "three";
 
 import { CollisionSystem } from "@/components/canvas/obstacles/CollisionSystem";
+import { AssetWarmup } from "@/components/canvas/AssetWarmup";
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
 import { ProgressionSystem } from "@/components/canvas/ProgressionSystem";
 import { QualityScaler } from "@/components/canvas/QualityScaler";
@@ -66,13 +67,17 @@ export function GameCanvas({ children }: GameCanvasProps) {
       >
         <ChaseCamera />
         <SceneLighting />
+        {/* Outside Suspense so progress updates while GLTFs stream in. */}
+        <AssetWarmup />
+        <Suspense fallback={null}>
+          <ScrollingWorld />
+          <BoatController>
+            <Suspense fallback={<PlaceholderBoat />}>
+              <PlayerBoat />
+            </Suspense>
+          </BoatController>
+        </Suspense>
         <WeatherSystem />
-        <ScrollingWorld />
-        <BoatController>
-          <Suspense fallback={<PlaceholderBoat />}>
-            <PlayerBoat />
-          </Suspense>
-        </BoatController>
         <WaterWake />
         <OarSplashes />
         <CollisionSystem />

@@ -101,7 +101,7 @@ export function WaterWake() {
 
     const dt = Math.min(delta, 0.05);
     const state = useGameStore.getState();
-    const { speed, laneOffset, graphicsQuality, adaptiveLow } = state;
+    const { status, speed, laneOffset, graphicsQuality, adaptiveLow } = state;
     const positionAttr = geometry.getAttribute("position");
     const lifeAttr = geometry.getAttribute("aLife");
     const sizeAttr = geometry.getAttribute("aSize");
@@ -132,6 +132,7 @@ export function WaterWake() {
         sizes[index] = splash ? 6 + Math.random() * 5 : 3.5 + Math.random() * 3;
       }
     } else if (status === "MENU") {
+      // Clear wake when returning to menu (must use store `status`, not window.status).
       lives.fill(0);
       emitAccRef.current = 0;
     }

@@ -27,6 +27,10 @@ export type GameState = {
   closeCallBonus: number;
   nearMissCombo: number;
   lastNearMissAt: number;
+  /** True once GLTF + WebGL scene have finished first warm load on the menu. */
+  assetsReady: boolean;
+  /** 0..100 progress while warming assets on the landing screen. */
+  assetProgress: number;
 };
 
 export type GameActions = {
@@ -44,6 +48,8 @@ export type GameActions = {
   openSettings: () => void;
   closeSettings: () => void;
   setAdaptiveLow: (adaptiveLow: boolean) => void;
+  setAssetProgress: (assetProgress: number) => void;
+  setAssetsReady: (assetsReady: boolean) => void;
   triggerCloseCall: () => void;
   startGame: (gameMode?: GameMode) => void;
   endGame: () => void;
@@ -73,6 +79,8 @@ const INITIAL_STATE: GameState = {
   closeCallBonus: 0,
   nearMissCombo: 0,
   lastNearMissAt: 0,
+  assetsReady: false,
+  assetProgress: 0,
 };
 
 export const useGameStore = create<GameStore>()(
@@ -104,6 +112,10 @@ export const useGameStore = create<GameStore>()(
         return { settingsOpen: false };
       }),
     setAdaptiveLow: (adaptiveLow) => set({ adaptiveLow }),
+    setAssetProgress: (assetProgress) =>
+      set({ assetProgress: Math.max(0, Math.min(100, assetProgress)) }),
+    setAssetsReady: (assetsReady) =>
+      set({ assetsReady, assetProgress: assetsReady ? 100 : 0 }),
     triggerCloseCall: () =>
       set((state) => {
         const now = Date.now();
@@ -129,6 +141,9 @@ export const useGameStore = create<GameStore>()(
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
         graphicsQuality: state.graphicsQuality,
+        // Keep warmed assets across runs so Play stays instant.
+        assetsReady: state.assetsReady,
+        assetProgress: state.assetProgress,
         adaptiveLow: false,
         isNewHighScore: false,
         settingsOpen: false,
@@ -165,6 +180,8 @@ export const useGameStore = create<GameStore>()(
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
         graphicsQuality: state.graphicsQuality,
+        assetsReady: state.assetsReady,
+        assetProgress: state.assetProgress,
         adaptiveLow: false,
       })),
   })),

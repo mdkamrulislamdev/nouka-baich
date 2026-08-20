@@ -242,50 +242,38 @@ export function InstancedScenery() {
     [grassScene],
   );
 
-  const treesRef = useRef<ScenerySlot[] | null>(null);
-  const hutsRef = useRef<ScenerySlot[] | null>(null);
-  const grassRefSlots = useRef<ScenerySlot[] | null>(null);
+  const trees = useMemo(
+    () => createSlots(SCENERY.treeCount, 0, 2.1, 3.6, 0.72, 0.78, 0.4),
+    [],
+  );
+  const huts = useMemo(
+    () => createSlots(SCENERY.hutCount, 200, 4.2, 2.2, 0.72, 0.85, 0.25),
+    [],
+  );
+  const grassSlots = useMemo(
+    () => createSlots(SCENERY.grassCount, 400, 0.45, 5.95, 0.58, 0.5, 0.85),
+    [],
+  );
   const instancesCommittedRef = useRef(false);
 
   useFrame((_, delta) => {
-    if (!treesRef.current) {
-      treesRef.current = createSlots(SCENERY.treeCount, 0, 2.1, 3.6, 0.72, 0.78, 0.4);
-    }
-    if (!hutsRef.current) {
-      hutsRef.current = createSlots(SCENERY.hutCount, 200, 4.2, 2.2, 0.72, 0.85, 0.25);
-    }
-    if (!grassRefSlots.current) {
-      grassRefSlots.current = createSlots(
-        SCENERY.grassCount,
-        400,
-        0.45,
-        5.95,
-        0.58,
-        0.5,
-        0.85,
-      );
-    }
-
     const state = useGameStore.getState();
     if (isGameplayActive(state)) {
       instancesCommittedRef.current = false;
       const dz = state.speed * Math.min(delta, 0.05);
-      scrollSlots(treesRef.current, dz, 0, (slot, seed, z) => {
+      scrollSlots(trees, dz, 0, (slot, seed, z) => {
         placeOnBank(slot, seed, 2.1, 3.6, 0.72, 0.78, 0.4, z);
       });
-      scrollSlots(hutsRef.current, dz, 200, (slot, seed, z) => {
+      scrollSlots(huts, dz, 200, (slot, seed, z) => {
         placeOnBank(slot, seed, 4.2, 2.2, 0.72, 0.85, 0.25, z);
       });
-      scrollSlots(grassRefSlots.current, dz, 400, (slot, seed, z) => {
+      scrollSlots(grassSlots, dz, 400, (slot, seed, z) => {
         placeGrassOnBank(slot, seed, z);
       });
     } else if (instancesCommittedRef.current) {
       return;
     }
 
-    const trees = treesRef.current;
-    const huts = hutsRef.current;
-    const grassSlots = grassRefSlots.current;
     const nearZ = SCENERY_MODELS.cull.nearZ;
     const farZ = SCENERY_MODELS.cull.farZ;
 
