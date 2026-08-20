@@ -249,6 +249,18 @@ export function getTargetSpeed(level: number): number {
 }
 
 export function getSpawnInterval(level: number): number {
+  if (level <= 1) {
+    /**
+     * Phase 11 (Level 1 density rebalance)
+     * `ObstacleSpawner` spawns rock/log only about ~50% of the time
+     * (see `pickSpawnKind` thresholds). So the *effective* rock/log gap
+     * is roughly `2 × interval`.
+     *
+     * Tune interval so rock/log spacing feels much tighter immediately:
+     * ~25m target rock/log gap => ~12.5m base interval.
+     */
+    return 12.5;
+  }
   return Math.max(
     PROGRESSION.minInterval,
     OBSTACLE_SPAWN.interval * PROGRESSION.intervalDecay ** Math.max(0, level - 1),
