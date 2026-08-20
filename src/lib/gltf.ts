@@ -115,13 +115,33 @@ export function enableGltfShadows(
     }
 
     child.visible = true;
-    child.castShadow = true;
+    // GLTF packs with morph targets + custom material extensions can crash in
+    // Three's shadow pass on some drivers/builds. Keep GLTF meshes out of the
+    // shadow-map render path; they still receive scene lighting/reflections.
+    child.castShadow = false;
     child.receiveShadow = true;
     child.frustumCulled = false;
 
     const sanitized = ensureStandardMaterial(child.material, envMapIntensity);
     if (sanitized) {
       child.material = sanitized;
+    }
+  });
+}
+
+function normalizeMorphTargets(root: Object3D): void {
+  root.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return;
+    }
+    // Some GLTF variants expose morph attributes without initialized runtime arrays.
+    // Ensure Three initializes morphTargetInfluences/morphTargetDictionary.
+    child.updateMorphTargets();
+    if (!Array.isArray(child.morphTargetInfluences)) {
+      child.morphTargetInfluences = [];
+    }
+    if (!child.morphTargetDictionary) {
+      child.morphTargetDictionary = {};
     }
   });
 }
@@ -140,14 +160,20 @@ export function cloneGltfScene(source: Group): Group {
   });
 
   if (!hasSkin) {
-    return source.clone(true) as Group;
+    const cloned = source.clone(true) as Group;
+    normalizeMorphTargets(cloned);
+    return cloned;
   }
 
   try {
-    return cloneSkinned(source) as Group;
+    const cloned = cloneSkinned(source) as Group;
+    normalizeMorphTargets(cloned);
+    return cloned;
   } catch (error) {
     console.warn("[gltf] SkeletonUtils.clone failed; falling back to Object3D.clone", error);
-    return source.clone(true) as Group;
+    const cloned = source.clone(true) as Group;
+    normalizeMorphTargets(cloned);
+    return cloned;
   }
 }
 

@@ -180,6 +180,10 @@ function preparePartFromMesh(mesh: Mesh, targetHeight: number): PreparedPart | n
     }
 
     const geometry = mesh.geometry.clone();
+    // Instanced scenery does not animate morph targets; stripping morph
+    // attributes avoids shader paths that require per-mesh influence arrays.
+    geometry.morphAttributes = {};
+    geometry.morphTargetsRelative = false;
     geometry.applyMatrix4(mesh.matrixWorld);
 
     fitMesh.geometry = geometry;
