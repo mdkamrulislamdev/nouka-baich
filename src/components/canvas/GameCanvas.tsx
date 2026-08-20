@@ -16,6 +16,7 @@ import { PlaceholderBoat } from "@/components/canvas/boat/PlaceholderBoat";
 import { PlayerBoat } from "@/components/canvas/boat/PlayerBoat";
 import { SceneLighting } from "@/components/canvas/SceneLighting";
 import { ScenePostProcessing } from "@/components/canvas/ScenePostProcessing";
+import { WeatherSystem } from "@/components/canvas/WeatherSystem";
 import { WaterWake } from "@/components/canvas/fx/WaterWake";
 import { OarSplashes } from "@/components/canvas/fx/OarSplashes";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
@@ -65,6 +66,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
       >
         <ChaseCamera />
         <SceneLighting />
+        <WeatherSystem />
         <ScrollingWorld />
         <BoatController>
           <Suspense fallback={<PlaceholderBoat />}>
