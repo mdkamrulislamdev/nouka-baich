@@ -9,7 +9,7 @@ import { useKeyboardSteering } from "@/hooks/useKeyboardSteering";
 import { usePointerSteering } from "@/hooks/usePointerSteering";
 import { clamp } from "@/lib/clamp";
 import { getCrashPose } from "@/lib/crashFeedback";
-import { isGameplayActive } from "@/lib/gameplay";
+import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 type BoatControllerProps = {
@@ -29,6 +29,9 @@ export function BoatController({ children }: BoatControllerProps) {
   const groupRef = useRef<Group>(null);
   const getKeyboardAxis = useKeyboardSteering();
   const pointer = usePointerSteering();
+  /** Frame-local lane copy — avoids reading a stale store value mid-frame. */
+  const laneRef = useRef(0);
+  const prevStatusRef = useRef<string>("MENU");
 
   useFrame((_, delta) => {
     const group = groupRef.current;
@@ -37,9 +40,17 @@ export function BoatController({ children }: BoatControllerProps) {
     }
 
     const state = useGameStore.getState();
-    const { status, laneOffset, setLaneOffset } = state;
+    const { status, setLaneOffset } = state;
+
+    if (prevStatusRef.current !== status) {
+      if (status === "PLAYING" || status === "MENU") {
+        laneRef.current = state.laneOffset;
+      }
+      prevStatusRef.current = status;
+    }
 
     if (status === "MENU") {
+      laneRef.current = 0;
       group.position.set(...BOAT_SPAWN);
       group.rotation.set(0, 0, 0);
       return;
@@ -47,14 +58,14 @@ export function BoatController({ children }: BoatControllerProps) {
 
     if (status === "GAMEOVER") {
       const crash = getCrashPose();
-      const settle = Math.min(delta, 0.05);
+      const settle = clampGameDelta(delta);
       group.rotation.z = dampToward(group.rotation.z, crash.roll, 8, settle);
       group.rotation.y = dampToward(group.rotation.y, crash.yaw, 8, settle);
       return;
     }
 
     if (status === "PAUSED") {
-      group.position.set(laneOffset, BOAT_SPAWN[1], BOAT_SPAWN[2]);
+      group.position.set(laneRef.current, BOAT_SPAWN[1], BOAT_SPAWN[2]);
       return;
     }
 
@@ -62,45 +73,50 @@ export function BoatController({ children }: BoatControllerProps) {
       return;
     }
 
-    const dt = Math.min(delta, 0.05);
+    // Keep local lane in sync if something external resets it (new run).
+    if (Math.abs(state.laneOffset - laneRef.current) > 2) {
+      laneRef.current = state.laneOffset;
+    }
+
+    const dt = clampGameDelta(delta);
     const laneLimit = getLaneLimit();
-    let nextOffset = laneOffset;
+    const keyboardAxis = getKeyboardAxis();
+    const pointerActive = pointer.isActive();
 
-    if (pointer.isActive()) {
-      const axis = pointer.getAxis();
-      const target = clamp(axis * laneLimit, -laneLimit, laneLimit);
-      nextOffset = clamp(
-        dampToward(laneOffset, target, STEER.damping, dt),
+    // Keyboard always wins when pressed — prevents a stuck click/touch from
+    // locking the boat while the river keeps scrolling.
+    let steerAxis = 0;
+    if (Math.abs(keyboardAxis) > 0.001) {
+      steerAxis = keyboardAxis;
+      laneRef.current = clamp(
+        laneRef.current + keyboardAxis * STEER.keyboardSpeed * dt,
         -laneLimit,
         laneLimit,
       );
-    } else {
-      const axis = getKeyboardAxis();
-      nextOffset = clamp(
-        laneOffset + axis * STEER.keyboardSpeed * dt,
+    } else if (pointerActive) {
+      steerAxis = pointer.getAxis();
+      const target = clamp(steerAxis * laneLimit, -laneLimit, laneLimit);
+      laneRef.current = clamp(
+        dampToward(laneRef.current, target, STEER.damping, dt),
         -laneLimit,
         laneLimit,
       );
     }
 
-    if (Math.abs(nextOffset - laneOffset) > 0.0001) {
-      setLaneOffset(nextOffset);
+    if (Math.abs(laneRef.current - state.laneOffset) > 0.0001) {
+      setLaneOffset(laneRef.current);
     }
 
-    const steerVisual = pointer.isActive()
-      ? pointer.getAxis()
-      : getKeyboardAxis();
-
-    group.position.set(nextOffset, BOAT_SPAWN[1], BOAT_SPAWN[2]);
+    group.position.set(laneRef.current, BOAT_SPAWN[1], BOAT_SPAWN[2]);
     group.rotation.y = dampToward(
       group.rotation.y,
-      -steerVisual * STEER.yawMax,
+      -steerAxis * STEER.yawMax,
       STEER.tiltDamping,
       dt,
     );
     group.rotation.z = dampToward(
       group.rotation.z,
-      -steerVisual * STEER.rollMax,
+      -steerAxis * STEER.rollMax,
       STEER.tiltDamping,
       dt,
     );

@@ -47,20 +47,28 @@ export function useKeyboardSteering(): () => number {
       syncAxis();
     };
 
-    const onBlur = () => {
+    const clearKeys = () => {
       leftRef.current = false;
       rightRef.current = false;
       axisRef.current = 0;
     };
 
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") {
+        clearKeys();
+      }
+    };
+
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", onBlur);
+    window.addEventListener("blur", clearKeys);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("blur", clearKeys);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 
