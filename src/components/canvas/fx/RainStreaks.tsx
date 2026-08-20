@@ -123,11 +123,12 @@ export function RainStreaks({ strength }: RainStreaksProps) {
     if (!uniformsRef.current) {
       return;
     }
-    uniformsRef.current.uAlpha.value = 0.15 + strength * 0.55;
 
     if (strength <= 0.001) {
       return;
     }
+
+    uniformsRef.current.uAlpha.value = 0.15 + strength * 0.55;
 
     const dt = Math.min(delta, 0.05);
     const speed = 5.5 + strength * 14.0;
