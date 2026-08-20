@@ -1,6 +1,6 @@
 import { Box3 } from "three";
 
-export type ObstacleKind = "marker" | "rock" | "log" | "dinghy";
+export type ObstacleKind = "marker" | "rock" | "log" | "dinghy" | "racing";
 
 export type ObstacleRecord = {
   id: number;
@@ -25,7 +25,7 @@ export type ObstacleRecord = {
 const obstacles: ObstacleRecord[] = [];
 
 function usesWorldBox(kind: ObstacleKind): boolean {
-  return kind === "rock" || kind === "log" || kind === "dinghy";
+  return kind === "rock" || kind === "log" || kind === "dinghy" || kind === "racing";
 }
 
 export function getObstacles(): readonly ObstacleRecord[] {
@@ -100,6 +100,7 @@ export function acquirePreferredObstacle(
   const fallback: ObstacleKind[] = [
     preferred,
     "dinghy",
+    "racing",
     "log",
     "rock",
     "marker",

@@ -154,6 +154,18 @@ export const DINGHY_OBSTACLE = {
   maxSpeed: 5.4,
 } as const;
 
+export const RACING_BOAT_OBSTACLE = {
+  length: 3.7,
+  beam: 1.05,
+  y: -0.06,
+  /**
+   * Negative speed => opposing boat direction.
+   * `ObstacleSpawner` converts this into relative motion vs the player.
+   */
+  minSpeed: -6.2,
+  maxSpeed: -3.8,
+} as const;
+
 export const SCENERY = {
   treeCount: 24,
   hutCount: 8,
@@ -275,8 +287,10 @@ export const OBSTACLE_SPAWN = {
   rockPoolSize: 8,
   logPoolSize: 8,
   dinghyPoolSize: 6,
+  racingPoolSize: 6,
   y: -0.2,
   laneScale: 0.78,
   rockLaneScale: 0.48,
   dinghyLaneScale: 0.64,
+  racingLaneScale: 0.66,
 } as const;

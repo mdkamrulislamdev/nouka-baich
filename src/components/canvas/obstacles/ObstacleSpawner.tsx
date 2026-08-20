@@ -7,6 +7,7 @@ import { Group, Vector3 } from "three";
 import {
   DINGHY_OBSTACLE,
   LOG_OBSTACLE,
+  RACING_BOAT_OBSTACLE,
   OBSTACLE_SPAWN,
   ROCK_MODEL,
   getLaneLimit,
@@ -18,6 +19,12 @@ import {
   disposeDinghyResources,
   DINGHY_EXTENTS,
 } from "@/components/canvas/obstacles/dinghyFactory";
+import {
+  createRacingBoatObstacle,
+  createRacingBoatResources,
+  disposeRacingBoatResources,
+  RACING_BOAT_EXTENTS,
+} from "@/components/canvas/obstacles/racingBoatFactory";
 import {
   createLogObstacle,
   createLogResources,
@@ -66,8 +73,11 @@ function pickSpawnKind(seed: number): ObstacleKind {
   if (roll < 0.5) {
     return "log";
   }
-  if (roll < 0.74) {
+  if (roll < 0.64) {
     return "dinghy";
+  }
+  if (roll < 0.82) {
+    return "racing";
   }
   return "marker";
 }
@@ -245,23 +255,60 @@ function placeLog(record: ObstacleRecord, seed: number, z: number): void {
   record.forwardSpeed = 0;
 }
 
+function placeRacingBoat(record: ObstacleRecord, seed: number, z: number): void {
+  const laneLimit = getLaneLimit();
+  const scale = 0.88 + seededRandom(seed * 4.8) * 0.28;
+
+  record.active = true;
+  record.scale = scale;
+  record.y = RACING_BOAT_OBSTACLE.y;
+  record.z = z;
+
+  record.halfX = RACING_BOAT_EXTENTS.halfX * scale;
+  record.halfY = RACING_BOAT_EXTENTS.halfY * scale;
+  record.halfZ = RACING_BOAT_EXTENTS.halfZ * scale;
+
+  const travelLimit = Math.max(0.6, laneLimit - record.halfX);
+  const amplitude = 0.55 + seededRandom(seed * 2.6) * 0.95;
+  const maxOrigin = Math.max(0, travelLimit - amplitude);
+
+  record.originX = (seededRandom(seed) * 2 - 1) * maxOrigin;
+  record.amplitude = Math.min(amplitude, maxOrigin);
+  record.phase = seededRandom(seed * 6.1) * Math.PI * 2;
+  record.angularSpeed = 0.85 + seededRandom(seed * 3.3) * 0.8;
+
+  record.x = record.originX + Math.sin(record.phase) * record.amplitude;
+  record.rotY = (seededRandom(seed * 8.2) - 0.5) * 0.18;
+
+  record.forwardSpeed =
+    RACING_BOAT_OBSTACLE.minSpeed +
+    seededRandom(seed * 5.1) *
+      (RACING_BOAT_OBSTACLE.maxSpeed - RACING_BOAT_OBSTACLE.minSpeed);
+}
+
 function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
   const laneLimit = getLaneLimit();
   const scale = 0.88 + seededRandom(seed * 4.4) * 0.22;
   record.active = true;
   record.scale = scale;
-  record.x =
-    (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.dinghyLaneScale;
   record.y = DINGHY_OBSTACLE.y;
   record.z = z;
-  record.rotY = (seededRandom(seed * 2.8) - 0.5) * 0.08;
+  record.halfX = DINGHY_EXTENTS.halfX * scale;
+  record.halfY = DINGHY_EXTENTS.halfY * scale;
+  record.halfZ = DINGHY_EXTENTS.halfZ * scale;
+  const travelLimit = Math.max(0.6, laneLimit - record.halfX);
+  const amplitude = 0.08 + seededRandom(seed * 2.6) * 0.18;
+  const maxOrigin = Math.max(0, travelLimit - amplitude);
+  record.originX = (seededRandom(seed) * 2 - 1) * maxOrigin;
+  record.amplitude = Math.min(amplitude, maxOrigin);
+  record.phase = seededRandom(seed * 6.1) * Math.PI * 2;
+  record.angularSpeed = 0.45 + seededRandom(seed * 3.3) * 0.6;
+  record.x = record.originX + Math.sin(record.phase) * record.amplitude;
+  record.rotY = Math.sin(record.phase) * 0.045;
   record.forwardSpeed =
     DINGHY_OBSTACLE.minSpeed +
     seededRandom(seed * 5.1) *
       (DINGHY_OBSTACLE.maxSpeed - DINGHY_OBSTACLE.minSpeed);
-  record.halfX = DINGHY_EXTENTS.halfX * scale;
-  record.halfY = DINGHY_EXTENTS.halfY * scale;
-  record.halfZ = DINGHY_EXTENTS.halfZ * scale;
 }
 
 export function ObstacleSpawner() {
@@ -281,6 +328,7 @@ export function ObstacleSpawner() {
     const resources = createMarkerResources();
     const logResources = createLogResources();
     const dinghyResources = createDinghyResources();
+    const racingResources = createRacingBoatResources();
     const markerPool = new ObjectPool(
       () => createMarkerObstacle(resources),
       OBSTACLE_SPAWN.poolSize,
@@ -297,11 +345,16 @@ export function ObstacleSpawner() {
       () => createDinghyObstacle(dinghyResources),
       OBSTACLE_SPAWN.dinghyPoolSize,
     );
+    const racingPool = new ObjectPool(
+      () => createRacingBoatObstacle(racingResources),
+      OBSTACLE_SPAWN.racingPoolSize,
+    );
     const pools: ObstaclePools = {
       marker: markerPool,
       rock: rockPool,
       log: logPool,
       dinghy: dinghyPool,
+      racing: racingPool,
     };
     const items: PooledObstacle[] = [];
 
@@ -321,6 +374,7 @@ export function ObstacleSpawner() {
     reserveSlots("rock", OBSTACLE_SPAWN.rockPoolSize, 100);
     reserveSlots("log", OBSTACLE_SPAWN.logPoolSize, 200);
     reserveSlots("dinghy", OBSTACLE_SPAWN.dinghyPoolSize, 300);
+    reserveSlots("racing", OBSTACLE_SPAWN.racingPoolSize, 400);
 
     poolsRef.current = pools;
     itemsRef.current = items;
@@ -340,6 +394,7 @@ export function ObstacleSpawner() {
       disposeMarkerResources(resources);
       disposeLogResources(logResources);
       disposeDinghyResources(dinghyResources);
+      disposeRacingBoatResources(racingResources);
       clearObstacles();
       itemsRef.current = null;
       poolsRef.current = null;
@@ -389,6 +444,34 @@ export function ObstacleSpawner() {
           travelLimit,
         );
       }
+      if (obstacle.kind === "racing") {
+        obstacle.phase += obstacle.angularSpeed * dt;
+        const laneLimit = getLaneLimit();
+        const travelLimit = Math.max(
+          0.4,
+          laneLimit - obstacle.halfX,
+        );
+        obstacle.x = clamp(
+          obstacle.originX + Math.sin(obstacle.phase) * obstacle.amplitude,
+          -travelLimit,
+          travelLimit,
+        );
+        obstacle.rotY = Math.sin(obstacle.phase) * 0.08;
+      }
+      if (obstacle.kind === "dinghy") {
+        obstacle.phase += obstacle.angularSpeed * dt;
+        const laneLimit = getLaneLimit();
+        const travelLimit = Math.max(
+          0.4,
+          laneLimit - obstacle.halfX,
+        );
+        obstacle.x = clamp(
+          obstacle.originX + Math.sin(obstacle.phase) * obstacle.amplitude,
+          -travelLimit,
+          travelLimit,
+        );
+        obstacle.rotY = Math.sin(obstacle.phase) * 0.045;
+      }
       if (obstacle.z > OBSTACLE_SPAWN.recycleZ) {
         const item = findItem(items, obstacle);
         if (item) {
@@ -436,12 +519,25 @@ export function ObstacleSpawner() {
         activateObstacle(item, pools, root);
       }
 
+      const seed = spawnCountRef.current;
+      const laneLimit = getLaneLimit();
+      const markerXFallback = clamp(
+        (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale,
+        -laneLimit,
+        laneLimit,
+      );
+
       if (slot.kind === "rock") {
-        placeRock(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+        placeRock(slot, seed, OBSTACLE_SPAWN.spawnZ);
       } else if (slot.kind === "log") {
-        placeLog(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+        placeLog(slot, seed, OBSTACLE_SPAWN.spawnZ);
+      } else if (slot.kind === "dinghy") {
+        placeDinghy(slot, seed, OBSTACLE_SPAWN.spawnZ);
+      } else if (slot.kind === "racing") {
+        placeRacingBoat(slot, seed, OBSTACLE_SPAWN.spawnZ);
       } else {
-        placeDinghy(slot, spawnCountRef.current, OBSTACLE_SPAWN.spawnZ);
+        // Fallback if we ran out of rock/log/dinghy/racing slots.
+        placeMarkerAt(slot, seed, markerXFallback, OBSTACLE_SPAWN.spawnZ);
       }
     }
 
