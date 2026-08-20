@@ -5,7 +5,8 @@ import { type ReactNode, useRef } from "react";
 import { type Group } from "three";
 
 import { BOAT_SPAWN, STEER, getLaneLimit } from "@/components/canvas/sceneConfig";
-import { useSteeringAxis } from "@/hooks/useSteeringAxis";
+import { useKeyboardSteering } from "@/hooks/useKeyboardSteering";
+import { usePointerSteering } from "@/hooks/usePointerSteering";
 import { clamp } from "@/lib/clamp";
 import { getCrashPose } from "@/lib/crashFeedback";
 import { isGameplayActive } from "@/lib/gameplay";
@@ -26,7 +27,8 @@ function dampToward(
 
 export function BoatController({ children }: BoatControllerProps) {
   const groupRef = useRef<Group>(null);
-  const getSteerAxis = useSteeringAxis();
+  const getKeyboardAxis = useKeyboardSteering();
+  const pointer = usePointerSteering();
 
   useFrame((_, delta) => {
     const group = groupRef.current;
@@ -61,29 +63,44 @@ export function BoatController({ children }: BoatControllerProps) {
     }
 
     const dt = Math.min(delta, 0.05);
-    const axis = getSteerAxis();
     const laneLimit = getLaneLimit();
-    const target = clamp(axis * laneLimit, -laneLimit, laneLimit);
-    const nextOffset = clamp(
-      dampToward(laneOffset, target, STEER.damping, dt),
-      -laneLimit,
-      laneLimit,
-    );
+    let nextOffset = laneOffset;
+
+    if (pointer.isActive()) {
+      const axis = pointer.getAxis();
+      const target = clamp(axis * laneLimit, -laneLimit, laneLimit);
+      nextOffset = clamp(
+        dampToward(laneOffset, target, STEER.damping, dt),
+        -laneLimit,
+        laneLimit,
+      );
+    } else {
+      const axis = getKeyboardAxis();
+      nextOffset = clamp(
+        laneOffset + axis * STEER.keyboardSpeed * dt,
+        -laneLimit,
+        laneLimit,
+      );
+    }
 
     if (Math.abs(nextOffset - laneOffset) > 0.0001) {
       setLaneOffset(nextOffset);
     }
 
+    const steerVisual = pointer.isActive()
+      ? pointer.getAxis()
+      : getKeyboardAxis();
+
     group.position.set(nextOffset, BOAT_SPAWN[1], BOAT_SPAWN[2]);
     group.rotation.y = dampToward(
       group.rotation.y,
-      -axis * STEER.yawMax,
+      -steerVisual * STEER.yawMax,
       STEER.tiltDamping,
       dt,
     );
     group.rotation.z = dampToward(
       group.rotation.z,
-      -axis * STEER.rollMax,
+      -steerVisual * STEER.rollMax,
       STEER.tiltDamping,
       dt,
     );

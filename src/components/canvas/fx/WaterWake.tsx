@@ -23,7 +23,7 @@ const VERTEX = /* glsl */ `
   void main() {
     vLife = aLife;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = aSize * (140.0 / max(1.0, -mvPosition.z));
+    gl_PointSize = aSize * (72.0 / max(1.0, -mvPosition.z));
     gl_Position = projectionMatrix * mvPosition;
   }
 `;

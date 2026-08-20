@@ -31,16 +31,14 @@ const SKY_FRAGMENT = /* glsl */ `
   varying vec3 vWorldPos;
 
   void main() {
-    // Height drives the zenith->horizon gradient.
-    float height = clamp(vWorldPos.y / 120.0, 0.0, 1.0);
-    float t = clamp(height * 0.85 + 0.35, 0.0, 1.0);
+    float height = clamp(vWorldPos.y / 90.0, 0.0, 1.0);
+    float t = pow(clamp(height, 0.0, 1.0), 0.85);
 
-    // Distance haze blended using the same fogDensity we apply to the scene.
-    float dist = length(vWorldPos);
-    float haze = 1.0 - exp(-uFogDensity * dist * 0.08);
+    float dist = length(vWorldPos.xz);
+    float haze = 1.0 - exp(-uFogDensity * dist * 0.045);
 
-    vec3 color = mix(uHorizon, uZenith, pow(t, 1.15));
-    color = mix(color, uHorizon, haze);
+    vec3 color = mix(uHorizon, uZenith, t);
+    color = mix(color, uHorizon, haze * 0.55);
     gl_FragColor = vec4(color, 1.0);
   }
 `;

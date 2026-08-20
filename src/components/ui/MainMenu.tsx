@@ -1,9 +1,11 @@
 "use client";
 
 import { beginRun, beginSprintRun } from "@/lib/gameSession";
-import { SPRINT } from "@/components/canvas/sceneConfig";
+import { DIFFICULTY_PRESETS, SPRINT, type Difficulty } from "@/components/canvas/sceneConfig";
 import { SettingsButton } from "@/components/ui/SettingsModal";
 import { useGameStore } from "@/store/useGameStore";
+
+const DIFFICULTY_OPTIONS: Difficulty[] = ["easy", "medium", "hard"];
 
 function AlpanaCorner({ className }: { className: string }) {
   return (
@@ -37,6 +39,8 @@ export function MainMenu() {
   const status = useGameStore((state) => state.status);
   const assetsReady = useGameStore((state) => state.assetsReady);
   const assetProgress = useGameStore((state) => state.assetProgress);
+  const difficulty = useGameStore((state) => state.difficulty);
+  const setDifficulty = useGameStore((state) => state.setDifficulty);
 
   if (status !== "MENU") {
     return null;
@@ -92,6 +96,35 @@ export function MainMenu() {
               />
             </div>
           ) : null}
+
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <p className="text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
+              Difficulty
+            </p>
+            <div className="flex gap-2">
+              {DIFFICULTY_OPTIONS.map((option) => {
+                const preset = DIFFICULTY_PRESETS[option];
+                const active = difficulty === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setDifficulty(option)}
+                    className={`font-bengali rounded-sm border px-3 py-1.5 text-sm transition focus-visible:ring-2 focus-visible:ring-[#e4c36a] focus-visible:outline-none ${
+                      active
+                        ? "border-[#e4c36a] bg-[#9b1c1c] text-[#f6e6c2]"
+                        : "border-[#e4c36a]/45 bg-[#1a0c08]/60 text-[#e4c36a]/85 hover:border-[#e4c36a]"
+                    }`}
+                  >
+                    {preset.labelBn}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[0.6rem] tracking-[0.18em] text-[#e4c36a]/65 uppercase">
+              {DIFFICULTY_PRESETS[difficulty].labelEn}
+            </p>
+          </div>
 
           <div className="mt-8 flex w-full max-w-xs flex-col gap-3 sm:max-w-sm">
             <button

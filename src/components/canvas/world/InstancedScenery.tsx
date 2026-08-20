@@ -5,6 +5,7 @@ import { useMemo, useRef } from "react";
 import {
   Box3,
   BufferGeometry,
+  Color,
   InstancedMesh,
   Matrix4,
   Mesh,
@@ -12,6 +13,7 @@ import {
   Object3D,
   Vector3,
   type Group,
+  type Material,
 } from "three";
 
 import { SCENERY, SCENERY_MODELS, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
@@ -26,6 +28,7 @@ const WORLD_LENGTH = segmentCount * segmentLength;
 const RIVER_EDGE = riverWidth / 2;
 
 const dummy = new Object3D();
+const IDENTITY = new Matrix4();
 
 type ScenerySlot = {
   x: number;
@@ -53,16 +56,12 @@ function placeOnBank(
   slot.z = z;
   slot.rotY = seededRandom(seed * 9.1) * Math.PI * 2;
   slot.scale = scaleMin + seededRandom(seed * 4.4) * scaleSpan;
-  slot.pitch = (seededRandom(seed * 7.3) - 0.5) * 0.18;
+  slot.pitch = (seededRandom(seed * 7.3) - 0.5) * 0.12;
 }
 
-function placeGrassOnBank(
-  slot: ScenerySlot,
-  seed: number,
-  z: number,
-): void {
-  placeOnBank(slot, seed, 0.45, 5.95, 0.58, 0.5, 0.85, z);
-  slot.pitch = (seededRandom(seed * 2.7) - 0.5) * 0.26;
+function placeGrassOnBank(slot: ScenerySlot, seed: number, z: number): void {
+  placeOnBank(slot, seed, 0.35, 4.8, 0.02, 0.75, 0.55, z);
+  slot.pitch = (seededRandom(seed * 2.7) - 0.5) * 0.2;
 }
 
 function createSlots(
@@ -96,23 +95,11 @@ function writePart(
   mesh: InstancedMesh,
   index: number,
   slot: ScenerySlot,
-  localMatrix: Matrix4,
-  cullSlot: boolean,
 ): void {
-  if (cullSlot) {
-    dummy.position.set(0, -999, 0);
-    dummy.rotation.set(0, 0, 0);
-    dummy.scale.setScalar(0.0001);
-    dummy.updateMatrix();
-    mesh.setMatrixAt(index, dummy.matrix);
-    return;
-  }
-
   dummy.position.set(slot.x, slot.y, slot.z);
   dummy.rotation.set(slot.pitch, slot.rotY, 0);
   dummy.scale.setScalar(slot.scale);
   dummy.updateMatrix();
-  dummy.matrix.multiply(localMatrix);
   mesh.setMatrixAt(index, dummy.matrix);
 }
 
@@ -121,11 +108,14 @@ function commitInstances(mesh: InstancedMesh | null): void {
     return;
   }
   mesh.instanceMatrix.needsUpdate = true;
-  // Avoid per-frame computeBoundingSphere — it can throw on incomplete
-  // attributes and is unnecessary when frustumCulled is disabled.
 }
 
-function scrollSlots(slots: ScenerySlot[], dz: number, startSeed: number, place: (slot: ScenerySlot, seed: number, z: number) => void): void {
+function scrollSlots(
+  slots: ScenerySlot[],
+  dz: number,
+  startSeed: number,
+  place: (slot: ScenerySlot, seed: number, z: number) => void,
+): void {
   for (let index = 0; index < slots.length; index += 1) {
     const slot = slots[index];
     slot.z += dz;
@@ -145,8 +135,6 @@ type PreparedPart = {
 const box = new Box3();
 const size = new Vector3();
 const center = new Vector3();
-const origin = new Vector3();
-const fitMesh = new Mesh();
 
 function gatherMeshes(source: Group): Mesh[] {
   const meshes: Mesh[] = [];
@@ -167,80 +155,132 @@ function getTriangleCount(mesh: Mesh): number {
   return Math.floor(indexCount / 3);
 }
 
-function preparePartFromMesh(mesh: Mesh, targetHeight: number): PreparedPart | null {
-  try {
-    const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-    if (!(material instanceof MeshStandardMaterial) || !mesh.geometry) {
-      return null;
+function stripMorphData(root: Group): void {
+  root.traverse((node) => {
+    if (!(node instanceof Mesh) || !node.geometry) {
+      return;
     }
-
-    const position = mesh.geometry.attributes.position;
-    if (!position || typeof position.count !== "number" || position.count < 3) {
-      return null;
-    }
-
-    const geometry = mesh.geometry.clone();
-    // Instanced scenery does not animate morph targets; stripping morph
-    // attributes avoids shader paths that require per-mesh influence arrays.
-    geometry.morphAttributes = {};
-    geometry.morphTargetsRelative = false;
-    geometry.applyMatrix4(mesh.matrixWorld);
-
-    fitMesh.geometry = geometry;
-    fitMesh.updateMatrixWorld(true);
-    box.setFromObject(fitMesh);
-    if (box.isEmpty()) {
-      geometry.dispose();
-      return null;
-    }
-    box.getSize(size);
-    const scale = targetHeight / Math.max(size.y, 0.001);
-    geometry.scale(scale, scale, scale);
-
-    fitMesh.geometry = geometry;
-    fitMesh.updateMatrixWorld(true);
-    box.setFromObject(fitMesh);
-    box.getCenter(center);
-    geometry.translate(-center.x, -box.min.y, -center.z);
-
-    const partMaterial = material.clone();
-    partMaterial.transparent = false;
-    partMaterial.depthWrite = true;
-    partMaterial.needsUpdate = true;
-
-    const localMatrix = new Matrix4();
-    localMatrix.compose(origin, mesh.quaternion, mesh.scale);
-    localMatrix.setPosition(0, 0, 0);
-
-    return { geometry, material: partMaterial, localMatrix };
-  } catch (error) {
-    console.warn("[InstancedScenery] skipped broken mesh part", mesh.name, error);
-    return null;
-  }
+    node.geometry.morphAttributes = {};
+    node.geometry.morphTargetsRelative = false;
+    node.morphTargetInfluences = [];
+    node.morphTargetDictionary = {};
+  });
 }
 
+function toStandardMaterial(material: Material | null | undefined): MeshStandardMaterial {
+  if (material instanceof MeshStandardMaterial) {
+    const next = material.clone();
+    next.transparent = false;
+    next.depthWrite = true;
+    next.opacity = 1;
+    next.needsUpdate = true;
+    return next;
+  }
+
+  const color =
+    material && "color" in material && material.color instanceof Color
+      ? material.color.clone()
+      : new Color("#5a7a3a");
+  const map =
+    material && "map" in material
+      ? (material.map as MeshStandardMaterial["map"])
+      : null;
+
+  return new MeshStandardMaterial({
+    color: map ? "#ffffff" : color,
+    map: map ?? undefined,
+    roughness: 0.82,
+    metalness: 0.04,
+    transparent: false,
+    depthWrite: true,
+    alphaTest:
+      material && "alphaTest" in material && typeof material.alphaTest === "number"
+        ? material.alphaTest
+        : 0,
+  });
+}
+
+function meshNameMatches(mesh: Mesh, patterns?: readonly string[]): boolean {
+  if (!patterns?.length) {
+    return true;
+  }
+  const haystack = `${mesh.name} ${mesh.parent?.name ?? ""}`;
+  return patterns.some((pattern) => haystack.includes(pattern));
+}
+
+/**
+ * Fit the entire GLTF as one prop (same scale for every mesh part), then
+ * extract top meshes for InstancedMesh. Morph extents are stripped first so
+ * Sketchfab animation bakes do not inflate the bounding box.
+ */
 function prepareInstancedParts(
   scene: Group,
   targetHeight: number,
   count: number,
+  options?: {
+    maxFootprint?: number;
+    meshPatterns?: readonly string[];
+  },
 ): PreparedPart[] {
   try {
     const cloned = cloneGltfScene(scene);
+    stripMorphData(cloned);
     enableGltfShadows(cloned, 0.68);
     patchFoliageAlphaMaterials(cloned);
     cloned.updateMatrixWorld(true);
 
+    box.setFromObject(cloned);
+    if (box.isEmpty()) {
+      return [];
+    }
+    box.getSize(size);
+
+    let uniformScale = targetHeight / Math.max(size.y, 0.001);
+    if (options?.maxFootprint) {
+      const footprint = Math.max(size.x, size.z) * uniformScale;
+      if (footprint > options.maxFootprint) {
+        uniformScale =
+          options.maxFootprint / Math.max(size.x, size.z, 0.001);
+      }
+    }
+
+    box.getCenter(center);
+    const groundY = box.min.y;
+    const shiftX = -center.x;
+    const shiftY = -groundY;
+    const shiftZ = -center.z;
+
     const meshes = gatherMeshes(cloned)
-      .filter((mesh) => getTriangleCount(mesh) > 0)
+      .filter((mesh) => getTriangleCount(mesh) > 12)
+      .filter((mesh) => meshNameMatches(mesh, options?.meshPatterns))
       .sort((a, b) => getTriangleCount(b) - getTriangleCount(a))
       .slice(0, count);
 
     const parts: PreparedPart[] = [];
     for (const mesh of meshes) {
-      const part = preparePartFromMesh(mesh, targetHeight);
-      if (part) {
-        parts.push(part);
+      const sourceMaterial = Array.isArray(mesh.material)
+        ? mesh.material[0]
+        : mesh.material;
+      if (!mesh.geometry?.attributes?.position) {
+        continue;
       }
+
+      const geometry = mesh.geometry.clone();
+      geometry.morphAttributes = {};
+      geometry.morphTargetsRelative = false;
+      geometry.applyMatrix4(mesh.matrixWorld);
+      geometry.scale(uniformScale, uniformScale, uniformScale);
+      geometry.translate(
+        shiftX * uniformScale,
+        shiftY * uniformScale,
+        shiftZ * uniformScale,
+      );
+
+      parts.push({
+        geometry,
+        material: toStandardMaterial(sourceMaterial),
+        localMatrix: IDENTITY,
+      });
     }
     return parts;
   } catch (error) {
@@ -250,8 +290,8 @@ function prepareInstancedParts(
 }
 
 export function InstancedScenery() {
-  const treeRefs = useRef<Array<InstancedMesh | null>>([null, null]);
-  const hutRefs = useRef<Array<InstancedMesh | null>>([null, null]);
+  const treeRefs = useRef<Array<InstancedMesh | null>>([null, null, null]);
+  const hutRefs = useRef<Array<InstancedMesh | null>>([null, null, null, null]);
   const grassRef = useRef<InstancedMesh>(null);
 
   const { scene: treeScene } = useGltfModel(SCENERY_MODELS.tree.path);
@@ -259,28 +299,39 @@ export function InstancedScenery() {
   const { scene: grassScene } = useGltfModel(SCENERY_MODELS.grass.path);
 
   const treeParts = useMemo(
-    () => prepareInstancedParts(treeScene, SCENERY_MODELS.tree.targetHeight, 2),
+    () =>
+      prepareInstancedParts(treeScene, SCENERY_MODELS.tree.targetHeight, 3, {
+        maxFootprint: SCENERY_MODELS.tree.maxFootprint,
+        meshPatterns: SCENERY_MODELS.tree.meshPatterns,
+      }),
     [treeScene],
   );
   const hutParts = useMemo(
-    () => prepareInstancedParts(hutScene, SCENERY_MODELS.hut.targetHeight, 2),
+    () =>
+      prepareInstancedParts(hutScene, SCENERY_MODELS.hut.targetHeight, 4, {
+        maxFootprint: SCENERY_MODELS.hut.maxFootprint,
+      }),
     [hutScene],
   );
   const grassParts = useMemo(
-    () => prepareInstancedParts(grassScene, SCENERY_MODELS.grass.targetHeight, 1),
+    () =>
+      prepareInstancedParts(grassScene, SCENERY_MODELS.grass.targetHeight, 1, {
+        maxFootprint: SCENERY_MODELS.grass.maxFootprint,
+      }),
     [grassScene],
   );
 
+  // Dense near-bank placement so horizon is filled with props.
   const trees = useMemo(
-    () => createSlots(SCENERY.treeCount, 0, 2.1, 3.6, 0.72, 0.78, 0.4),
+    () => createSlots(SCENERY.treeCount, 0, 1.6, 4.2, 0.02, 0.85, 0.35),
     [],
   );
   const huts = useMemo(
-    () => createSlots(SCENERY.hutCount, 200, 4.2, 2.2, 0.72, 0.85, 0.25),
+    () => createSlots(SCENERY.hutCount, 200, 3.2, 3.4, 0.02, 0.9, 0.25),
     [],
   );
   const grassSlots = useMemo(
-    () => createSlots(SCENERY.grassCount, 400, 0.45, 5.95, 0.58, 0.5, 0.85),
+    () => createSlots(SCENERY.grassCount, 400, 0.35, 4.8, 0.02, 0.75, 0.55),
     [],
   );
   const instancesCommittedRef = useRef(false);
@@ -291,10 +342,10 @@ export function InstancedScenery() {
       instancesCommittedRef.current = false;
       const dz = state.speed * Math.min(delta, 0.05);
       scrollSlots(trees, dz, 0, (slot, seed, z) => {
-        placeOnBank(slot, seed, 2.1, 3.6, 0.72, 0.78, 0.4, z);
+        placeOnBank(slot, seed, 1.6, 4.2, 0.02, 0.85, 0.35, z);
       });
       scrollSlots(huts, dz, 200, (slot, seed, z) => {
-        placeOnBank(slot, seed, 4.2, 2.2, 0.72, 0.85, 0.25, z);
+        placeOnBank(slot, seed, 3.2, 3.4, 0.02, 0.9, 0.25, z);
       });
       scrollSlots(grassSlots, dz, 400, (slot, seed, z) => {
         placeGrassOnBank(slot, seed, z);
@@ -317,13 +368,7 @@ export function InstancedScenery() {
         if (slot.z < nearZ || slot.z > farZ) {
           continue;
         }
-        writePart(
-          mesh,
-          visibleCount,
-          slot,
-          treeParts[partIndex].localMatrix,
-          false,
-        );
+        writePart(mesh, visibleCount, slot);
         visibleCount += 1;
       }
       mesh.count = visibleCount;
@@ -341,13 +386,7 @@ export function InstancedScenery() {
         if (slot.z < nearZ || slot.z > farZ) {
           continue;
         }
-        writePart(
-          mesh,
-          visibleCount,
-          slot,
-          hutParts[partIndex].localMatrix,
-          false,
-        );
+        writePart(mesh, visibleCount, slot);
         visibleCount += 1;
       }
       mesh.count = visibleCount;
@@ -362,7 +401,7 @@ export function InstancedScenery() {
         if (slot.z < nearZ || slot.z > farZ) {
           continue;
         }
-        writePart(grass, visibleCount, slot, grassParts[0].localMatrix, false);
+        writePart(grass, visibleCount, slot);
         visibleCount += 1;
       }
       grass.count = visibleCount;

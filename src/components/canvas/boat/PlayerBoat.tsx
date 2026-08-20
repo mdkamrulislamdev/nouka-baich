@@ -60,11 +60,11 @@ function prepareBoatScene(source: Group): Group {
   fitBox.getCenter(fitCenter);
   fitBox.getSize(fitSize);
 
-  // Center on XZ; sink only a fraction of the hull under the opaque water plane.
+  // Center on XZ; keep roughly half the hull above the opaque water plane.
   const submerged = fitSize.y * BOAT_MODEL.waterlineRatio;
   boat.position.set(
     -fitCenter.x,
-    -fitBox.min.y - submerged,
+    -fitBox.min.y - submerged + BOAT_MODEL.waterlineLift,
     -fitCenter.z,
   );
 

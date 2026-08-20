@@ -4,12 +4,13 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Group } from "three";
 
-import { PALM_MODEL, SCENERY, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
+import { PALM_MODEL, SCENERY, SCENERY_MODELS, WORLD_SCROLL } from "@/components/canvas/sceneConfig";
 import { preparePalm } from "@/components/canvas/world/PalmProp";
+import { prepareHut } from "@/components/canvas/world/sceneryPropFactory";
 import { detachObject } from "@/lib/dispose";
 import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
-import { isGameplayActive } from "@/lib/gameplay";
+import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { recycleZPosition, seededRandom } from "@/lib/mathUtils";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -17,25 +18,87 @@ const { segmentCount, segmentLength, recycleZ, riverWidth } = WORLD_SCROLL;
 const WORLD_LENGTH = segmentCount * segmentLength;
 const RIVER_EDGE = riverWidth / 2;
 
-type PooledPalm = {
+type PooledProp = {
   object: Group;
 };
 
-function placePalm(prop: PooledPalm, slot: number, z: number): void {
-  const side: -1 | 1 = seededRandom(slot * 3.1) < 0.5 ? -1 : 1;
-  const outward = 2.1 + seededRandom(slot * 5.7) * 3.6;
-  const scale = 0.78 + seededRandom(slot * 4.4) * 0.4;
+type PropLayer = {
+  props: PooledProp[];
+  place: (prop: PooledProp, slot: number, z: number) => void;
+  seedBase: number;
+};
 
-  prop.object.position.set(side * (RIVER_EDGE + outward), 0.72, z);
+function bankSide(seed: number): -1 | 1 {
+  return seededRandom(seed * 3.1) < 0.5 ? -1 : 1;
+}
+
+function placePalmNear(prop: PooledProp, slot: number, z: number): void {
+  const side = bankSide(slot);
+  const outward = 0.7 + seededRandom(slot * 5.7) * 3.4;
+  const scale = 0.78 + seededRandom(slot * 4.4) * 0.42;
+
+  prop.object.position.set(side * (RIVER_EDGE + outward), 0, z);
   prop.object.rotation.set(0, seededRandom(slot * 9.1) * Math.PI * 2, 0);
   prop.object.scale.setScalar(scale);
   prop.object.visible = true;
 }
 
+function placePalmMid(prop: PooledProp, slot: number, z: number): void {
+  const side = bankSide(slot + 17);
+  const outward = 2.8 + seededRandom(slot * 5.7) * 3.6;
+  const scale = 0.88 + seededRandom(slot * 4.4) * 0.48;
+
+  prop.object.position.set(side * (RIVER_EDGE + outward), 0, z);
+  prop.object.rotation.set(0, seededRandom(slot * 9.1) * Math.PI * 2, 0);
+  prop.object.scale.setScalar(scale);
+  prop.object.visible = true;
+}
+
+function placePalmBack(prop: PooledProp, slot: number, z: number): void {
+  const side = bankSide(slot + 31);
+  const outward = 5.2 + seededRandom(slot * 5.7) * 2.4;
+  const scale = 1.0 + seededRandom(slot * 4.4) * 0.55;
+
+  prop.object.position.set(side * (RIVER_EDGE + outward), 0, z);
+  prop.object.rotation.set(0, seededRandom(slot * 9.1) * Math.PI * 2, 0);
+  prop.object.scale.setScalar(scale);
+  prop.object.visible = true;
+}
+
+function placeHut(prop: PooledProp, slot: number, z: number): void {
+  const side = bankSide(slot + 53);
+  const outward = 4.0 + seededRandom(slot * 5.7) * 2.8;
+  const scale = 0.95 + seededRandom(slot * 4.4) * 0.25;
+
+  prop.object.position.set(side * (RIVER_EDGE + outward), 0, z);
+  prop.object.rotation.set(0, seededRandom(slot * 7.3) * Math.PI * 2, 0);
+  prop.object.scale.setScalar(scale);
+  prop.object.visible = true;
+}
+
+function initialZ(index: number, count: number): number {
+  return recycleZ - 6 - (index / Math.max(count - 1, 1)) * (WORLD_LENGTH - 12);
+}
+
+function scrollLayer(layer: PropLayer, dz: number): void {
+  for (let index = 0; index < layer.props.length; index += 1) {
+    const prop = layer.props[index];
+    prop.object.position.z += dz;
+    const z = prop.object.position.z;
+    prop.object.visible = z > -90 && z < 40;
+    if (z > recycleZ) {
+      const nextZ = recycleZPosition(z, WORLD_LENGTH);
+      layer.place(prop, layer.seedBase + index + Math.floor(nextZ), nextZ);
+    }
+  }
+}
+
 export function PooledScenery() {
+  const { scene: hutScene } = useGltfModel(SCENERY_MODELS.hut.path);
   const { scene: palmScene } = useGltfModel(PALM_MODEL.path);
+
   const rootRef = useRef<Group>(null);
-  const propsRef = useRef<PooledPalm[] | null>(null);
+  const layersRef = useRef<PropLayer[] | null>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -43,35 +106,61 @@ export function PooledScenery() {
       return;
     }
 
-    const palmPool = new ObjectPool(() => preparePalm(palmScene), SCENERY.palmCount);
-    const props: PooledPalm[] = [];
+    const palmNearPool = new ObjectPool(
+      () => preparePalm(palmScene),
+      SCENERY.palmNearCount,
+    );
+    const palmMidPool = new ObjectPool(
+      () => preparePalm(palmScene),
+      SCENERY.palmMidCount,
+    );
+    const palmBackPool = new ObjectPool(
+      () => preparePalm(palmScene),
+      SCENERY.palmBackCount,
+    );
+    const hutPool = new ObjectPool(() => prepareHut(hutScene), SCENERY.hutCount);
 
-    for (let index = 0; index < SCENERY.palmCount; index += 1) {
-      const object = palmPool.acquire();
-      root.add(object);
-      const z =
-        recycleZ -
-        8 -
-        (index / Math.max(SCENERY.palmCount - 1, 1)) * (WORLD_LENGTH - 16);
-      const prop: PooledPalm = { object };
-      placePalm(prop, 100 + index, z);
-      props.push(prop);
+    const layers: PropLayer[] = [
+      { props: [], place: placePalmNear, seedBase: 0 },
+      { props: [], place: placePalmMid, seedBase: 300 },
+      { props: [], place: placePalmBack, seedBase: 600 },
+      { props: [], place: placeHut, seedBase: 900 },
+    ];
+
+    const counts = [
+      SCENERY.palmNearCount,
+      SCENERY.palmMidCount,
+      SCENERY.palmBackCount,
+      SCENERY.hutCount,
+    ];
+    const pools = [palmNearPool, palmMidPool, palmBackPool, hutPool];
+
+    for (let layerIndex = 0; layerIndex < layers.length; layerIndex += 1) {
+      const layer = layers[layerIndex];
+      const count = counts[layerIndex];
+      const pool = pools[layerIndex];
+      for (let index = 0; index < count; index += 1) {
+        const object = pool.acquire();
+        root.add(object);
+        const prop: PooledProp = { object };
+        layer.place(prop, layer.seedBase + index, initialZ(index, count));
+        layer.props.push(prop);
+      }
     }
 
-    propsRef.current = props;
+    layersRef.current = layers;
 
     return () => {
-      props.forEach((prop) => {
-        detachObject(prop.object);
-      });
-      palmPool.drain(detachObject);
-      propsRef.current = null;
+      for (const pool of pools) {
+        pool.drain(detachObject);
+      }
+      layersRef.current = null;
     };
-  }, [palmScene]);
+  }, [hutScene, palmScene]);
 
   useFrame((_, delta) => {
-    const props = propsRef.current;
-    if (!props) {
+    const layers = layersRef.current;
+    if (!layers) {
       return;
     }
 
@@ -80,16 +169,13 @@ export function PooledScenery() {
       return;
     }
 
-    const dz = state.speed * Math.min(delta, 0.05);
-
-    for (let index = 0; index < props.length; index += 1) {
-      const prop = props[index];
-      prop.object.position.z += dz;
-
-      if (prop.object.position.z > recycleZ) {
-        const nextZ = recycleZPosition(prop.object.position.z, WORLD_LENGTH);
-        placePalm(prop, index + Math.floor(nextZ), nextZ);
+    try {
+      const dz = state.speed * clampGameDelta(delta);
+      for (const layer of layers) {
+        scrollLayer(layer, dz);
       }
+    } catch (error) {
+      console.error("[PooledScenery] scroll failed:", error);
     }
   });
 

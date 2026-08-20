@@ -17,7 +17,7 @@ export function ProgressionSystem() {
       return;
     }
 
-    const { distance, level, speed, setLevel, setSpeed } = state;
+    const { distance, level, speed, difficulty, setLevel, setSpeed } = state;
 
     const nextLevel = getLevelForDistance(distance);
     if (nextLevel !== level) {
@@ -25,7 +25,7 @@ export function ProgressionSystem() {
     }
 
     const dt = Math.min(delta, 0.05);
-    const target = getTargetSpeed(nextLevel);
+    const target = getTargetSpeed(nextLevel, difficulty);
     const nextSpeed =
       speed + (target - speed) * (1 - Math.exp(-PROGRESSION.speedDamping * dt));
 

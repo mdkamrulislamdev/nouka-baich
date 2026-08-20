@@ -29,7 +29,9 @@ export const BOAT_MODEL = {
    * Fraction of hull height sunk below the water plane.
    * Keep low — water is opaque, so too much hides the textured deck.
    */
-  waterlineRatio: 0.18,
+  waterlineRatio: 0.1,
+  /** Extra lift so gunwales sit clearly above the waterline. */
+  waterlineLift: 0.22,
   /** Used by procedural placeholder / gunwale composites. */
   embedY: -0.08,
 } as const;
@@ -57,12 +59,12 @@ export const OARS = {
 } as const;
 
 export const WAKE = {
-  count: 160,
+  count: 120,
   y: 0.05,
   sternZ: 1.85,
-  emitPerSecond: 36,
-  life: 0.85,
-  splashSpread: 0.55,
+  emitPerSecond: 24,
+  life: 0.75,
+  splashSpread: 0.38,
 } as const;
 
 export const BOAT_BOUNDS = {
@@ -93,33 +95,33 @@ export type AtmospherePalette = {
 
 export const LEVEL_ATMOSPHERES: AtmospherePalette[] = [
   {
-    zenith: "#3a6ea8",
-    horizon: "#e0a36a",
-    fogDensity: 0.01,
+    zenith: "#4a7eb8",
+    horizon: "#d4b896",
+    fogDensity: 0.0065,
     sunColor: "#ffd09a",
     ambient: "#ffd2a8",
     ground: "#3a2718",
   },
   {
-    zenith: "#4ea3d4",
+    zenith: "#5aadcf",
     horizon: "#c8e4c0",
-    fogDensity: 0.007,
+    fogDensity: 0.0055,
     sunColor: "#fff1c8",
     ambient: "#e7f3ff",
     ground: "#3d4a28",
   },
   {
-    zenith: "#5b6d78",
-    horizon: "#8aa090",
-    fogDensity: 0.016,
+    zenith: "#6a7d88",
+    horizon: "#9aab9a",
+    fogDensity: 0.01,
     sunColor: "#d8d0c0",
     ambient: "#c5d0c8",
     ground: "#2c2a24",
   },
   {
-    zenith: "#2a2458",
+    zenith: "#3a3068",
     horizon: "#c46b8a",
-    fogDensity: 0.012,
+    fogDensity: 0.008,
     sunColor: "#ffb08a",
     ambient: "#e0b8d0",
     ground: "#2a1820",
@@ -147,8 +149,8 @@ export const PALM_MODEL = {
 
 export const ROCK_MODEL = {
   path: "/models/stylized_rocks/scene.gltf",
-  targetWidth: 2.2,
-  embedY: -0.35,
+  targetWidth: 1.35,
+  embedY: -0.28,
 } as const;
 
 export const RIVERBANK_MODEL = {
@@ -160,50 +162,61 @@ export const RIVERBANK_MODEL = {
 } as const;
 
 export const LOG_OBSTACLE = {
-  length: 3.2,
-  radius: 0.24,
+  length: 2.35,
+  radius: 0.17,
   y: 0.02,
 } as const;
 
 export const DINGHY_OBSTACLE = {
-  length: 2.8,
-  beam: 1.15,
-  y: -0.06,
+  length: 3.2,
+  beam: 1.05,
+  y: 0.06,
   minSpeed: 3.2,
   maxSpeed: 5.4,
+  tint: "#2f6f6a",
 } as const;
 
 export const RACING_BOAT_OBSTACLE = {
-  length: 3.7,
+  length: 3.8,
   beam: 1.05,
-  y: -0.06,
+  y: 0.06,
   /**
    * Negative speed => opposing boat direction.
    * `ObstacleSpawner` converts this into relative motion vs the player.
    */
   minSpeed: -6.2,
   maxSpeed: -3.8,
+  tint: "#23458f",
 } as const;
 
 export const SCENERY = {
-  treeCount: 24,
-  hutCount: 8,
-  grassCount: 128,
-  palmCount: 12,
+  /** Broken tree/grass GLTFs disabled — palms + huts only for now. */
+  treeCount: 0,
+  hutCount: 10,
+  grassCount: 0,
+  palmNearCount: 48,
+  palmMidCount: 40,
+  palmBackCount: 28,
+  /** Total palms = 116 */
+  palmCount: 116,
 } as const;
 
 export const SCENERY_MODELS = {
   tree: {
     path: "/models/tree_animate/scene.gltf",
-    targetHeight: 4.8,
+    targetHeight: 5.8,
+    maxFootprint: 3.8,
+    meshPatterns: ["Bark", "Leaf", "Branch"] as const,
   },
   hut: {
     path: "/models/low_poly_fishermans_hut/scene.gltf",
-    targetHeight: 1.9,
+    targetHeight: 2.4,
+    maxFootprint: 3.6,
   },
   grass: {
     path: "/models/grass/scene.gltf",
-    targetHeight: 0.68,
+    targetHeight: 1.35,
+    maxFootprint: 1.4,
   },
   rower: {
     path: "/models/a_man_sitting/scene.gltf",
@@ -230,11 +243,13 @@ export const WATER = {
 } as const;
 
 export const STEER = {
-  damping: 8,
+  damping: 5.5,
   dragPixelsForFullSteer: 140,
-  yawMax: 0.18,
-  rollMax: 0.22,
-  tiltDamping: 10,
+  /** Lateral drift speed when holding arrow keys (world units / sec). */
+  keyboardSpeed: 2.6,
+  yawMax: 0.14,
+  rollMax: 0.18,
+  tiltDamping: 8,
 } as const;
 
 export const AUDIO = {
@@ -257,6 +272,40 @@ export const SCORE = {
 } as const;
 
 export type GameMode = "endless" | "sprint";
+export type Difficulty = "easy" | "medium" | "hard";
+
+export const DIFFICULTY_PRESETS: Record<
+  Difficulty,
+  {
+    labelBn: string;
+    labelEn: string;
+    speedMul: number;
+    spawnMul: number;
+    skipMarkers: boolean;
+  }
+> = {
+  easy: {
+    labelBn: "সহজ",
+    labelEn: "Easy",
+    speedMul: 0.78,
+    spawnMul: 1.55,
+    skipMarkers: true,
+  },
+  medium: {
+    labelBn: "মাধ্যম",
+    labelEn: "Medium",
+    speedMul: 1,
+    spawnMul: 1,
+    skipMarkers: false,
+  },
+  hard: {
+    labelBn: "কঠিন",
+    labelEn: "Hard",
+    speedMul: 1.16,
+    spawnMul: 0.72,
+    skipMarkers: false,
+  },
+};
 
 export const SPRINT = {
   targetDistance: 1200,
@@ -275,28 +324,29 @@ export function getLevelForDistance(distance: number): number {
   return 1 + Math.floor(Math.max(0, distance) / PROGRESSION.metersPerLevel);
 }
 
-export function getTargetSpeed(level: number): number {
+export function getTargetSpeed(
+  level: number,
+  difficulty: Difficulty = "medium",
+): number {
   const t = Math.max(0, level - 1);
-  // Phase 13: +12% velocity growth per level.
-  return PROGRESSION.baseSpeed * 1.12 ** t;
+  const preset = DIFFICULTY_PRESETS[difficulty];
+  return PROGRESSION.baseSpeed * 1.12 ** t * preset.speedMul;
 }
 
-export function getSpawnInterval(level: number): number {
+export function getSpawnInterval(
+  level: number,
+  difficulty: Difficulty = "medium",
+): number {
+  const preset = DIFFICULTY_PRESETS[difficulty];
   if (level <= 1) {
-    /**
-     * Phase 11 (Level 1 density rebalance)
-     * `ObstacleSpawner` spawns rock/log only about ~50% of the time
-     * (see `pickSpawnKind` thresholds). So the *effective* rock/log gap
-     * is roughly `2 × interval`.
-     *
-     * Tune interval so rock/log spacing feels much tighter immediately:
-     * ~25m target rock/log gap => ~12.5m base interval.
-     */
-    return 12.5;
+    return 12.5 * preset.spawnMul;
   }
-  return Math.max(
-    PROGRESSION.minInterval,
-    OBSTACLE_SPAWN.interval * PROGRESSION.intervalDecay ** Math.max(0, level - 1),
+  return (
+    Math.max(
+      PROGRESSION.minInterval,
+      OBSTACLE_SPAWN.interval *
+        PROGRESSION.intervalDecay ** Math.max(0, level - 1),
+    ) * preset.spawnMul
   );
 }
 
@@ -310,8 +360,8 @@ export const OBSTACLE_SPAWN = {
   dinghyPoolSize: 6,
   racingPoolSize: 6,
   y: -0.2,
-  laneScale: 0.78,
-  rockLaneScale: 0.48,
-  dinghyLaneScale: 0.64,
-  racingLaneScale: 0.66,
+  laneScale: 0.96,
+  rockLaneScale: 0.96,
+  dinghyLaneScale: 0.94,
+  racingLaneScale: 0.94,
 } as const;

@@ -10,21 +10,18 @@ import {
   RACING_BOAT_OBSTACLE,
   OBSTACLE_SPAWN,
   ROCK_MODEL,
+  BOAT_MODEL,
+  DIFFICULTY_PRESETS,
+  type Difficulty,
   getLaneLimit,
   getSpawnInterval,
 } from "@/components/canvas/sceneConfig";
 import {
   createDinghyObstacle,
-  createDinghyResources,
-  disposeDinghyResources,
-  DINGHY_EXTENTS,
-} from "@/components/canvas/obstacles/dinghyFactory";
-import {
   createRacingBoatObstacle,
-  createRacingBoatResources,
-  disposeRacingBoatResources,
+  DINGHY_EXTENTS,
   RACING_BOAT_EXTENTS,
-} from "@/components/canvas/obstacles/racingBoatFactory";
+} from "@/components/canvas/obstacles/npcBoatFactory";
 import {
   createLogObstacle,
   createLogResources,
@@ -42,7 +39,7 @@ import { detachObject } from "@/lib/dispose";
 import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
 import { clamp } from "@/lib/clamp";
-import { isGameplayActive } from "@/lib/gameplay";
+import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { seededRandom } from "@/lib/mathUtils";
 import {
   acquireIdleObstacle,
@@ -64,25 +61,52 @@ type PooledObstacle = {
 type ObstaclePools = Record<ObstacleKind, ObjectPool<Group>>;
 
 const worldSize = new Vector3();
+const MAX_SPAWNS_PER_FRAME = 2;
 
-function pickSpawnKind(seed: number, level: number): ObstacleKind {
+/** Bias obstacle X toward river edges instead of the center lane. */
+function laneX(seed: number, laneLimit: number, laneScale: number): number {
+  const sideRoll = seededRandom(seed * 3.77);
+  const magnitude = 0.28 + seededRandom(seed * 5.19) ** 0.42 * 0.72;
+  const sign: -1 | 1 = sideRoll < 0.5 ? -1 : 1;
+  return sign * magnitude * laneLimit * laneScale;
+}
+
+function laneXUniform(seed: number, laneLimit: number, laneScale: number): number {
+  return (seededRandom(seed) * 2 - 1) * laneLimit * laneScale;
+}
+
+function pickSpawnKind(
+  seed: number,
+  level: number,
+  difficulty: Difficulty,
+): ObstacleKind {
   const roll = seededRandom(seed * 1.7);
-  // Phase 13: at higher levels, bias toward lane-block marker clusters.
+  const preset = DIFFICULTY_PRESETS[difficulty];
   const levelT = Math.min(1, Math.max(0, (level - 1) / 3));
-  const racingEnd = 0.82 - 0.09 * levelT;
 
-  if (roll < 0.28) {
-    return "rock";
-  }
-  if (roll < 0.5) {
-    return "log";
-  }
-  if (roll < 0.64) {
-    return "dinghy";
-  }
-  if (roll < racingEnd) {
+  if (difficulty === "easy") {
+    if (roll < 0.38) return "rock";
+    if (roll < 0.72) return "log";
+    if (roll < 0.9) return "dinghy";
     return "racing";
   }
+
+  if (difficulty === "hard") {
+    const racingEnd = 0.78 - 0.06 * levelT;
+    if (roll < 0.22) return "rock";
+    if (roll < 0.4) return "log";
+    if (roll < 0.56) return "dinghy";
+    if (roll < racingEnd) return "racing";
+    return "marker";
+  }
+
+  // medium
+  const racingEnd = 0.86 - 0.08 * levelT;
+  if (roll < 0.3) return "rock";
+  if (roll < 0.52) return "log";
+  if (roll < 0.66) return "dinghy";
+  if (roll < racingEnd) return "racing";
+  if (preset.skipMarkers) return "log";
   return "marker";
 }
 
@@ -164,7 +188,7 @@ function placeMarkerAt(
   record.y = OBSTACLE_SPAWN.y;
   record.z = z;
   record.rotY = seededRandom(seed * 2.2) * Math.PI * 2;
-  record.scale = (0.9 + seededRandom(seed * 4.1) * 0.25) * scaleFactor;
+  record.scale = (0.72 + seededRandom(seed * 4.1) * 0.18) * scaleFactor;
   record.halfX = MARKER_EXTENTS.halfX * record.scale;
   record.halfY = MARKER_EXTENTS.halfY * record.scale;
   record.halfZ = MARKER_EXTENTS.halfZ * record.scale;
@@ -200,8 +224,7 @@ function spawnMarkerCluster(
   }
   const pattern = MARKER_CLUSTER_OFFSETS[patternIndex];
   const laneLimit = getLaneLimit();
-  const centerX =
-    (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale;
+  const centerX = laneXUniform(seed, laneLimit, OBSTACLE_SPAWN.laneScale);
   const slots: ObstacleRecord[] = [];
 
   for (let index = 0; index < pattern.length; index += 1) {
@@ -237,12 +260,11 @@ function spawnMarkerCluster(
 function placeRock(record: ObstacleRecord, seed: number, z: number): void {
   const laneLimit = getLaneLimit();
   record.active = true;
-  record.x =
-    (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.rockLaneScale;
+  record.x = laneX(seed, laneLimit, OBSTACLE_SPAWN.rockLaneScale);
   record.y = ROCK_MODEL.embedY;
   record.z = z;
   record.rotY = seededRandom(seed * 3.4) * Math.PI * 2;
-  record.scale = 0.78 + seededRandom(seed * 5.2) * 0.4;
+  record.scale = 0.62 + seededRandom(seed * 5.2) * 0.32;
   record.forwardSpeed = 0;
 }
 
@@ -256,7 +278,7 @@ function placeLog(record: ObstacleRecord, seed: number, z: number): void {
 
   record.active = true;
   record.scale = scale;
-  record.originX = (seededRandom(seed) * 2 - 1) * maxOrigin;
+  record.originX = laneX(seed, maxOrigin, 1);
   record.amplitude = Math.min(amplitude, travelLimit);
   record.phase = seededRandom(seed * 6.1) * Math.PI * 2;
   record.angularSpeed = 0.65 + seededRandom(seed * 3.3) * 0.7;
@@ -287,7 +309,7 @@ function placeRacingBoat(record: ObstacleRecord, seed: number, z: number): void 
   const amplitude = 0.55 + seededRandom(seed * 2.6) * 0.95;
   const maxOrigin = Math.max(0, travelLimit - amplitude);
 
-  record.originX = (seededRandom(seed) * 2 - 1) * maxOrigin;
+  record.originX = laneX(seed, maxOrigin, 1);
   record.amplitude = Math.min(amplitude, maxOrigin);
   record.phase = seededRandom(seed * 6.1) * Math.PI * 2;
   record.angularSpeed = 0.85 + seededRandom(seed * 3.3) * 0.8;
@@ -314,7 +336,7 @@ function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
   const travelLimit = Math.max(0.6, laneLimit - record.halfX);
   const amplitude = 0.08 + seededRandom(seed * 2.6) * 0.18;
   const maxOrigin = Math.max(0, travelLimit - amplitude);
-  record.originX = (seededRandom(seed) * 2 - 1) * maxOrigin;
+  record.originX = laneX(seed, maxOrigin, 1);
   record.amplitude = Math.min(amplitude, maxOrigin);
   record.phase = seededRandom(seed * 6.1) * Math.PI * 2;
   record.angularSpeed = 0.45 + seededRandom(seed * 3.3) * 0.6;
@@ -328,6 +350,7 @@ function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
 
 export function ObstacleSpawner() {
   const { scene: rockScene } = useGltfModel(ROCK_MODEL.path);
+  const { scene: boatScene } = useGltfModel(BOAT_MODEL.path);
   const rootRef = useRef<Group>(null);
   const itemsRef = useRef<PooledObstacle[] | null>(null);
   const poolsRef = useRef<ObstaclePools | null>(null);
@@ -342,8 +365,6 @@ export function ObstacleSpawner() {
 
     const resources = createMarkerResources();
     const logResources = createLogResources();
-    const dinghyResources = createDinghyResources();
-    const racingResources = createRacingBoatResources();
     const markerPool = new ObjectPool(
       () => createMarkerObstacle(resources),
       OBSTACLE_SPAWN.poolSize,
@@ -357,11 +378,11 @@ export function ObstacleSpawner() {
       OBSTACLE_SPAWN.logPoolSize,
     );
     const dinghyPool = new ObjectPool(
-      () => createDinghyObstacle(dinghyResources),
+      () => createDinghyObstacle(boatScene),
       OBSTACLE_SPAWN.dinghyPoolSize,
     );
     const racingPool = new ObjectPool(
-      () => createRacingBoatObstacle(racingResources),
+      () => createRacingBoatObstacle(boatScene),
       OBSTACLE_SPAWN.racingPoolSize,
     );
     const pools: ObstaclePools = {
@@ -406,17 +427,17 @@ export function ObstacleSpawner() {
       rockPool.drain(detachObject);
       logPool.drain(detachObject);
       dinghyPool.drain(detachObject);
+      racingPool.drain(detachObject);
       disposeMarkerResources(resources);
       disposeLogResources(logResources);
-      disposeDinghyResources(dinghyResources);
-      disposeRacingBoatResources(racingResources);
       clearObstacles();
       itemsRef.current = null;
       poolsRef.current = null;
     };
-  }, [rockScene]);
+  }, [rockScene, boatScene]);
 
   useFrame((_, delta) => {
+    try {
     const items = itemsRef.current;
     const pools = poolsRef.current;
     const root = rootRef.current;
@@ -425,7 +446,7 @@ export function ObstacleSpawner() {
     }
 
     const state = useGameStore.getState();
-    const { status, speed, level } = state;
+    const { status, speed, level, difficulty } = state;
     if (status === "MENU") {
       for (let index = 0; index < items.length; index += 1) {
         recycleObstacle(items[index], pools);
@@ -439,7 +460,7 @@ export function ObstacleSpawner() {
       return;
     }
 
-    const dt = Math.min(delta, 0.05);
+    const dt = clampGameDelta(delta);
     const dz = speed * dt;
     distanceRef.current += dz;
 
@@ -473,11 +494,13 @@ export function ObstacleSpawner() {
       }
     });
 
-    const interval = getSpawnInterval(level);
-    while (distanceRef.current >= interval) {
+    const interval = getSpawnInterval(level, difficulty);
+    let spawnsThisFrame = 0;
+    while (distanceRef.current >= interval && spawnsThisFrame < MAX_SPAWNS_PER_FRAME) {
       distanceRef.current -= interval;
       spawnCountRef.current += 1;
-      const kind = pickSpawnKind(spawnCountRef.current, level);
+      spawnsThisFrame += 1;
+      const kind = pickSpawnKind(spawnCountRef.current, level, difficulty);
 
       if (kind === "marker") {
         if (
@@ -516,7 +539,7 @@ export function ObstacleSpawner() {
       const seed = spawnCountRef.current;
       const laneLimit = getLaneLimit();
       const markerXFallback = clamp(
-        (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale,
+        laneXUniform(seed, laneLimit, OBSTACLE_SPAWN.laneScale),
         -laneLimit,
         laneLimit,
       );
@@ -537,6 +560,9 @@ export function ObstacleSpawner() {
 
     for (let index = 0; index < items.length; index += 1) {
       syncObstacle(items[index]);
+    }
+    } catch (error) {
+      console.error("[ObstacleSpawner] frame failed:", error);
     }
   }, 0);
 

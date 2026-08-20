@@ -5,13 +5,12 @@ import { Suspense, useRef } from "react";
 import { type Group } from "three";
 
 import { ObstacleSpawner } from "@/components/canvas/obstacles/ObstacleSpawner";
-import { InstancedScenery } from "@/components/canvas/world/InstancedScenery";
 import { FinishLine } from "@/components/canvas/world/FinishLine";
 import { PooledScenery } from "@/components/canvas/world/PooledScenery";
 import { RiverBankMesh } from "@/components/canvas/world/RiverBankMesh";
 import { RiverWater } from "@/components/canvas/world/RiverWater";
 import { WORLD_SCROLL } from "@/components/canvas/sceneConfig";
-import { isGameplayActive } from "@/lib/gameplay";
+import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 const { segmentCount, segmentLength, recycleZ } = WORLD_SCROLL;
@@ -31,7 +30,7 @@ export function ScrollingWorld() {
       return;
     }
 
-    const dz = state.speed * Math.min(delta, 0.05);
+    const dz = state.speed * clampGameDelta(delta);
 
     for (let index = 0; index < segmentCount; index += 1) {
       const segment = segmentsRef.current[index];
@@ -48,9 +47,6 @@ export function ScrollingWorld() {
 
   return (
     <group>
-      <Suspense fallback={null}>
-        <InstancedScenery />
-      </Suspense>
       {Array.from({ length: segmentCount }, (_, index) => (
         <group
           key={index}

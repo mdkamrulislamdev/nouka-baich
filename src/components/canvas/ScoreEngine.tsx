@@ -3,7 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 
 import { SCORE } from "@/components/canvas/sceneConfig";
-import { isGameplayActive } from "@/lib/gameplay";
+import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 export function ScoreEngine() {
@@ -15,7 +15,7 @@ export function ScoreEngine() {
 
     const { speed, distance, score, setDistance, setScore } = state;
 
-    const dt = Math.min(delta, 0.05);
+    const dt = clampGameDelta(delta);
     const deltaDistance = speed * dt;
     const multiplier = speed / SCORE.referenceSpeed;
     const nextDistance = distance + deltaDistance;

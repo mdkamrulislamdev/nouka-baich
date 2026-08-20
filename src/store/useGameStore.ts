@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-import { SCORE, type GameMode } from "@/components/canvas/sceneConfig";
+import { SCORE, type Difficulty, type GameMode } from "@/components/canvas/sceneConfig";
 
 export type GameStatus = "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER";
 export type GraphicsQuality = "high" | "low";
@@ -10,6 +10,7 @@ export type RunOutcome = "playing" | "crash" | "finish";
 export type GameState = {
   status: GameStatus;
   gameMode: GameMode;
+  difficulty: Difficulty;
   runOutcome: RunOutcome;
   score: number;
   distance: number;
@@ -44,6 +45,7 @@ export type GameActions = {
   setMusicMuted: (musicMuted: boolean) => void;
   setSfxMuted: (sfxMuted: boolean) => void;
   setGraphicsQuality: (graphicsQuality: GraphicsQuality) => void;
+  setDifficulty: (difficulty: Difficulty) => void;
   setSettingsOpen: (settingsOpen: boolean) => void;
   openSettings: () => void;
   closeSettings: () => void;
@@ -62,6 +64,7 @@ export type GameStore = GameState & GameActions;
 const INITIAL_STATE: GameState = {
   status: "MENU",
   gameMode: "endless",
+  difficulty: "medium",
   runOutcome: "playing",
   score: 0,
   distance: 0,
@@ -96,6 +99,7 @@ export const useGameStore = create<GameStore>()(
     setMusicMuted: (musicMuted) => set({ musicMuted }),
     setSfxMuted: (sfxMuted) => set({ sfxMuted }),
     setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
+    setDifficulty: (difficulty) => set({ difficulty }),
     setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
     openSettings: () =>
       set((state) => {
@@ -141,6 +145,7 @@ export const useGameStore = create<GameStore>()(
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
         graphicsQuality: state.graphicsQuality,
+        difficulty: state.difficulty,
         // Keep warmed assets across runs so Play stays instant.
         assetsReady: state.assetsReady,
         assetProgress: state.assetProgress,
@@ -180,6 +185,7 @@ export const useGameStore = create<GameStore>()(
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
         graphicsQuality: state.graphicsQuality,
+        difficulty: state.difficulty,
         assetsReady: state.assetsReady,
         assetProgress: state.assetProgress,
         adaptiveLow: false,
