@@ -6,34 +6,43 @@ import { useRef } from "react";
 import { isRunActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
-const SAMPLE_SECONDS = 1.25;
-const DOWNGRADE_FPS = 28;
-const RECOVER_FPS = 52;
-const RECOVER_SAMPLES = 8;
-/** Ignore the first seconds of a run — load hitch must not flip quality. */
-const WARMUP_SECONDS = 4;
+const SAMPLE_SECONDS = 1.5;
+const DOWNGRADE_FPS = 26;
+/** Ignore load hitch at the start of a run. */
+const WARMUP_SECONDS = 6;
 
+/**
+ * One-way adaptive downgrade only.
+ * Recovering mid-run remounted EffectComposer and froze steering for ~8s —
+ * never flip quality back up until the player returns to the menu.
+ */
 export function QualityScaler() {
   const framesRef = useRef(0);
   const elapsedRef = useRef(0);
-  const healthySamplesRef = useRef(0);
   const runElapsedRef = useRef(0);
 
   useFrame((_, delta) => {
     const state = useGameStore.getState();
-    const { graphicsQuality, adaptiveLow, setAdaptiveLow } = state;
+    const { status, graphicsQuality, adaptiveLow, setAdaptiveLow } = state;
 
-    if (!isRunActive(state) || graphicsQuality !== "high") {
+    if (status === "MENU") {
       framesRef.current = 0;
       elapsedRef.current = 0;
-      healthySamplesRef.current = 0;
       runElapsedRef.current = 0;
+      return;
+    }
+
+    if (!isRunActive(state) || graphicsQuality !== "high" || adaptiveLow) {
       return;
     }
 
     runElapsedRef.current += delta;
     framesRef.current += 1;
     elapsedRef.current += delta;
+
+    if (runElapsedRef.current < WARMUP_SECONDS) {
+      return;
+    }
 
     if (elapsedRef.current < SAMPLE_SECONDS) {
       return;
@@ -43,26 +52,8 @@ export function QualityScaler() {
     framesRef.current = 0;
     elapsedRef.current = 0;
 
-    if (runElapsedRef.current < WARMUP_SECONDS) {
-      return;
-    }
-
-    if (!adaptiveLow) {
-      if (fps < DOWNGRADE_FPS) {
-        setAdaptiveLow(true);
-        healthySamplesRef.current = 0;
-      }
-      return;
-    }
-
-    if (fps > RECOVER_FPS) {
-      healthySamplesRef.current += 1;
-      if (healthySamplesRef.current >= RECOVER_SAMPLES) {
-        setAdaptiveLow(false);
-        healthySamplesRef.current = 0;
-      }
-    } else {
-      healthySamplesRef.current = 0;
+    if (fps < DOWNGRADE_FPS) {
+      setAdaptiveLow(true);
     }
   });
 

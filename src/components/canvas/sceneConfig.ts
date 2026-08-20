@@ -194,11 +194,11 @@ export const SCENERY = {
   treeCount: 0,
   hutCount: 10,
   grassCount: 0,
-  palmNearCount: 48,
-  palmMidCount: 40,
-  palmBackCount: 28,
-  /** Total palms = 116 */
-  palmCount: 116,
+  palmNearCount: 28,
+  palmMidCount: 22,
+  palmBackCount: 14,
+  /** Total palms = 64 (was 116 — lighter for production FPS). */
+  palmCount: 64,
 } as const;
 
 export const SCENERY_MODELS = {

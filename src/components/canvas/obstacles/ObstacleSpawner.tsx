@@ -61,6 +61,7 @@ type PooledObstacle = {
 type ObstaclePools = Record<ObstacleKind, ObjectPool<Group>>;
 
 const worldSize = new Vector3();
+const worldCenter = new Vector3();
 const MAX_SPAWNS_PER_FRAME = 2;
 
 /** Bias obstacle X toward river edges instead of the center lane. */
@@ -166,13 +167,12 @@ function syncObstacle(item: PooledObstacle): void {
   object.rotation.y = record.rotY;
   object.scale.setScalar(record.scale);
 
+  // Cheap AABB from recorded half-extents — avoid setFromObject() every frame
+  // (that walks full GLTF meshes and causes multi-second freezes on production).
   if (record.worldBox) {
-    object.updateWorldMatrix(true, false);
-    record.worldBox.setFromObject(object);
-    record.worldBox.getSize(worldSize);
-    record.halfX = worldSize.x * 0.5;
-    record.halfY = worldSize.y * 0.5;
-    record.halfZ = worldSize.z * 0.5;
+    worldCenter.set(record.x, record.y + record.halfY, record.z);
+    worldSize.set(record.halfX * 2, record.halfY * 2, record.halfZ * 2);
+    record.worldBox.setFromCenterAndSize(worldCenter, worldSize);
   }
 }
 
@@ -259,12 +259,16 @@ function spawnMarkerCluster(
 
 function placeRock(record: ObstacleRecord, seed: number, z: number): void {
   const laneLimit = getLaneLimit();
+  const scale = 0.62 + seededRandom(seed * 5.2) * 0.32;
   record.active = true;
   record.x = laneX(seed, laneLimit, OBSTACLE_SPAWN.rockLaneScale);
   record.y = ROCK_MODEL.embedY;
   record.z = z;
   record.rotY = seededRandom(seed * 3.4) * Math.PI * 2;
-  record.scale = 0.62 + seededRandom(seed * 5.2) * 0.32;
+  record.scale = scale;
+  record.halfX = ROCK_MODEL.targetWidth * 0.45 * scale;
+  record.halfY = ROCK_MODEL.targetWidth * 0.35 * scale;
+  record.halfZ = ROCK_MODEL.targetWidth * 0.45 * scale;
   record.forwardSpeed = 0;
 }
 

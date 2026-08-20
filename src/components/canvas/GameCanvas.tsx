@@ -23,7 +23,6 @@ import { OarSplashes } from "@/components/canvas/fx/OarSplashes";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { getAtmosphere } from "@/components/canvas/sceneConfig";
 import { useGameDpr } from "@/hooks/useGameDpr";
-import { useGameStore } from "@/store/useGameStore";
 import "@/lib/gltf";
 
 type GameCanvasProps = {
@@ -32,15 +31,11 @@ type GameCanvasProps = {
 
 export function GameCanvas({ children }: GameCanvasProps) {
   const dpr = useGameDpr();
-  const graphicsQuality = useGameStore((state) => state.graphicsQuality);
-  const adaptiveLow = useGameStore((state) => state.adaptiveLow);
-  const highFx = graphicsQuality === "high" && !adaptiveLow;
 
   return (
     <div className="absolute inset-0 h-full w-full touch-none bg-[#1a0c08]" data-game-canvas>
       <Canvas
-        // Keep Canvas props stable — toggling shadows/dpr/antialias remounts
-        // WebGL and wipes keyboard/pointer state (boat "freezes" then recovers).
+        // Keep Canvas props stable — never remount WebGL mid-run.
         shadows={{ type: PCFShadowMap }}
         dpr={dpr}
         frameloop="always"
@@ -88,7 +83,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
         <ProgressionSystem />
         <RaceSystem />
         <QualityScaler />
-        <ScenePostProcessing enabled={highFx} />
+        <ScenePostProcessing />
         {children}
       </Canvas>
     </div>
