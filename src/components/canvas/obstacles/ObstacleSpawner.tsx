@@ -65,8 +65,12 @@ type ObstaclePools = Record<ObstacleKind, ObjectPool<Group>>;
 
 const worldSize = new Vector3();
 
-function pickSpawnKind(seed: number): ObstacleKind {
+function pickSpawnKind(seed: number, level: number): ObstacleKind {
   const roll = seededRandom(seed * 1.7);
+  // Phase 13: at higher levels, bias toward lane-block marker clusters.
+  const levelT = Math.min(1, Math.max(0, (level - 1) / 3));
+  const racingEnd = 0.82 - 0.09 * levelT;
+
   if (roll < 0.28) {
     return "rock";
   }
@@ -76,7 +80,7 @@ function pickSpawnKind(seed: number): ObstacleKind {
   if (roll < 0.64) {
     return "dinghy";
   }
-  if (roll < 0.82) {
+  if (roll < racingEnd) {
     return "racing";
   }
   return "marker";
@@ -179,11 +183,22 @@ function spawnMarkerCluster(
   root: Group,
   seed: number,
   z: number,
+  level: number,
 ): boolean {
-  const pattern =
-    MARKER_CLUSTER_OFFSETS[
-      Math.floor(seededRandom(seed * 11.3) * MARKER_CLUSTER_OFFSETS.length)
-    ];
+  const r = seededRandom(seed * 11.3);
+  // Phase 13: bias toward larger lane-block patterns as level increases.
+  const t = Math.min(1, Math.max(0, (level - 1) / 4));
+  const w2 = 0.6 - 0.45 * t; // length-2 pattern weight
+  const w4 = 0.05 + 0.45 * t; // length-4 pattern weight
+  const w3 = Math.max(0, 1 - w2 - w4); // length-3 weight
+
+  let patternIndex = 2;
+  if (r < w2) {
+    patternIndex = 0;
+  } else if (r < w2 + w3) {
+    patternIndex = 1;
+  }
+  const pattern = MARKER_CLUSTER_OFFSETS[patternIndex];
   const laneLimit = getLaneLimit();
   const centerX =
     (seededRandom(seed) * 2 - 1) * laneLimit * OBSTACLE_SPAWN.laneScale;
@@ -484,7 +499,7 @@ export function ObstacleSpawner() {
     while (distanceRef.current >= interval) {
       distanceRef.current -= interval;
       spawnCountRef.current += 1;
-      const kind = pickSpawnKind(spawnCountRef.current);
+      const kind = pickSpawnKind(spawnCountRef.current, level);
 
       if (kind === "marker") {
         if (
@@ -494,6 +509,7 @@ export function ObstacleSpawner() {
             root,
             spawnCountRef.current,
             OBSTACLE_SPAWN.spawnZ,
+            level,
           )
         ) {
           const fallback = acquirePreferredObstacle("log");

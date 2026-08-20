@@ -257,7 +257,9 @@ export function getLevelForDistance(distance: number): number {
 }
 
 export function getTargetSpeed(level: number): number {
-  return PROGRESSION.baseSpeed + Math.max(0, level - 1) * PROGRESSION.speedPerLevel;
+  const t = Math.max(0, level - 1);
+  // Phase 13: +12% velocity growth per level.
+  return PROGRESSION.baseSpeed * 1.12 ** t;
 }
 
 export function getSpawnInterval(level: number): number {
