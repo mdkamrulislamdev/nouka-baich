@@ -2,13 +2,14 @@ import { Howl, Howler } from "howler";
 
 import { AUDIO } from "@/components/canvas/sceneConfig";
 
-export type SfxId = "row" | "splash" | "crash" | "nearMiss";
+export type SfxId = "row" | "splash" | "crash" | "nearMiss" | "kick";
 
 const SFX_COOLDOWN_MS: Record<SfxId, number> = {
   row: 95,
   splash: 120,
   crash: 0,
   nearMiss: 200,
+  kick: 180,
 };
 
 if (typeof window !== "undefined") {

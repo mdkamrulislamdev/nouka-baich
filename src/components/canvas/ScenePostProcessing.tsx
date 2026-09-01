@@ -28,7 +28,7 @@ export function ScenePostProcessing() {
   return (
     <EffectComposer multisampling={0} enableNormalPass={false}>
       <DepthOfField
-        target={CAMERA.lookAt}
+        target={CAMERA.focus}
         focusRange={7.5}
         focalLength={0.012}
         bokehScale={dofScale}

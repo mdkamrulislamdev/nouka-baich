@@ -11,7 +11,9 @@ import {
   OBSTACLE_SPAWN,
   ROCK_MODEL,
   BOAT_MODEL,
+  SCENERY_MODELS,
   DIFFICULTY_PRESETS,
+  KICK,
   type Difficulty,
   getLaneLimit,
   getSpawnInterval,
@@ -48,6 +50,7 @@ import {
   createObstacleRecord,
   forEachActiveObstacle,
   registerObstacle,
+  resetObstacleCombat,
   type ObstacleKind,
   type ObstacleRecord,
 } from "@/lib/obstacleWorld";
@@ -86,26 +89,26 @@ function pickSpawnKind(
   const levelT = Math.min(1, Math.max(0, (level - 1) / 3));
 
   if (difficulty === "easy") {
-    if (roll < 0.38) return "rock";
-    if (roll < 0.72) return "log";
-    if (roll < 0.9) return "dinghy";
+    if (roll < 0.32) return "rock";
+    if (roll < 0.56) return "log";
+    if (roll < 0.78) return "dinghy";
     return "racing";
   }
 
   if (difficulty === "hard") {
-    const racingEnd = 0.78 - 0.06 * levelT;
-    if (roll < 0.22) return "rock";
-    if (roll < 0.4) return "log";
-    if (roll < 0.56) return "dinghy";
+    const racingEnd = 0.82 - 0.04 * levelT;
+    if (roll < 0.18) return "rock";
+    if (roll < 0.34) return "log";
+    if (roll < 0.5) return "dinghy";
     if (roll < racingEnd) return "racing";
     return "marker";
   }
 
   // medium
-  const racingEnd = 0.86 - 0.08 * levelT;
-  if (roll < 0.3) return "rock";
-  if (roll < 0.52) return "log";
-  if (roll < 0.66) return "dinghy";
+  const racingEnd = 0.9 - 0.06 * levelT;
+  if (roll < 0.24) return "rock";
+  if (roll < 0.44) return "log";
+  if (roll < 0.6) return "dinghy";
   if (roll < racingEnd) return "racing";
   if (preset.skipMarkers) return "log";
   return "marker";
@@ -138,6 +141,7 @@ function activateObstacle(
 
 function recycleObstacle(item: PooledObstacle, pools: ObstaclePools): void {
   item.record.active = false;
+  resetObstacleCombat(item.record);
 
   const object = item.object;
   if (!object) {
@@ -164,7 +168,7 @@ function syncObstacle(item: PooledObstacle): void {
   }
 
   object.position.set(record.x, record.y, record.z);
-  object.rotation.y = record.rotY;
+  object.rotation.set(record.rotX, record.rotY, record.rotZ);
   object.scale.setScalar(record.scale);
 
   // Cheap AABB from recorded half-extents — avoid setFromObject() every frame
@@ -297,13 +301,17 @@ function placeLog(record: ObstacleRecord, seed: number, z: number): void {
 }
 
 function placeRacingBoat(record: ObstacleRecord, seed: number, z: number): void {
+  resetObstacleCombat(record);
   const laneLimit = getLaneLimit();
   const scale = 0.88 + seededRandom(seed * 4.8) * 0.28;
+  const oncoming =
+    seededRandom(seed * 9.37) < RACING_BOAT_OBSTACLE.oncomingChance;
 
   record.active = true;
   record.scale = scale;
   record.y = RACING_BOAT_OBSTACLE.y;
-  record.z = z;
+  record.z = oncoming ? z : RACING_BOAT_OBSTACLE.sameDirSpawnZ;
+  record.facing = oncoming ? -1 : 1;
 
   record.halfX = RACING_BOAT_EXTENTS.halfX * scale;
   record.halfY = RACING_BOAT_EXTENTS.halfY * scale;
@@ -319,15 +327,26 @@ function placeRacingBoat(record: ObstacleRecord, seed: number, z: number): void 
   record.angularSpeed = 0.85 + seededRandom(seed * 3.3) * 0.8;
 
   record.x = record.originX + Math.sin(record.phase) * record.amplitude;
-  record.rotY = (seededRandom(seed * 8.2) - 0.5) * 0.18;
+  const heading = oncoming ? Math.PI : 0;
+  record.rotY = heading + (seededRandom(seed * 8.2) - 0.5) * 0.12;
 
-  record.forwardSpeed =
-    RACING_BOAT_OBSTACLE.minSpeed +
-    seededRandom(seed * 5.1) *
-      (RACING_BOAT_OBSTACLE.maxSpeed - RACING_BOAT_OBSTACLE.minSpeed);
+  if (oncoming) {
+    record.forwardSpeed =
+      RACING_BOAT_OBSTACLE.oncomingMinSpeed +
+      seededRandom(seed * 5.1) *
+        (RACING_BOAT_OBSTACLE.oncomingMaxSpeed -
+          RACING_BOAT_OBSTACLE.oncomingMinSpeed);
+  } else {
+    record.forwardSpeed =
+      RACING_BOAT_OBSTACLE.sameDirMinSpeed +
+      seededRandom(seed * 5.1) *
+        (RACING_BOAT_OBSTACLE.sameDirMaxSpeed -
+          RACING_BOAT_OBSTACLE.sameDirMinSpeed);
+  }
 }
 
 function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
+  resetObstacleCombat(record);
   const laneLimit = getLaneLimit();
   const scale = 0.88 + seededRandom(seed * 4.4) * 0.22;
   record.active = true;
@@ -346,6 +365,7 @@ function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
   record.angularSpeed = 0.45 + seededRandom(seed * 3.3) * 0.6;
   record.x = record.originX + Math.sin(record.phase) * record.amplitude;
   record.rotY = Math.sin(record.phase) * 0.045;
+  record.facing = 1;
   record.forwardSpeed =
     DINGHY_OBSTACLE.minSpeed +
     seededRandom(seed * 5.1) *
@@ -355,6 +375,7 @@ function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
 export function ObstacleSpawner() {
   const { scene: rockScene } = useGltfModel(ROCK_MODEL.path);
   const { scene: boatScene } = useGltfModel(BOAT_MODEL.path);
+  const { scene: rowerScene } = useGltfModel(SCENERY_MODELS.rower.path);
   const rootRef = useRef<Group>(null);
   const itemsRef = useRef<PooledObstacle[] | null>(null);
   const poolsRef = useRef<ObstaclePools | null>(null);
@@ -382,11 +403,11 @@ export function ObstacleSpawner() {
       OBSTACLE_SPAWN.logPoolSize,
     );
     const dinghyPool = new ObjectPool(
-      () => createDinghyObstacle(boatScene),
+      () => createDinghyObstacle(boatScene, rowerScene),
       OBSTACLE_SPAWN.dinghyPoolSize,
     );
     const racingPool = new ObjectPool(
-      () => createRacingBoatObstacle(boatScene),
+      () => createRacingBoatObstacle(boatScene, rowerScene),
       OBSTACLE_SPAWN.racingPoolSize,
     );
     const pools: ObstaclePools = {
@@ -438,7 +459,7 @@ export function ObstacleSpawner() {
       itemsRef.current = null;
       poolsRef.current = null;
     };
-  }, [rockScene, boatScene]);
+  }, [rockScene, boatScene, rowerScene]);
 
   useFrame((_, delta) => {
     try {
@@ -469,6 +490,22 @@ export function ObstacleSpawner() {
     distanceRef.current += dz;
 
     forEachActiveObstacle((obstacle) => {
+      if (obstacle.sinking) {
+        obstacle.sinkT += dt / KICK.sinkDuration;
+        const t = Math.min(1, obstacle.sinkT);
+        const ease = t * 0.25 + t * t * 0.75;
+        obstacle.y = obstacle.sinkStartY - ease * KICK.sinkDepth;
+        obstacle.rotZ = obstacle.sinkSide * t * 0.38;
+        obstacle.rotX = t * 0.14;
+        if (t >= 1) {
+          const item = findItem(items, obstacle);
+          if (item) {
+            recycleObstacle(item, pools);
+          }
+        }
+        return;
+      }
+
       const relativeSpeed = Math.max(2.2, speed - obstacle.forwardSpeed);
       obstacle.z += relativeSpeed * dt;
       if (
@@ -485,7 +522,8 @@ export function ObstacleSpawner() {
           travelLimit,
         );
         if (obstacle.kind === "racing") {
-          obstacle.rotY = Math.sin(obstacle.phase) * 0.08;
+          const heading = obstacle.facing < 0 ? Math.PI : 0;
+          obstacle.rotY = heading + Math.sin(obstacle.phase) * 0.08;
         } else if (obstacle.kind === "dinghy") {
           obstacle.rotY = Math.sin(obstacle.phase) * 0.045;
         }

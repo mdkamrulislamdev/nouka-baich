@@ -28,6 +28,12 @@ export type GameState = {
   closeCallBonus: number;
   nearMissCombo: number;
   lastNearMissAt: number;
+  sinkFlash: number;
+  sinkBonus: number;
+  sinkCombo: number;
+  lastSinkAt: number;
+  kickInRange: boolean;
+  kickReady: boolean;
   /** True once GLTF + WebGL scene have finished first warm load on the menu. */
   assetsReady: boolean;
   /** 0..100 progress while warming assets on the landing screen. */
@@ -53,6 +59,8 @@ export type GameActions = {
   setAssetProgress: (assetProgress: number) => void;
   setAssetsReady: (assetsReady: boolean) => void;
   triggerCloseCall: () => void;
+  triggerSink: (kind: "racing" | "dinghy") => void;
+  setKickHud: (kickInRange: boolean, kickReady: boolean) => void;
   startGame: (gameMode?: GameMode) => void;
   endGame: () => void;
   finishRace: () => void;
@@ -82,6 +90,12 @@ const INITIAL_STATE: GameState = {
   closeCallBonus: 0,
   nearMissCombo: 0,
   lastNearMissAt: 0,
+  sinkFlash: 0,
+  sinkBonus: 0,
+  sinkCombo: 0,
+  lastSinkAt: 0,
+  kickInRange: false,
+  kickReady: true,
   assetsReady: false,
   assetProgress: 0,
 };
@@ -137,6 +151,36 @@ export const useGameStore = create<GameStore>()(
           score: state.score + bonus,
           closeCallFlash: state.closeCallFlash + 1,
         };
+      }),
+    triggerSink: (kind) =>
+      set((state) => {
+        const now = Date.now();
+        const withinCombo =
+          state.lastSinkAt > 0 &&
+          now - state.lastSinkAt < SCORE.sinkComboWindowMs;
+        const combo = withinCombo
+          ? Math.min(state.sinkCombo + 1, SCORE.sinkComboMax)
+          : 1;
+        const base =
+          kind === "racing" ? SCORE.sinkRacingBonus : SCORE.sinkDinghyBonus;
+        const bonus = base * combo;
+        return {
+          sinkCombo: combo,
+          lastSinkAt: now,
+          sinkBonus: bonus,
+          score: state.score + bonus,
+          sinkFlash: state.sinkFlash + 1,
+        };
+      }),
+    setKickHud: (kickInRange, kickReady) =>
+      set((state) => {
+        if (
+          state.kickInRange === kickInRange &&
+          state.kickReady === kickReady
+        ) {
+          return state;
+        }
+        return { kickInRange, kickReady };
       }),
     startGame: (gameMode = "endless") =>
       set((state) => ({

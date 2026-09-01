@@ -4,7 +4,8 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import { type Group } from "three";
 
-import { LONGBOAT_RIG, OARS } from "@/components/canvas/sceneConfig";
+import { LONGBOAT_RIG, KICK, OARS } from "@/components/canvas/sceneConfig";
+import { getKickPose } from "@/lib/kickCombat";
 import { updateRowingClock } from "@/lib/rowingClock";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -57,6 +58,7 @@ export function OarRig() {
     const { status, speed } = useGameStore.getState();
     const dt = Math.min(delta, 0.05);
     phaseRef.current = updateRowingClock(dt, status, speed);
+    const kick = getKickPose();
 
     for (let seat = 0; seat < LONGBOAT_RIG.thwartZ.length; seat += 1) {
       // Backward pull (Z < 0) should dip the blade into the water.
@@ -81,6 +83,11 @@ export function OarRig() {
         pivot.rotation.y = side * zPhase * OARS.stroke;
         // Dipping into water occurs on backward pull; lift clear on return.
         pivot.rotation.z = side * (OARS.restTilt - dip * OARS.lift);
+
+        if (kick.strength > 0.01 && side === kick.side) {
+          pivot.rotation.y += side * kick.strength * KICK.oarSweep;
+          pivot.rotation.z += side * kick.strength * 0.35;
+        }
       }
     }
   });

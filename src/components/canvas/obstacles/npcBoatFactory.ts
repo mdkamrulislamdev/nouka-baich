@@ -9,9 +9,15 @@ import {
 } from "three";
 
 import {
+  addBoatCrew,
+  dinghyCrewSeats,
+  racingCrewSeats,
+} from "@/components/canvas/boat/rowerFactory";
+import {
   BOAT_MODEL,
   DINGHY_OBSTACLE,
   RACING_BOAT_OBSTACLE,
+  SCENERY_MODELS,
 } from "@/components/canvas/sceneConfig";
 import { cloneGltfScene, enableGltfShadows } from "@/lib/gltf";
 
@@ -43,11 +49,7 @@ function tintBoatMaterials(root: Group, tintHex: string): void {
         return material;
       }
       const next = material.clone();
-      if (next.map) {
-        next.color.copy(tint);
-      } else {
-        next.color.copy(tint);
-      }
+      next.color.copy(tint);
       next.metalness = Math.min(next.metalness, 0.1);
       next.roughness = Math.max(next.roughness, 0.45);
       next.needsUpdate = true;
@@ -62,9 +64,15 @@ function tintBoatMaterials(root: Group, tintHex: string): void {
   });
 }
 
-function prepareNpcBoat(source: Group, targetLength: number, tintHex: string): Group {
+function prepareNpcBoat(
+  boatSource: Group,
+  rowerSource: Group,
+  targetLength: number,
+  tintHex: string,
+  crew: "racing" | "dinghy",
+): Group {
   const wrapper = new Group();
-  const boat = cloneGltfScene(source);
+  const boat = cloneGltfScene(boatSource);
   wrapper.add(boat);
   enableGltfShadows(wrapper, 0.85);
   tintBoatMaterials(boat, tintHex);
@@ -95,18 +103,42 @@ function prepareNpcBoat(source: Group, targetLength: number, tintHex: string): G
     -fitCenter.z,
   );
 
+  const seats =
+    crew === "racing"
+      ? racingCrewSeats(targetLength, RACING_BOAT_OBSTACLE.beam)
+      : dinghyCrewSeats(targetLength, DINGHY_OBSTACLE.beam);
+  const rowerHeight =
+    crew === "racing"
+      ? SCENERY_MODELS.rower.targetHeight
+      : SCENERY_MODELS.rower.targetHeight * 0.92;
+  addBoatCrew(wrapper, rowerSource, seats, rowerHeight);
+
   wrapper.visible = false;
   return wrapper;
 }
 
-export function createDinghyObstacle(source: Group): Group {
-  return prepareNpcBoat(source, DINGHY_OBSTACLE.length, DINGHY_OBSTACLE.tint);
+export function createDinghyObstacle(
+  boatSource: Group,
+  rowerSource: Group,
+): Group {
+  return prepareNpcBoat(
+    boatSource,
+    rowerSource,
+    DINGHY_OBSTACLE.length,
+    DINGHY_OBSTACLE.tint,
+    "dinghy",
+  );
 }
 
-export function createRacingBoatObstacle(source: Group): Group {
+export function createRacingBoatObstacle(
+  boatSource: Group,
+  rowerSource: Group,
+): Group {
   return prepareNpcBoat(
-    source,
+    boatSource,
+    rowerSource,
     RACING_BOAT_OBSTACLE.length,
     RACING_BOAT_OBSTACLE.tint,
+    "racing",
   );
 }

@@ -3,10 +3,12 @@ import { AudioDirector } from "@/components/ui/AudioDirector";
 import { CloseCallToast } from "@/components/ui/CloseCallToast";
 import { GameHud } from "@/components/ui/GameHud";
 import { GameOverModal } from "@/components/ui/GameOverModal";
+import { KickButton } from "@/components/ui/KickButton";
 import { MainMenu } from "@/components/ui/MainMenu";
 import { OrientationGuard } from "@/components/ui/OrientationGuard";
 import { PersistStore } from "@/components/ui/PersistStore";
 import { SettingsModal } from "@/components/ui/SettingsModal";
+import { SinkToast } from "@/components/ui/SinkToast";
 
 export default function Home() {
   return (
@@ -16,6 +18,8 @@ export default function Home() {
       <AudioDirector />
       <GameHud />
       <CloseCallToast />
+      <SinkToast />
+      <KickButton />
       <MainMenu />
       <GameOverModal />
       <SettingsModal />

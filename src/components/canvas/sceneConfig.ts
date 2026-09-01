@@ -75,11 +75,15 @@ export const BOAT_BOUNDS = {
 } as const;
 
 export const CAMERA = {
-  fov: 40,
+  fov: 52,
   near: 0.1,
   far: 260,
-  position: [5.4, 4.6, 13.2] as [number, number, number],
-  lookAt: [0, 0.7, -1.6] as [number, number, number],
+  /** Straight third-person chase: behind the boat, looking down-river (−Z). */
+  position: [0, 3.15, 10.2] as [number, number, number],
+  lookAt: [0, 1.05, -18] as [number, number, number],
+  /** Depth-of-field stays on the hull, not the distant look target. */
+  focus: [0, 0.88, -1.2] as [number, number, number],
+  follow: 7.2,
 };
 
 export const SUN_POSITION: [number, number, number] = [28, 32, 12];
@@ -180,12 +184,19 @@ export const RACING_BOAT_OBSTACLE = {
   length: 3.8,
   beam: 1.05,
   y: 0.06,
+  /** Chance a racing boat is oncoming instead of same-direction. */
+  oncomingChance: 0.4,
+  oncomingMinSpeed: -6.2,
+  oncomingMaxSpeed: -3.8,
+  sameDirMinSpeed: 6.1,
+  sameDirMaxSpeed: 9.3,
+  sameDirSpawnZ: -32,
   /**
-   * Negative speed => opposing boat direction.
-   * `ObstacleSpawner` converts this into relative motion vs the player.
+   * Fallback band used when a caller still reads min/max as oncoming.
+   * Prefer the sameDir / oncoming pairs above.
    */
   minSpeed: -6.2,
-  maxSpeed: -3.8,
+  maxSpeed: 9.3,
   tint: "#23458f",
 } as const;
 
@@ -261,6 +272,7 @@ export const AUDIO = {
     splash: "/audio/sfx-splash.wav",
     crash: "/audio/sfx-crash.wav",
     nearMiss: "/audio/sfx-near-miss.wav",
+    kick: "/audio/sfx-splash.wav",
   },
 } as const;
 
@@ -269,6 +281,24 @@ export const SCORE = {
   nearMissBonus: 35,
   nearMissComboWindowMs: 4000,
   nearMissComboMax: 5,
+  sinkRacingBonus: 160,
+  sinkDinghyBonus: 90,
+  sinkComboWindowMs: 3500,
+  sinkComboMax: 4,
+} as const;
+
+/** Road Rash-style oar/leg kick: button or Space/K, then a ranged hit check. */
+export const KICK = {
+  /** Extra lateral reach beyond hull-to-hull gap (world units). */
+  rangeX: 1.9,
+  /** Forward/back window so the rival must be alongside. */
+  rangeZ: 3.15,
+  duration: 0.5,
+  cooldownMs: 720,
+  sinkDuration: 3.8,
+  sinkDepth: 2.6,
+  hullRoll: 0.16,
+  oarSweep: 0.92,
 } as const;
 
 export type GameMode = "endless" | "sprint";

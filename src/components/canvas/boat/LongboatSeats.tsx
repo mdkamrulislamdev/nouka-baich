@@ -2,18 +2,17 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { Box3, Group, Vector3 } from "three";
+import { type Group } from "three";
 
+import { RowerKickLeg } from "@/components/canvas/boat/KickLimb";
+import { createSeatedRower } from "@/components/canvas/boat/rowerFactory";
 import { LONGBOAT_RIG, OARS, SCENERY_MODELS } from "@/components/canvas/sceneConfig";
 import { detachObject } from "@/lib/dispose";
-import { cloneGltfScene, enableGltfShadows, useGltfModel } from "@/lib/gltf";
+import { useGltfModel } from "@/lib/gltf";
+import { getKickPose } from "@/lib/kickCombat";
 import { getRowingPhase } from "@/lib/rowingClock";
 import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
-
-const fitBox = new Box3();
-const fitSize = new Vector3();
-const fitCenter = new Vector3();
 
 type RowerProps = {
   seatIndex: number;
@@ -22,30 +21,8 @@ type RowerProps = {
   source: Group;
 };
 
-function prepareRower(source: Group): Group {
-  const wrapper = new Group();
-  const rower = cloneGltfScene(source);
-  wrapper.add(rower);
-  enableGltfShadows(wrapper, 0.62);
-
-  wrapper.updateMatrixWorld(true);
-  fitBox.setFromObject(wrapper);
-  fitBox.getSize(fitSize);
-  const scale = SCENERY_MODELS.rower.targetHeight / Math.max(fitSize.y, 0.001);
-  rower.scale.setScalar(scale);
-
-  wrapper.updateMatrixWorld(true);
-  fitBox.setFromObject(wrapper);
-  fitBox.getCenter(fitCenter);
-  rower.position.x -= fitCenter.x;
-  rower.position.y -= fitBox.min.y;
-  rower.position.z -= fitCenter.z;
-
-  return wrapper;
-}
-
 function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
-  const rower = useMemo(() => prepareRower(source), [source]);
+  const rower = useMemo(() => createSeatedRower(source), [source]);
   const rowerRef = useRef<Group>(null);
 
   useEffect(() => {
@@ -63,24 +40,30 @@ function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
     const state = useGameStore.getState();
     if (!isGameplayActive(state)) {
       root.rotation.x = 0;
+      root.rotation.z = 0;
       return;
     }
 
-    // Match `OarRig` so rower lean/torso follows the oar dip curve.
     const t = getRowingPhase() + seatIndex * OARS.stagger;
-    const zPhase = Math.sin(t); // [-1..1]
+    const zPhase = Math.sin(t);
     const backward = Math.max(0, -zPhase);
     const dip = Math.pow(backward, 0.65);
-    root.rotation.x = dip * 0.38 * side;
+    const kick = getKickPose();
+    const kickLean =
+      kick.strength > 0.01 && side === kick.side ? kick.strength : 0;
+    root.rotation.x = dip * 0.38 * side + kickLean * 0.28;
+    root.rotation.z = kickLean * 0.72 * side;
   });
 
   return (
-    <group
-      position={[side * 0.3, LONGBOAT_RIG.seatY + 0.01, seatZ]}
-      rotation={[0, side === -1 ? Math.PI / 2 : -Math.PI / 2, 0]}
-      ref={rowerRef}
-    >
-      <primitive object={rower} />
+    <group position={[side * 0.32, LONGBOAT_RIG.seatY + 0.01, seatZ]}>
+      <group
+        rotation={[0, side === -1 ? Math.PI / 2 : -Math.PI / 2, 0]}
+        ref={rowerRef}
+      >
+        <primitive object={rower} />
+      </group>
+      <RowerKickLeg side={side} />
     </group>
   );
 }

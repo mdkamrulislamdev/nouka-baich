@@ -9,7 +9,9 @@ export type ObstacleRecord = {
   x: number;
   y: number;
   z: number;
+  rotX: number;
   rotY: number;
+  rotZ: number;
   scale: number;
   halfX: number;
   halfY: number;
@@ -20,6 +22,12 @@ export type ObstacleRecord = {
   amplitude: number;
   angularSpeed: number;
   forwardSpeed: number;
+  /** 1 = same heading as the player (−Z), -1 = oncoming. */
+  facing: -1 | 1;
+  sinking: boolean;
+  sinkT: number;
+  sinkSide: -1 | 1;
+  sinkStartY: number;
 };
 
 const obstacles: ObstacleRecord[] = [];
@@ -43,7 +51,9 @@ export function createObstacleRecord(
     x: 0,
     y: 0,
     z: 0,
+    rotX: 0,
     rotY: 0,
+    rotZ: 0,
     scale: 1,
     halfX: 0.5,
     halfY: 0.5,
@@ -54,7 +64,38 @@ export function createObstacleRecord(
     amplitude: 0,
     angularSpeed: 0,
     forwardSpeed: 0,
+    facing: 1,
+    sinking: false,
+    sinkT: 0,
+    sinkSide: 1,
+    sinkStartY: 0,
   };
+}
+
+export function isSinkableKind(kind: ObstacleKind): boolean {
+  return kind === "racing" || kind === "dinghy";
+}
+
+export function resetObstacleCombat(record: ObstacleRecord): void {
+  record.rotX = 0;
+  record.rotZ = 0;
+  record.sinking = false;
+  record.sinkT = 0;
+  record.sinkSide = 1;
+  record.sinkStartY = 0;
+}
+
+export function beginObstacleSink(
+  record: ObstacleRecord,
+  side: -1 | 1,
+): void {
+  record.sinking = true;
+  record.sinkT = 0;
+  record.sinkSide = side;
+  record.sinkStartY = record.y;
+  record.angularSpeed = 0;
+  record.amplitude = 0;
+  record.forwardSpeed = 0;
 }
 
 export function registerObstacle(record: ObstacleRecord): void {
@@ -67,7 +108,9 @@ export function clearObstacles(): void {
 
 export function deactivateAllObstacles(): void {
   for (let index = 0; index < obstacles.length; index += 1) {
-    obstacles[index].active = false;
+    const obstacle = obstacles[index];
+    obstacle.active = false;
+    resetObstacleCombat(obstacle);
   }
 }
 

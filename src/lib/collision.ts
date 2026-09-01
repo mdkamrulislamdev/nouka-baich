@@ -48,7 +48,7 @@ export function queryObstacleCollision(
   const playerHalfX = BOAT_BOUNDS.width * 0.5;
 
   forEachActiveObstacle((obstacle) => {
-    if (lastHit) {
+    if (lastHit || obstacle.sinking) {
       return;
     }
 
@@ -77,6 +77,9 @@ export function queryNearMiss(laneOffset: number): ObstacleRecord | null {
   let closestGap = Number.POSITIVE_INFINITY;
 
   forEachActiveObstacle((obstacle) => {
+    if (obstacle.sinking) {
+      return;
+    }
     if (obstacle.z < -NEAR_MISS_Z || obstacle.z > BOAT_BOUNDS.length * 0.35) {
       return;
     }

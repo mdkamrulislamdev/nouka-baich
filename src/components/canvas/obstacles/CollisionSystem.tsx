@@ -12,7 +12,8 @@ import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 export function CollisionSystem() {
-  // Priority 1: run after ObstacleSpawner (priority 0) so world boxes are fresh.
+  // Priority 2: after ObstacleSpawner (0) and KickSystem (1) so a successful
+  // kick this frame starts sinking and cannot also crash the player.
   useFrame(() => {
     const state = useGameStore.getState();
     const { status, laneOffset, endGame } = state;
@@ -32,7 +33,7 @@ export function CollisionSystem() {
     triggerCrashShake(laneOffset - hit.x);
     audio.playSfx("crash");
     endGame();
-  }, 1);
+  }, 2);
 
   return null;
 }

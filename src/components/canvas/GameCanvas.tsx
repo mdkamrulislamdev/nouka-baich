@@ -5,6 +5,7 @@ import { Suspense, type ReactNode } from "react";
 import { PCFShadowMap } from "three";
 
 import { CollisionSystem } from "@/components/canvas/obstacles/CollisionSystem";
+import { KickSystem } from "@/components/canvas/obstacles/KickSystem";
 import { AssetWarmup } from "@/components/canvas/AssetWarmup";
 import { ChaseCamera } from "@/components/canvas/ChaseCamera";
 import { ProgressionSystem } from "@/components/canvas/ProgressionSystem";
@@ -77,6 +78,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
         <WeatherSystem />
         <WaterWake />
         <OarSplashes />
+        <KickSystem />
         <CollisionSystem />
         <SfxSystem />
         <ScoreEngine />

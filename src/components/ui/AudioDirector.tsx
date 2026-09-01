@@ -13,6 +13,7 @@ export function AudioDirector() {
     audio.loadSfx("splash", AUDIO.sfx.splash);
     audio.loadSfx("crash", AUDIO.sfx.crash);
     audio.loadSfx("nearMiss", AUDIO.sfx.nearMiss);
+    audio.loadSfx("kick", AUDIO.sfx.kick);
 
     const unsubscribe = useGameStore.subscribe(
       (state) => state.status,

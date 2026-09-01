@@ -1,5 +1,6 @@
 import { audio } from "@/lib/audio";
 import { resetCrashShake } from "@/lib/crashFeedback";
+import { resetKickCombat } from "@/lib/kickCombat";
 import { deactivateAllObstacles } from "@/lib/obstacleWorld";
 import { requestLandscapeLock } from "@/lib/orientation";
 import { useGameStore } from "@/store/useGameStore";
@@ -10,6 +11,7 @@ function beginRunWithMode(gameMode: GameMode): void {
   void requestLandscapeLock();
   deactivateAllObstacles();
   resetCrashShake();
+  resetKickCombat();
   useGameStore.getState().startGame(gameMode);
 }
 
@@ -33,5 +35,6 @@ export function replayRun(): void {
 export function returnToMenu(): void {
   deactivateAllObstacles();
   resetCrashShake();
+  resetKickCombat();
   useGameStore.getState().resetGame();
 }
