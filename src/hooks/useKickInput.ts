@@ -2,19 +2,30 @@
 
 import { useEffect } from "react";
 
-import { requestKick } from "@/lib/kickCombat";
+import { requestKick, type KickIntent } from "@/lib/kickCombat";
 import { useGameStore } from "@/store/useGameStore";
 
-const KICK_CODES = new Set(["Space", "KeyK"]);
+function intentFromCode(code: string): KickIntent | null {
+  if (code === "KeyQ" || code === "Comma") {
+    return -1;
+  }
+  if (code === "KeyE" || code === "Period") {
+    return 1;
+  }
+  if (code === "Space" || code === "KeyK") {
+    return 0;
+  }
+  return null;
+}
 
 /**
- * Space / K triggers a kick while playing. The on-screen Kick button
- * calls `requestKick` directly so this hook only covers the keyboard.
+ * Q / , = left kick, E / . = right kick, Space / K = nearest side.
  */
 export function useKickInput(): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!KICK_CODES.has(event.code) || event.repeat) {
+      const intent = intentFromCode(event.code);
+      if (intent === null || event.repeat) {
         return;
       }
 
@@ -24,7 +35,7 @@ export function useKickInput(): void {
       }
 
       event.preventDefault();
-      requestKick();
+      requestKick(intent);
     };
 
     window.addEventListener("keydown", onKeyDown);

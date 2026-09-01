@@ -6,6 +6,8 @@ import {
 } from "@/lib/obstacleWorld";
 
 export type KickSide = -1 | 1;
+/** `0` = auto: hit the nearest boat on either side. */
+export type KickIntent = KickSide | 0;
 
 export type KickPose = {
   active: boolean;
@@ -13,8 +15,13 @@ export type KickPose = {
   side: KickSide;
 };
 
+export type KickTargets = {
+  left: ObstacleRecord | null;
+  right: ObstacleRecord | null;
+};
+
 type KickClock = {
-  requested: boolean;
+  pending: KickIntent | null;
   active: boolean;
   elapsed: number;
   cooldownUntil: number;
@@ -22,27 +29,33 @@ type KickClock = {
 };
 
 const clock: KickClock = {
-  requested: false,
+  pending: null,
   active: false,
   elapsed: 0,
   cooldownUntil: 0,
   side: 1,
 };
 
+const targets: KickTargets = {
+  left: null,
+  right: null,
+};
+
+/** Boats this close to the player center can be hit from either side. */
+const SIDE_OVERLAP = 0.35;
+
 function nowMs(): number {
   return typeof performance === "undefined" ? Date.now() : performance.now();
 }
 
-export function requestKick(): void {
-  clock.requested = true;
+export function requestKick(side: KickIntent = 0): void {
+  clock.pending = side;
 }
 
-export function consumeKickRequest(): boolean {
-  if (!clock.requested) {
-    return false;
-  }
-  clock.requested = false;
-  return true;
+export function consumeKickRequest(): KickIntent | null {
+  const pending = clock.pending;
+  clock.pending = null;
+  return pending;
 }
 
 export function isKickOnCooldown(): boolean {
@@ -87,17 +100,27 @@ export function getKickPose(): KickPose {
 }
 
 export function resetKickCombat(): void {
-  clock.requested = false;
+  clock.pending = null;
   clock.active = false;
   clock.elapsed = 0;
   clock.cooldownUntil = 0;
   clock.side = 1;
 }
 
-export function queryKickTarget(laneOffset: number): ObstacleRecord | null {
+function scoreTarget(gapX: number, dz: number): number {
+  return Math.max(0, gapX) * 2 + dz;
+}
+
+/**
+ * One pass over active boats. Reuses a module-level result — copy fields
+ * before the next query if you need to keep them.
+ */
+export function queryKickTargets(laneOffset: number): KickTargets {
+  targets.left = null;
+  targets.right = null;
+  let leftScore = Number.POSITIVE_INFINITY;
+  let rightScore = Number.POSITIVE_INFINITY;
   const playerHalfX = BOAT_BOUNDS.width * 0.5;
-  let best: ObstacleRecord | null = null;
-  let bestScore = Number.POSITIVE_INFINITY;
 
   forEachActiveObstacle((obstacle) => {
     if (obstacle.sinking || !isSinkableKind(obstacle.kind)) {
@@ -109,28 +132,48 @@ export function queryKickTarget(laneOffset: number): ObstacleRecord | null {
       return;
     }
 
-    const gapX =
-      Math.abs(obstacle.x - laneOffset) - playerHalfX - obstacle.halfX;
+    const dx = obstacle.x - laneOffset;
+    const gapX = Math.abs(dx) - playerHalfX - obstacle.halfX;
     if (gapX > KICK.rangeX) {
       return;
     }
 
-    const score = Math.max(0, gapX) * 2 + dz;
-    if (score < bestScore) {
-      bestScore = score;
-      best = obstacle;
+    const score = scoreTarget(gapX, dz);
+    if (dx <= SIDE_OVERLAP && score < leftScore) {
+      leftScore = score;
+      targets.left = obstacle;
+    }
+    if (dx >= -SIDE_OVERLAP && score < rightScore) {
+      rightScore = score;
+      targets.right = obstacle;
     }
   });
 
-  return best;
+  return targets;
 }
 
-export function kickSideToward(
+export function pickAutoKick(
+  found: KickTargets,
   laneOffset: number,
-  target: ObstacleRecord | null,
-): KickSide {
-  if (!target) {
-    return clock.side;
+): { side: KickSide; target: ObstacleRecord | null } {
+  const { left, right } = found;
+  if (left && right) {
+    if (left === right) {
+      const side: KickSide = left.x < laneOffset ? -1 : 1;
+      return { side, target: left };
+    }
+    const leftGap = Math.abs(left.x - laneOffset);
+    const rightGap = Math.abs(right.x - laneOffset);
+    if (leftGap <= rightGap) {
+      return { side: -1, target: left };
+    }
+    return { side: 1, target: right };
   }
-  return target.x >= laneOffset ? 1 : -1;
+  if (left) {
+    return { side: -1, target: left };
+  }
+  if (right) {
+    return { side: 1, target: right };
+  }
+  return { side: clock.side, target: null };
 }

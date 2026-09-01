@@ -290,9 +290,9 @@ export const SCORE = {
 /** Road Rash-style oar/leg kick: button or Space/K, then a ranged hit check. */
 export const KICK = {
   /** Extra lateral reach beyond hull-to-hull gap (world units). */
-  rangeX: 1.9,
+  rangeX: 2.45,
   /** Forward/back window so the rival must be alongside. */
-  rangeZ: 3.15,
+  rangeZ: 3.6,
   duration: 0.5,
   cooldownMs: 720,
   sinkDuration: 3.8,

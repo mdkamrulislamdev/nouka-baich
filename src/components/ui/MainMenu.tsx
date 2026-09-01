@@ -74,7 +74,7 @@ export function MainMenu() {
             নদীর স্রোতে হাল ধরো। পাথর এড়াও, আর কাছের নৌকায় লাথি মেরে ডুবিয়ে বোনাস নাও।
           </p>
           <p className="mt-2 max-w-xs text-[0.65rem] tracking-[0.14em] text-[#e4c36a]/75 uppercase">
-            Kick nearby boats in range to sink them
+            Kick nearby boats: Q left · E right · Space nearest
           </p>
 
           <p

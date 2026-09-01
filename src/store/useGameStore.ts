@@ -32,7 +32,8 @@ export type GameState = {
   sinkBonus: number;
   sinkCombo: number;
   lastSinkAt: number;
-  kickInRange: boolean;
+  kickInRangeLeft: boolean;
+  kickInRangeRight: boolean;
   kickReady: boolean;
   /** True once GLTF + WebGL scene have finished first warm load on the menu. */
   assetsReady: boolean;
@@ -60,7 +61,11 @@ export type GameActions = {
   setAssetsReady: (assetsReady: boolean) => void;
   triggerCloseCall: () => void;
   triggerSink: (kind: "racing" | "dinghy") => void;
-  setKickHud: (kickInRange: boolean, kickReady: boolean) => void;
+  setKickHud: (
+    kickInRangeLeft: boolean,
+    kickInRangeRight: boolean,
+    kickReady: boolean,
+  ) => void;
   startGame: (gameMode?: GameMode) => void;
   endGame: () => void;
   finishRace: () => void;
@@ -94,7 +99,8 @@ const INITIAL_STATE: GameState = {
   sinkBonus: 0,
   sinkCombo: 0,
   lastSinkAt: 0,
-  kickInRange: false,
+  kickInRangeLeft: false,
+  kickInRangeRight: false,
   kickReady: true,
   assetsReady: false,
   assetProgress: 0,
@@ -172,15 +178,16 @@ export const useGameStore = create<GameStore>()(
           sinkFlash: state.sinkFlash + 1,
         };
       }),
-    setKickHud: (kickInRange, kickReady) =>
+    setKickHud: (kickInRangeLeft, kickInRangeRight, kickReady) =>
       set((state) => {
         if (
-          state.kickInRange === kickInRange &&
+          state.kickInRangeLeft === kickInRangeLeft &&
+          state.kickInRangeRight === kickInRangeRight &&
           state.kickReady === kickReady
         ) {
           return state;
         }
-        return { kickInRange, kickReady };
+        return { kickInRangeLeft, kickInRangeRight, kickReady };
       }),
     startGame: (gameMode = "endless") =>
       set((state) => ({

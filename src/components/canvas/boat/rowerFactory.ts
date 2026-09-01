@@ -19,18 +19,18 @@ const thighGeo = new CylinderGeometry(0.05, 0.064, 0.34, 8);
 const shinGeo = new CylinderGeometry(0.042, 0.052, 0.32, 8);
 const footGeo = new BoxGeometry(0.1, 0.055, 0.16);
 
-/** Match the seated NPC: black trousers and black dress shoes. */
-const TROUSER = "#141414";
-const SHOE = "#0b0b0b";
-
-function makeMat(hex: string, roughness: number): MeshStandardMaterial {
-  return new MeshStandardMaterial({
-    color: hex,
-    roughness,
-    metalness: 0.05,
-    envMapIntensity: 0.4,
-  });
-}
+const trouserMat = new MeshStandardMaterial({
+  color: "#141414",
+  roughness: 0.82,
+  metalness: 0.05,
+  envMapIntensity: 0.4,
+});
+const shoeMat = new MeshStandardMaterial({
+  color: "#0b0b0b",
+  roughness: 0.55,
+  metalness: 0.05,
+  envMapIntensity: 0.4,
+});
 
 /**
  * Kicking legs in the same black as the seated NPC trousers.
@@ -39,20 +39,20 @@ function makeMat(hex: string, roughness: number): MeshStandardMaterial {
  */
 export function createColoredKickLeg(side: -1 | 1): Group {
   const root = new Group();
-  root.position.set(side * 0.1, 0.3, 0.04);
+  root.position.set(side * 0.22, 0.3, 0.04);
 
-  const thigh = new Mesh(thighGeo, makeMat(TROUSER, 0.82));
+  const thigh = new Mesh(thighGeo, trouserMat);
   thigh.position.set(side * 0.02, -0.15, 0);
   thigh.castShadow = true;
   root.add(thigh);
 
-  const shin = new Mesh(shinGeo, makeMat(TROUSER, 0.82));
+  const shin = new Mesh(shinGeo, trouserMat);
   shin.position.set(side * 0.05, -0.38, 0.03);
   shin.rotation.x = 0.22;
   shin.castShadow = true;
   root.add(shin);
 
-  const foot = new Mesh(footGeo, makeMat(SHOE, 0.55));
+  const foot = new Mesh(footGeo, shoeMat);
   foot.position.set(side * 0.06, -0.54, 0.11);
   foot.rotation.x = 0.82;
   foot.castShadow = true;
@@ -106,19 +106,17 @@ export function addBoatCrew(
 
     const rower = createSeatedRower(rowerSource, targetHeight);
     rower.rotation.y = seat.side === -1 ? Math.PI / 2 : -Math.PI / 2;
+    rower.traverse((child) => {
+      child.frustumCulled = true;
+    });
     holder.add(rower);
-
-    const legs = createColoredKickLeg(seat.side);
-    legs.rotation.z = seat.side * -0.18;
-    holder.add(legs);
-
     parent.add(holder);
   }
 }
 
-/** Three thwarts, two rowers each — matches the player longboat crew. */
+/** Two thwarts, two rowers each — enough to read as a crew without 6 GLTFs. */
 export function racingCrewSeats(length: number, beam: number): CrewSeat[] {
-  const zs = [length * 0.22, 0.04, -length * 0.2];
+  const zs = [length * 0.18, -length * 0.16];
   const seats: CrewSeat[] = [];
   for (let index = 0; index < zs.length; index += 1) {
     const z = zs[index];

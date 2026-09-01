@@ -8,10 +8,11 @@ import {
   beginKick,
   consumeKickRequest,
   isKickOnCooldown,
-  kickSideToward,
-  queryKickTarget,
+  pickAutoKick,
+  queryKickTargets,
   resetKickCombat,
   tickKick,
+  type KickSide,
 } from "@/lib/kickCombat";
 import { beginObstacleSink } from "@/lib/obstacleWorld";
 import { useGameStore } from "@/store/useGameStore";
@@ -27,23 +28,35 @@ export function KickSystem() {
       consumeKickRequest();
       if (state.status === "MENU" || state.status === "GAMEOVER") {
         resetKickCombat();
-        state.setKickHud(false, true);
+        state.setKickHud(false, false, true);
       }
       return;
     }
 
-    const target = queryKickTarget(state.laneOffset);
+    const found = queryKickTargets(state.laneOffset);
     const ready = !isKickOnCooldown();
-    state.setKickHud(target !== null, ready);
+    state.setKickHud(found.left !== null, found.right !== null, ready);
 
-    if (!consumeKickRequest()) {
-      return;
-    }
-    if (!ready) {
+    const intent = consumeKickRequest();
+    if (intent === null || !ready) {
       return;
     }
 
-    const side = kickSideToward(state.laneOffset, target);
+    let side: KickSide;
+    let target = null as typeof found.left;
+
+    if (intent === -1) {
+      side = -1;
+      target = found.left;
+    } else if (intent === 1) {
+      side = 1;
+      target = found.right;
+    } else {
+      const auto = pickAutoKick(found, state.laneOffset);
+      side = auto.side;
+      target = auto.target;
+    }
+
     beginKick(side);
     audio.playSfx("kick", { rate: 0.88 + Math.random() * 0.18, volume: 0.55 });
 
