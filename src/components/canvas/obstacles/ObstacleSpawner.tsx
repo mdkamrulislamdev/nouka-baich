@@ -14,6 +14,7 @@ import {
   SCENERY_MODELS,
   DIFFICULTY_PRESETS,
   KICK,
+  BUMP,
   type Difficulty,
   getLaneLimit,
   getSpawnInterval,
@@ -494,9 +495,18 @@ export function ObstacleSpawner() {
         obstacle.sinkT += dt / KICK.sinkDuration;
         const t = Math.min(1, obstacle.sinkT);
         const ease = t * 0.25 + t * t * 0.75;
+        const remain = 1 - t;
+        const travelLimit = Math.max(0.4, getLaneLimit() - obstacle.halfX);
         obstacle.y = obstacle.sinkStartY - ease * KICK.sinkDepth;
-        obstacle.rotZ = obstacle.sinkSide * t * 0.38;
-        obstacle.rotX = t * 0.14;
+        obstacle.x = clamp(
+          obstacle.x + obstacle.sinkSide * KICK.knockSpeed * dt * remain,
+          -travelLimit,
+          travelLimit,
+        );
+        obstacle.originX = obstacle.x;
+        obstacle.z += KICK.knockBack * dt * remain;
+        obstacle.rotZ = obstacle.sinkSide * t * 0.55;
+        obstacle.rotX = t * 0.22;
         if (t >= 1) {
           const item = findItem(items, obstacle);
           if (item) {
@@ -508,14 +518,33 @@ export function ObstacleSpawner() {
 
       const relativeSpeed = Math.max(2.2, speed - obstacle.forwardSpeed);
       obstacle.z += relativeSpeed * dt;
-      if (
+
+      const laneLimit = getLaneLimit();
+      const travelLimit = Math.max(0.4, laneLimit - obstacle.halfX);
+
+      if (obstacle.bumpTimer > 0) {
+        obstacle.bumpTimer = Math.max(0, obstacle.bumpTimer - dt);
+        obstacle.x = clamp(
+          obstacle.x + obstacle.knockVx * dt,
+          -travelLimit,
+          travelLimit,
+        );
+        obstacle.originX = obstacle.x;
+        obstacle.z += obstacle.knockVz * dt;
+        const damp = Math.exp(-BUMP.knockDecay * dt);
+        obstacle.knockVx *= damp;
+        obstacle.knockVz *= damp;
+        obstacle.rotZ =
+          obstacle.sinkSide *
+          Math.sin(obstacle.bumpTimer * 16) *
+          0.2 *
+          Math.min(1, obstacle.bumpTimer * 2);
+      } else if (
         obstacle.kind === "log" ||
         obstacle.kind === "racing" ||
         obstacle.kind === "dinghy"
       ) {
         obstacle.phase += obstacle.angularSpeed * dt;
-        const laneLimit = getLaneLimit();
-        const travelLimit = Math.max(0.4, laneLimit - obstacle.halfX);
         obstacle.x = clamp(
           obstacle.originX + Math.sin(obstacle.phase) * obstacle.amplitude,
           -travelLimit,

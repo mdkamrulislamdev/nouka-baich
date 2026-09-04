@@ -2,7 +2,7 @@ import { Howl, Howler } from "howler";
 
 import { AUDIO } from "@/components/canvas/sceneConfig";
 
-export type SfxId = "row" | "splash" | "crash" | "nearMiss" | "kick";
+export type SfxId = "row" | "splash" | "crash" | "nearMiss" | "kick" | "bump";
 
 const SFX_COOLDOWN_MS: Record<SfxId, number> = {
   row: 95,
@@ -10,6 +10,7 @@ const SFX_COOLDOWN_MS: Record<SfxId, number> = {
   crash: 0,
   nearMiss: 200,
   kick: 180,
+  bump: 140,
 };
 
 if (typeof window !== "undefined") {
@@ -18,6 +19,8 @@ if (typeof window !== "undefined") {
 
 class SoundManager {
   private bgm: Howl | null = null;
+  private wind: Howl | null = null;
+  private water: Howl | null = null;
   private readonly sfx = new Map<SfxId, Howl>();
   private readonly lastPlayed = new Map<SfxId, number>();
   private musicMuted = false;
@@ -53,6 +56,12 @@ class SoundManager {
 
   setSfxMuted(muted: boolean): void {
     this.sfxMuted = muted;
+    this.wind?.mute(muted);
+    this.water?.mute(muted);
+    if (muted) {
+      this.wind?.pause();
+      this.water?.pause();
+    }
   }
 
   loadBgm(src: string): void {
@@ -67,6 +76,30 @@ class SoundManager {
     this.bgm.mute(this.musicMuted);
   }
 
+  loadWind(src: string): void {
+    this.wind?.unload();
+    this.wind = new Howl({
+      src: [src],
+      loop: true,
+      volume: 0,
+      html5: false,
+      preload: true,
+    });
+    this.wind.mute(this.sfxMuted);
+  }
+
+  loadWater(src: string): void {
+    this.water?.unload();
+    this.water = new Howl({
+      src: [src],
+      loop: true,
+      volume: 0,
+      html5: false,
+      preload: true,
+    });
+    this.water.mute(this.sfxMuted);
+  }
+
   playBgm(): void {
     if (!this.bgm || this.musicMuted) {
       return;
@@ -78,6 +111,42 @@ class SoundManager {
 
   stopBgm(): void {
     this.bgm?.stop();
+  }
+
+  playWind(): void {
+    if (!this.wind || this.sfxMuted) {
+      return;
+    }
+    if (!this.wind.playing()) {
+      this.wind.play();
+    }
+  }
+
+  stopWind(): void {
+    this.wind?.stop();
+  }
+
+  playWater(): void {
+    if (!this.water || this.sfxMuted) {
+      return;
+    }
+    if (!this.water.playing()) {
+      this.water.play();
+    }
+  }
+
+  stopWater(): void {
+    this.water?.stop();
+  }
+
+  setAmbientMix(windVolume: number, windRate: number, waterVolume: number): void {
+    if (this.wind) {
+      this.wind.volume(this.sfxMuted ? 0 : windVolume);
+      this.wind.rate(windRate);
+    }
+    if (this.water) {
+      this.water.volume(this.sfxMuted ? 0 : waterVolume);
+    }
   }
 
   loadSfx(id: SfxId, src: string): void {
@@ -97,6 +166,10 @@ class SoundManager {
   unload(): void {
     this.bgm?.unload();
     this.bgm = null;
+    this.wind?.unload();
+    this.wind = null;
+    this.water?.unload();
+    this.water = null;
     this.sfx.forEach((sound) => {
       sound.unload();
     });

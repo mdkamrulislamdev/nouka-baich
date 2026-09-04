@@ -71,10 +71,10 @@ export function MainMenu() {
           </p>
           <div className="mt-5 h-px w-24 bg-linear-to-r from-transparent via-[#e4c36a] to-transparent" />
           <p className="font-bengali mt-5 max-w-xs text-sm leading-relaxed text-[#f0d9b0]/85">
-            নদীর স্রোতে হাল ধরো। পাথর এড়াও, আর কাছের নৌকায় লাথি মেরে ডুবিয়ে বোনাস নাও।
+            নদীর স্রোতে হাল ধরো। অন্য নৌকায় ধাক্কা লাগলে তুমি ডুবে যাবে। বৈঠার হাতল দিয়ে পাশের নৌকা সরিয়ে পয়েন্ট নাও।
           </p>
           <p className="mt-2 max-w-xs text-[0.65rem] tracking-[0.14em] text-[#e4c36a]/75 uppercase">
-            Kick nearby boats: Q left · E right · Space nearest
+            Colliding sinks you · rowing oars shove nearby boats and score
           </p>
 
           <p

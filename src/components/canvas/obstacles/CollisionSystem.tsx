@@ -2,18 +2,14 @@
 
 import { useFrame } from "@react-three/fiber";
 
-import {
-  clearLastCollision,
-  queryObstacleCollision,
-} from "@/lib/collision";
+import { clearLastCollision, queryObstacleCollision } from "@/lib/collision";
 import { resetCrashShake, triggerCrashShake } from "@/lib/crashFeedback";
 import { audio } from "@/lib/audio";
 import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
 
 export function CollisionSystem() {
-  // Priority 2: after ObstacleSpawner (0) and KickSystem (1) so a successful
-  // kick this frame starts sinking and cannot also crash the player.
+  // Priority 2: after ObstacleSpawner (0) and KickSystem (1).
   useFrame(() => {
     const state = useGameStore.getState();
     const { status, laneOffset, endGame } = state;

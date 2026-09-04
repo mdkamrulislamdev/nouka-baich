@@ -32,6 +32,7 @@ export type GameState = {
   sinkBonus: number;
   sinkCombo: number;
   lastSinkAt: number;
+  bumpFlash: number;
   kickInRangeLeft: boolean;
   kickInRangeRight: boolean;
   kickReady: boolean;
@@ -61,6 +62,7 @@ export type GameActions = {
   setAssetsReady: (assetsReady: boolean) => void;
   triggerCloseCall: () => void;
   triggerSink: (kind: "racing" | "dinghy") => void;
+  triggerBump: () => void;
   setKickHud: (
     kickInRangeLeft: boolean,
     kickInRangeRight: boolean,
@@ -99,6 +101,7 @@ const INITIAL_STATE: GameState = {
   sinkBonus: 0,
   sinkCombo: 0,
   lastSinkAt: 0,
+  bumpFlash: 0,
   kickInRangeLeft: false,
   kickInRangeRight: false,
   kickReady: true,
@@ -178,6 +181,11 @@ export const useGameStore = create<GameStore>()(
           sinkFlash: state.sinkFlash + 1,
         };
       }),
+    triggerBump: () =>
+      set((state) => ({
+        bumpFlash: state.bumpFlash + 1,
+        score: state.score + SCORE.bumpBonus,
+      })),
     setKickHud: (kickInRangeLeft, kickInRangeRight, kickReady) =>
       set((state) => {
         if (

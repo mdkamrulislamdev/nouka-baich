@@ -19,10 +19,10 @@ export function SinkToast() {
         className="close-call-toast rounded-sm border border-[#7ad0ff] bg-[#0d3a4a]/90 px-5 py-2.5 text-center shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-[2px]"
       >
         <p className="font-bengali text-lg font-bold text-[#f6e6c2]">
-          ডুবে গেল!
+          সরে গেল!
         </p>
         <p className="text-[0.65rem] tracking-[0.28em] text-[#7ad0ff] uppercase">
-          Boat sunk! +{sinkBonus.toLocaleString()}
+          Boat shoved! +{sinkBonus.toLocaleString()}
           {sinkCombo > 1 ? ` · x${sinkCombo} combo` : ""}
         </p>
       </div>

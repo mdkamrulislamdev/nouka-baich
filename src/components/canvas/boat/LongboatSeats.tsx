@@ -4,12 +4,11 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { type Group } from "three";
 
-import { RowerKickLeg } from "@/components/canvas/boat/KickLimb";
 import { createSeatedRower } from "@/components/canvas/boat/rowerFactory";
 import { LONGBOAT_RIG, OARS, SCENERY_MODELS } from "@/components/canvas/sceneConfig";
 import { detachObject } from "@/lib/dispose";
 import { useGltfModel } from "@/lib/gltf";
-import { getKickPose } from "@/lib/kickCombat";
+import { getOarStrike } from "@/lib/kickCombat";
 import { getRowingPhase } from "@/lib/rowingClock";
 import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
@@ -48,11 +47,9 @@ function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
     const zPhase = Math.sin(t);
     const backward = Math.max(0, -zPhase);
     const dip = Math.pow(backward, 0.65);
-    const kick = getKickPose();
-    const kickLean =
-      kick.strength > 0.01 && side === kick.side ? kick.strength : 0;
-    root.rotation.x = dip * 0.38 * side + kickLean * 0.28;
-    root.rotation.z = kickLean * 0.72 * side;
+    const oarHit = getOarStrike(side);
+    root.rotation.x = dip * 0.38 * side + oarHit * 0.22 * side;
+    root.rotation.z = oarHit * 0.55 * side;
   });
 
   return (
@@ -63,7 +60,6 @@ function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
       >
         <primitive object={rower} />
       </group>
-      <RowerKickLeg side={side} />
     </group>
   );
 }

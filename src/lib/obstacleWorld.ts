@@ -1,5 +1,8 @@
 import { Box3 } from "three";
 
+import { getLaneLimit } from "@/components/canvas/sceneConfig";
+import { clamp } from "@/lib/clamp";
+
 export type ObstacleKind = "marker" | "rock" | "log" | "dinghy" | "racing";
 
 export type ObstacleRecord = {
@@ -28,6 +31,9 @@ export type ObstacleRecord = {
   sinkT: number;
   sinkSide: -1 | 1;
   sinkStartY: number;
+  bumpTimer: number;
+  knockVx: number;
+  knockVz: number;
 };
 
 const obstacles: ObstacleRecord[] = [];
@@ -69,6 +75,9 @@ export function createObstacleRecord(
     sinkT: 0,
     sinkSide: 1,
     sinkStartY: 0,
+    bumpTimer: 0,
+    knockVx: 0,
+    knockVz: 0,
   };
 }
 
@@ -83,6 +92,9 @@ export function resetObstacleCombat(record: ObstacleRecord): void {
   record.sinkT = 0;
   record.sinkSide = 1;
   record.sinkStartY = 0;
+  record.bumpTimer = 0;
+  record.knockVx = 0;
+  record.knockVz = 0;
 }
 
 export function beginObstacleSink(
@@ -96,6 +108,44 @@ export function beginObstacleSink(
   record.angularSpeed = 0;
   record.amplitude = 0;
   record.forwardSpeed = 0;
+  record.bumpTimer = 0;
+  record.knockVx = 0;
+  record.knockVz = 0;
+}
+
+export function beginObstacleBump(
+  record: ObstacleRecord,
+  side: -1 | 1,
+  impulseX: number,
+  impulseZ: number,
+  speedMul: number,
+  duration: number,
+): void {
+  record.sinking = false;
+  record.sinkT = 0;
+  record.bumpTimer = duration;
+  record.sinkSide = side;
+  record.knockVx = side * impulseX;
+  record.knockVz = impulseZ;
+  record.forwardSpeed *= speedMul;
+  record.amplitude *= 0.18;
+  record.rotZ = -side * 0.24;
+  record.rotX = 0.06;
+}
+
+export function shoveNpcBoat(
+  record: ObstacleRecord,
+  side: -1 | 1,
+  popX: number,
+  impulseX: number,
+  impulseZ: number,
+  speedMul: number,
+  duration: number,
+): void {
+  beginObstacleBump(record, side, impulseX, impulseZ, speedMul, duration);
+  const travelLimit = Math.max(0.4, getLaneLimit() - record.halfX);
+  record.x = clamp(record.x + side * popX, -travelLimit, travelLimit);
+  record.originX = record.x;
 }
 
 export function registerObstacle(record: ObstacleRecord): void {

@@ -70,7 +70,7 @@ export function KickButton() {
         armed={kickInRangeLeft}
         ready={kickReady}
         bangla="বাম"
-        label="Left Kick"
+        label="Left Oar"
         hint="Q"
       />
       <KickPad
@@ -78,7 +78,7 @@ export function KickButton() {
         armed={kickInRangeRight}
         ready={kickReady}
         bangla="ডান"
-        label="Right Kick"
+        label="Right Oar"
         hint="E"
       />
     </div>

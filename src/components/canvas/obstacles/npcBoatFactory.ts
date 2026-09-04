@@ -1,6 +1,7 @@
 import {
   Box3,
   Color,
+  FrontSide,
   Group,
   Mesh,
   MeshStandardMaterial,
@@ -26,15 +27,15 @@ const fitSize = new Vector3();
 const fitCenter = new Vector3();
 
 export const DINGHY_EXTENTS = {
-  halfX: DINGHY_OBSTACLE.beam * 0.52,
+  halfX: DINGHY_OBSTACLE.beam * 0.62,
   halfY: 0.55,
-  halfZ: DINGHY_OBSTACLE.length * 0.52,
+  halfZ: DINGHY_OBSTACLE.length * 0.5,
 } as const;
 
 export const RACING_BOAT_EXTENTS = {
-  halfX: RACING_BOAT_OBSTACLE.beam * 0.52,
+  halfX: RACING_BOAT_OBSTACLE.beam * 0.62,
   halfY: 0.55,
-  halfZ: RACING_BOAT_OBSTACLE.length * 0.52,
+  halfZ: RACING_BOAT_OBSTACLE.length * 0.5,
 } as const;
 
 function tintBoatMaterials(root: Group, tintHex: string): void {
@@ -50,6 +51,7 @@ function tintBoatMaterials(root: Group, tintHex: string): void {
       }
       const next = material.clone();
       next.color.copy(tint);
+      next.side = FrontSide;
       next.metalness = Math.min(next.metalness, 0.1);
       next.roughness = Math.max(next.roughness, 0.45);
       next.needsUpdate = true;
@@ -113,6 +115,9 @@ function prepareNpcBoat(
       : SCENERY_MODELS.rower.targetHeight * 0.92;
   addBoatCrew(wrapper, rowerSource, seats, rowerHeight);
 
+  wrapper.traverse((child) => {
+    child.frustumCulled = true;
+  });
   wrapper.visible = false;
   return wrapper;
 }

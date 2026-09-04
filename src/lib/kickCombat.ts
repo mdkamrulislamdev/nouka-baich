@@ -1,4 +1,4 @@
-import { BOAT_BOUNDS, KICK } from "@/components/canvas/sceneConfig";
+import { BOAT_BOUNDS, KICK, LONGBOAT_RIG, OARS, OAR_HIT } from "@/components/canvas/sceneConfig";
 import {
   forEachActiveObstacle,
   isSinkableKind,
@@ -35,6 +35,8 @@ const clock: KickClock = {
   cooldownUntil: 0,
   side: 1,
 };
+
+const oarStrike = { left: 0, right: 0 };
 
 const targets: KickTargets = {
   left: null,
@@ -81,6 +83,30 @@ export function tickKick(dt: number): void {
   }
 }
 
+export function beginOarStrike(side: KickSide): void {
+  if (side < 0) {
+    oarStrike.left = 1;
+  } else {
+    oarStrike.right = 1;
+  }
+}
+
+export function tickOarStrike(dt: number): void {
+  const decay = Math.exp(-8.5 * dt);
+  oarStrike.left *= decay;
+  oarStrike.right *= decay;
+  if (oarStrike.left < 0.03) {
+    oarStrike.left = 0;
+  }
+  if (oarStrike.right < 0.03) {
+    oarStrike.right = 0;
+  }
+}
+
+export function getOarStrike(side: KickSide): number {
+  return side < 0 ? oarStrike.left : oarStrike.right;
+}
+
 export function getKickPose(): KickPose {
   if (!clock.active) {
     return { active: false, strength: 0, side: clock.side };
@@ -105,6 +131,8 @@ export function resetKickCombat(): void {
   clock.elapsed = 0;
   clock.cooldownUntil = 0;
   clock.side = 1;
+  oarStrike.left = 0;
+  oarStrike.right = 0;
 }
 
 function scoreTarget(gapX: number, dz: number): number {
@@ -123,7 +151,7 @@ export function queryKickTargets(laneOffset: number): KickTargets {
   const playerHalfX = BOAT_BOUNDS.width * 0.5;
 
   forEachActiveObstacle((obstacle) => {
-    if (obstacle.sinking || !isSinkableKind(obstacle.kind)) {
+    if (obstacle.sinking || obstacle.bumpTimer > 0 || !isSinkableKind(obstacle.kind)) {
       return;
     }
 
@@ -134,7 +162,7 @@ export function queryKickTargets(laneOffset: number): KickTargets {
 
     const dx = obstacle.x - laneOffset;
     const gapX = Math.abs(dx) - playerHalfX - obstacle.halfX;
-    if (gapX > KICK.rangeX) {
+    if (gapX < KICK.minGap || gapX > KICK.rangeX) {
       return;
     }
 
@@ -176,4 +204,73 @@ export function pickAutoKick(
     return { side: 1, target: right };
   }
   return { side: clock.side, target: null };
+}
+
+type OarHit = { side: KickSide; target: ObstacleRecord };
+
+function pickOarTarget(
+  laneOffset: number,
+  side: KickSide,
+  used: Set<number>,
+): ObstacleRecord | null {
+  const playerHalfX = BOAT_BOUNDS.width * 0.5;
+  let best: ObstacleRecord | null = null;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  forEachActiveObstacle((obstacle) => {
+    if (
+      obstacle.sinking ||
+      obstacle.bumpTimer > 0 ||
+      !isSinkableKind(obstacle.kind) ||
+      used.has(obstacle.id)
+    ) {
+      return;
+    }
+
+    const dx = obstacle.x - laneOffset;
+    if (dx * side <= 0) {
+      return;
+    }
+    if (Math.abs(obstacle.z) > OAR_HIT.rangeZ) {
+      return;
+    }
+
+    const gapX = Math.abs(dx) - playerHalfX - obstacle.halfX;
+    if (gapX < KICK.minGap || gapX > OAR_HIT.reachX) {
+      return;
+    }
+
+    const score = Math.max(0, gapX) + Math.abs(obstacle.z) * 0.35;
+    if (score < bestScore) {
+      bestScore = score;
+      best = obstacle;
+    }
+  });
+
+  return best;
+}
+
+export function queryOarHits(laneOffset: number, phase: number): OarHit[] {
+  let maxDip = 0;
+  for (let seat = 0; seat < LONGBOAT_RIG.thwartZ.length; seat += 1) {
+    const zPhase = Math.sin(phase + seat * OARS.stagger);
+    const backward = Math.max(0, -zPhase);
+    maxDip = Math.max(maxDip, Math.pow(backward, 0.65));
+  }
+  if (maxDip < OAR_HIT.dipMin) {
+    return [];
+  }
+
+  const hits: OarHit[] = [];
+  const used = new Set<number>();
+
+  for (const side of [-1, 1] as const) {
+    const target = pickOarTarget(laneOffset, side, used);
+    if (target) {
+      used.add(target.id);
+      hits.push({ side, target });
+    }
+  }
+
+  return hits;
 }

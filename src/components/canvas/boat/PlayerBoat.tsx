@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { Box3, Group, Mesh, Vector3, type Material } from "three";
+import { Box3, FrontSide, Group, Mesh, Vector3, type Material } from "three";
 
 import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
 import { LongboatSeats } from "@/components/canvas/boat/LongboatSeats";
@@ -67,6 +67,21 @@ function prepareBoatScene(source: Group): Group {
     -fitBox.min.y - submerged + BOAT_MODEL.waterlineLift,
     -fitCenter.z,
   );
+
+  boat.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return;
+    }
+    const apply = (material: Material): void => {
+      material.side = FrontSide;
+      material.needsUpdate = true;
+    };
+    if (Array.isArray(child.material)) {
+      child.material.forEach(apply);
+    } else if (child.material) {
+      apply(child.material);
+    }
+  });
 
   return wrapper;
 }

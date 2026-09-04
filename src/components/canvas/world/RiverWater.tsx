@@ -122,7 +122,11 @@ function createRiverWater(sourceNormals: Texture): Water {
 
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.set(0, 0, WATER_Z);
+  mesh.renderOrder = -1;
   mesh.material.precision = "highp";
+  mesh.material.polygonOffset = true;
+  mesh.material.polygonOffsetFactor = 4;
+  mesh.material.polygonOffsetUnits = 4;
   mesh.material.uniforms.size.value = Math.max(WATER.size, MIN_WATER_SIZE);
 
   return mesh;

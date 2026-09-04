@@ -61,6 +61,13 @@ export function BoatController({ children }: BoatControllerProps) {
       const settle = clampGameDelta(delta);
       group.rotation.z = dampToward(group.rotation.z, crash.roll, 8, settle);
       group.rotation.y = dampToward(group.rotation.y, crash.yaw, 8, settle);
+      group.rotation.x = dampToward(group.rotation.x, 0.32, 4.2, settle);
+      group.position.y = dampToward(
+        group.position.y,
+        BOAT_SPAWN[1] - 1.55,
+        1.7,
+        settle,
+      );
       return;
     }
 

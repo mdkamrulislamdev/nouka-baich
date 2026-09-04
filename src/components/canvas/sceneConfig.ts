@@ -44,15 +44,17 @@ export const LONGBOAT_RIG = {
 } as const;
 
 export const OARS = {
-  length: 1.15,
-  shaftRadius: 0.02,
-  bladeWidth: 0.11,
-  bladeLength: 0.28,
-  pivotX: 0.52,
+  length: 1.05,
+  shaftRadius: 0.016,
+  bladeWidth: 0.08,
+  bladeLength: 0.2,
+  pivotX: 0.5,
   pivotY: 0.48,
-  stroke: 0.5,
-  lift: 0.18,
-  restTilt: 0.28,
+  handleLength: 0.2,
+  handleRadius: 0.018,
+  stroke: 0.4,
+  lift: 0.15,
+  restTilt: 0.24,
   baseRate: 1.05,
   speedRate: 0.11,
   stagger: 0.4,
@@ -68,9 +70,9 @@ export const WAKE = {
 } as const;
 
 export const BOAT_BOUNDS = {
-  width: BOAT_MODEL.halfWidth * 1.35,
+  width: BOAT_MODEL.halfWidth * 2.08,
   height: 0.95,
-  length: BOAT_MODEL.targetLength * 0.8,
+  length: BOAT_MODEL.targetLength * 0.94,
   centerY: 0.4,
 } as const;
 
@@ -264,15 +266,20 @@ export const STEER = {
 } as const;
 
 export const AUDIO = {
-  musicVolume: 0.4,
+  musicVolume: 0.34,
   sfxVolume: 0.72,
+  windVolume: 0.22,
+  waterVolume: 0.14,
   bgmPath: "/audio/folk-loop.wav",
+  windPath: "/audio/sfx-wind.wav",
+  waterPath: "/audio/sfx-water.wav",
   sfx: {
     row: "/audio/sfx-row.wav",
     splash: "/audio/sfx-splash.wav",
     crash: "/audio/sfx-crash.wav",
     nearMiss: "/audio/sfx-near-miss.wav",
-    kick: "/audio/sfx-splash.wav",
+    kick: "/audio/sfx-kick.wav",
+    bump: "/audio/sfx-bump.wav",
   },
 } as const;
 
@@ -285,20 +292,44 @@ export const SCORE = {
   sinkDinghyBonus: 90,
   sinkComboWindowMs: 3500,
   sinkComboMax: 4,
+  bumpBonus: 48,
 } as const;
 
-/** Road Rash-style oar/leg kick: button or Space/K, then a ranged hit check. */
+/** Road Rash-style oar smash: button or Space/K, then a short-range hit check. */
 export const KICK = {
-  /** Extra lateral reach beyond hull-to-hull gap (world units). */
-  rangeX: 2.45,
-  /** Forward/back window so the rival must be alongside. */
-  rangeZ: 3.6,
+  rangeX: 0.7,
+  minGap: 0.1,
+  rangeZ: 1.55,
   duration: 0.5,
   cooldownMs: 720,
   sinkDuration: 3.8,
   sinkDepth: 2.6,
-  hullRoll: 0.16,
-  oarSweep: 0.92,
+  knockPop: 1.2,
+  knockSpeed: 5.4,
+  knockBack: 1.8,
+  hullRoll: 0.12,
+  oarSweep: 0.55,
+} as const;
+
+/** Oar-handle hits during the power stroke. */
+export const OAR_HIT = {
+  dipMin: 0.22,
+  reachX: 0.7,
+  rangeZ: 1.5,
+  popX: 1.05,
+  impulseX: 4.8,
+  impulseZ: 2.1,
+  speedMul: 0.48,
+} as const;
+
+/** Knockback when an oar connects. Hull contact is fatal. */
+export const BUMP = {
+  duration: 0.95,
+  popX: 1.55,
+  impulseX: 7.4,
+  impulseZ: 3.2,
+  speedMul: 0.3,
+  knockDecay: 3.6,
 } as const;
 
 export type GameMode = "endless" | "sprint";
@@ -338,11 +369,11 @@ export const DIFFICULTY_PRESETS: Record<
 };
 
 export const SPRINT = {
-  targetDistance: 1200,
+  targetDistance: 480,
 } as const;
 
 export const PROGRESSION = {
-  metersPerLevel: 500,
+  metersPerLevel: 220,
   baseSpeed: 11,
   speedPerLevel: 1.8,
   minInterval: 12,

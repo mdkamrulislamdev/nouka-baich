@@ -16,6 +16,7 @@ import {
   BOAT_MODEL,
   PALM_MODEL,
   ROCK_MODEL,
+  SCENERY,
   SCENERY_MODELS,
 } from "@/components/canvas/sceneConfig";
 
@@ -23,10 +24,10 @@ export const GLTF_ASSET_PATHS = [
   BOAT_MODEL.path,
   PALM_MODEL.path,
   ROCK_MODEL.path,
-  SCENERY_MODELS.tree.path,
   SCENERY_MODELS.hut.path,
-  SCENERY_MODELS.grass.path,
   SCENERY_MODELS.rower.path,
+  ...(SCENERY.treeCount > 0 ? [SCENERY_MODELS.tree.path] : []),
+  ...(SCENERY.grassCount > 0 ? [SCENERY_MODELS.grass.path] : []),
 ] as const;
 
 export function useGltfModel(path: string) {
@@ -120,7 +121,7 @@ export function enableGltfShadows(
     // shadow-map render path; they still receive scene lighting/reflections.
     child.castShadow = false;
     child.receiveShadow = true;
-    child.frustumCulled = false;
+    child.frustumCulled = true;
 
     const sanitized = ensureStandardMaterial(child.material, envMapIntensity);
     if (sanitized) {

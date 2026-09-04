@@ -1,12 +1,4 @@
-import {
-  Box3,
-  BoxGeometry,
-  CylinderGeometry,
-  Group,
-  Mesh,
-  MeshStandardMaterial,
-  Vector3,
-} from "three";
+import { Box3, Group, Mesh, Vector3, type Material } from "three";
 
 import { SCENERY_MODELS } from "@/components/canvas/sceneConfig";
 import { cloneGltfScene, enableGltfShadows } from "@/lib/gltf";
@@ -15,50 +7,19 @@ const fitBox = new Box3();
 const fitSize = new Vector3();
 const fitCenter = new Vector3();
 
-const thighGeo = new CylinderGeometry(0.05, 0.064, 0.34, 8);
-const shinGeo = new CylinderGeometry(0.042, 0.052, 0.32, 8);
-const footGeo = new BoxGeometry(0.1, 0.055, 0.16);
-
-const trouserMat = new MeshStandardMaterial({
-  color: "#141414",
-  roughness: 0.82,
-  metalness: 0.05,
-  envMapIntensity: 0.4,
-});
-const shoeMat = new MeshStandardMaterial({
-  color: "#0b0b0b",
-  roughness: 0.55,
-  metalness: 0.05,
-  envMapIntensity: 0.4,
-});
-
-/**
- * Kicking legs in the same black as the seated NPC trousers.
- * Parent this in boat-aligned space (not the ±90° rower yaw) so a Z-roll
- * swings the foot out over the gunwale.
- */
-export function createColoredKickLeg(side: -1 | 1): Group {
-  const root = new Group();
-  root.position.set(side * 0.22, 0.3, 0.04);
-
-  const thigh = new Mesh(thighGeo, trouserMat);
-  thigh.position.set(side * 0.02, -0.15, 0);
-  thigh.castShadow = true;
-  root.add(thigh);
-
-  const shin = new Mesh(shinGeo, trouserMat);
-  shin.position.set(side * 0.05, -0.38, 0.03);
-  shin.rotation.x = 0.22;
-  shin.castShadow = true;
-  root.add(shin);
-
-  const foot = new Mesh(footGeo, shoeMat);
-  foot.position.set(side * 0.06, -0.54, 0.11);
-  foot.rotation.x = 0.82;
-  foot.castShadow = true;
-  root.add(foot);
-
-  return root;
+function cloneOwnedMaterials(root: Group): void {
+  root.traverse((child) => {
+    if (!(child instanceof Mesh)) {
+      return;
+    }
+    if (Array.isArray(child.material)) {
+      child.material = child.material.map((material: Material) =>
+        material.clone(),
+      );
+    } else if (child.material) {
+      child.material = child.material.clone();
+    }
+  });
 }
 
 export function createSeatedRower(
@@ -67,6 +28,7 @@ export function createSeatedRower(
 ): Group {
   const wrapper = new Group();
   const rower = cloneGltfScene(source);
+  cloneOwnedMaterials(rower);
   wrapper.add(rower);
   enableGltfShadows(wrapper, 0.62);
 

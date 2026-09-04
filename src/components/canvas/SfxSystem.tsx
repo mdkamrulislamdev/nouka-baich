@@ -3,6 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 
+import { AUDIO } from "@/components/canvas/sceneConfig";
 import { audio } from "@/lib/audio";
 import { queryNearMiss } from "@/lib/collision";
 import { triggerNearMissShake } from "@/lib/crashFeedback";
@@ -25,7 +26,15 @@ export function SfxSystem() {
       return;
     }
 
-    const { laneOffset } = state;
+    const { laneOffset, speed } = state;
+    audio.playWind();
+    audio.playWater();
+    const windT = Math.min(1, Math.max(0, (speed - 8) / 14));
+    audio.setAmbientMix(
+      AUDIO.windVolume * (0.4 + windT * 0.6),
+      0.9 + windT * 0.22,
+      AUDIO.waterVolume * (0.75 + windT * 0.25),
+    );
 
     const phase = getRowingPhase();
     const stroke = Math.sin(phase);

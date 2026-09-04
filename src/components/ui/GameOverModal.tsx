@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { replayRun, returnToMenu } from "@/lib/gameSession";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -13,7 +15,23 @@ export function GameOverModal() {
   const level = useGameStore((state) => state.level);
   const isNewHighScore = useGameStore((state) => state.isNewHighScore);
 
-  if (status !== "GAMEOVER") {
+  const [showCard, setShowCard] = useState(false);
+
+  useEffect(() => {
+    if (status !== "GAMEOVER") {
+      setShowCard(false);
+      return;
+    }
+    const delay = runOutcome === "crash" ? 900 : 200;
+    const timer = window.setTimeout(() => {
+      setShowCard(true);
+    }, delay);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [status, runOutcome]);
+
+  if (status !== "GAMEOVER" || !showCard) {
     return null;
   }
 
