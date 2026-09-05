@@ -187,7 +187,7 @@ export const RACING_BOAT_OBSTACLE = {
   beam: 1.05,
   y: 0.06,
   /** Chance a racing boat is oncoming instead of same-direction. */
-  oncomingChance: 0.4,
+  oncomingChance: 0.08,
   oncomingMinSpeed: -6.2,
   oncomingMaxSpeed: -3.8,
   sameDirMinSpeed: 6.1,
@@ -203,33 +203,17 @@ export const RACING_BOAT_OBSTACLE = {
 } as const;
 
 export const SCENERY = {
-  /** Broken tree/grass GLTFs disabled — palms + huts only for now. */
-  treeCount: 0,
   hutCount: 10,
-  grassCount: 0,
   palmNearCount: 28,
   palmMidCount: 22,
   palmBackCount: 14,
-  /** Total palms = 64 (was 116 — lighter for production FPS). */
-  palmCount: 64,
 } as const;
 
 export const SCENERY_MODELS = {
-  tree: {
-    path: "/models/tree_animate/scene.gltf",
-    targetHeight: 5.8,
-    maxFootprint: 3.8,
-    meshPatterns: ["Bark", "Leaf", "Branch"] as const,
-  },
   hut: {
     path: "/models/low_poly_fishermans_hut/scene.gltf",
     targetHeight: 2.4,
     maxFootprint: 3.6,
-  },
-  grass: {
-    path: "/models/grass/scene.gltf",
-    targetHeight: 1.35,
-    maxFootprint: 1.4,
   },
   rower: {
     path: "/models/a_man_sitting/scene.gltf",
@@ -285,17 +269,116 @@ export const AUDIO = {
 
 export const SCORE = {
   referenceSpeed: 12,
-  nearMissBonus: 35,
+  nearMissBonus: 45,
   nearMissComboWindowMs: 4000,
-  nearMissComboMax: 5,
-  sinkRacingBonus: 160,
-  sinkDinghyBonus: 90,
+  nearMissComboMax: 8,
+  sinkRacingBonus: 180,
+  sinkDinghyBonus: 110,
   sinkComboWindowMs: 3500,
-  sinkComboMax: 4,
+  sinkComboMax: 8,
   bumpBonus: 48,
+  overtakeBonus: 260,
+  slingshotBonus: 140,
+  strokeBonus: 55,
+  bonusPickup: 160,
+  logSmashBonus: 220,
+  dodgeBonus: 90,
 } as const;
 
-/** Road Rash-style oar smash: button or Space/K, then a short-range hit check. */
+export const FEVER = {
+  max: 8,
+  idleSec: 2.15,
+  drainSec: 1.35,
+  recoverHeat: 0.42,
+} as const;
+
+export const RIVAL = {
+  paceMinZ: -22,
+  paceMaxZ: -10,
+  paceCatch: 1.65,
+  flankZ: -9.5,
+  flankGap: 2.35,
+  packCheckSec: 1.15,
+  packAfter: 7,
+} as const;
+
+export const DRAFT = {
+  minZ: -3.55,
+  maxZ: -1.12,
+  maxGapX: 0.58,
+  speedMul: 0.16,
+  readySec: 0.7,
+  slingshotBoost: 4.6,
+  slingshotSec: 0.72,
+  exitSteer: 0.07,
+} as const;
+
+export const STROKE = {
+  catchMin: 0.76,
+  boost: 0.55,
+} as const;
+
+export const NPC_KICK = {
+  rangeX: 0.95,
+  rangeZ: 1.75,
+  windup: 0.48,
+  cooldown: 1.55,
+  impulse: 5.2,
+  pop: 0.55,
+  dodgeGap: 0.88,
+} as const;
+
+export const JUICE = {
+  hitStopSec: 0.012,
+  fovPunchShove: 1.4,
+  fovPunchOvertake: 1.8,
+  fovPunchSlingshot: 1.6,
+  fovPunchStroke: 0.7,
+  speedFov: 0.16,
+  draftFov: 1.1,
+} as const;
+
+export const INTRO = {
+  holdSpawnUntil: 9.5,
+  graceSec: 3.4,
+  beats: [
+    {
+      at: 0.55,
+      kind: "racing" as const,
+      role: "pace" as const,
+      z: -18,
+      xOff: 2.35,
+      speedDelta: -1.4,
+      heatIndex: 0,
+    },
+    {
+      at: 2.4,
+      kind: "rock" as const,
+      role: "none" as const,
+      z: -26,
+      xOff: -2.7,
+      speedDelta: 0,
+      heatIndex: -1,
+    },
+    {
+      at: 7.2,
+      kind: "racing" as const,
+      role: "flank" as const,
+      z: -10,
+      xOff: 2.4,
+      speedDelta: -0.55,
+      heatIndex: -1,
+    },
+  ],
+} as const;
+
+export const RIVAL_NAMES = [
+  { bn: "সোনার তরী", en: "Sonar Tori" },
+  { bn: "মেঘনা", en: "Meghna" },
+  { bn: "পদ্মা", en: "Padma" },
+] as const;
+
+/** Foot kick: Q / E / Space, then a short-range hit check. */
 export const KICK = {
   rangeX: 0.7,
   minGap: 0.1,
@@ -308,18 +391,6 @@ export const KICK = {
   knockSpeed: 5.4,
   knockBack: 1.8,
   hullRoll: 0.12,
-  oarSweep: 0.55,
-} as const;
-
-/** Oar-handle hits during the power stroke. */
-export const OAR_HIT = {
-  dipMin: 0.22,
-  reachX: 0.7,
-  rangeZ: 1.5,
-  popX: 1.05,
-  impulseX: 4.8,
-  impulseZ: 2.1,
-  speedMul: 0.48,
 } as const;
 
 /** Knockback when an oar connects. Hull contact is fatal. */
@@ -332,7 +403,7 @@ export const BUMP = {
   knockDecay: 3.6,
 } as const;
 
-export type GameMode = "endless" | "sprint";
+export type GameMode = "endless" | "sprint" | "festival";
 export type Difficulty = "easy" | "medium" | "hard";
 
 export const DIFFICULTY_PRESETS: Record<
@@ -372,11 +443,21 @@ export const SPRINT = {
   targetDistance: 480,
 } as const;
 
+export const FESTIVAL = {
+  duration: 90,
+  boatCount: 3,
+  starts: [
+    { z: -20, xOff: -2.45, speedDelta: -0.35, heatIndex: 0 },
+    { z: -30, xOff: 2.5, speedDelta: -0.9, heatIndex: 1 },
+    { z: -42, xOff: -2.2, speedDelta: 0.25, heatIndex: 2 },
+  ],
+} as const;
+
 export const PROGRESSION = {
   metersPerLevel: 220,
   baseSpeed: 11,
   speedPerLevel: 1.8,
-  minInterval: 12,
+  minInterval: 9,
   intervalDecay: 0.88,
   speedDamping: 1.35,
 } as const;
@@ -397,10 +478,14 @@ export function getTargetSpeed(
 export function getSpawnInterval(
   level: number,
   difficulty: Difficulty = "medium",
+  distance = 0,
 ): number {
   const preset = DIFFICULTY_PRESETS[difficulty];
+  if (distance < 70) {
+    return 24 * preset.spawnMul;
+  }
   if (level <= 1) {
-    return 12.5 * preset.spawnMul;
+    return 14 * preset.spawnMul;
   }
   return (
     Math.max(
@@ -411,6 +496,20 @@ export function getSpawnInterval(
   );
 }
 
+export const PICKUPS = {
+  interval: 38,
+  spawnZ: -72,
+  recycleZ: 16,
+  y: 0.98,
+  poolSize: 8,
+  breakerChance: 0.38,
+  breakerCharges: 3,
+  collectRadius: 1.22,
+  bonusSpread: 2.15,
+  clearX: 3.4,
+  clearZ: 16,
+} as const;
+
 export const OBSTACLE_SPAWN = {
   interval: 34,
   spawnZ: -96,
@@ -418,8 +517,8 @@ export const OBSTACLE_SPAWN = {
   poolSize: 6,
   rockPoolSize: 8,
   logPoolSize: 8,
-  dinghyPoolSize: 6,
-  racingPoolSize: 6,
+  dinghyPoolSize: 8,
+  racingPoolSize: 10,
   y: -0.2,
   laneScale: 0.96,
   rockLaneScale: 0.96,

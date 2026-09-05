@@ -1,6 +1,6 @@
 "use client";
 
-import { beginRun, beginSprintRun } from "@/lib/gameSession";
+import { beginFestivalRun, beginRun, beginSprintRun } from "@/lib/gameSession";
 import { DIFFICULTY_PRESETS, SPRINT, type Difficulty } from "@/components/canvas/sceneConfig";
 import { SettingsButton } from "@/components/ui/SettingsModal";
 import { useGameStore } from "@/store/useGameStore";
@@ -71,10 +71,10 @@ export function MainMenu() {
           </p>
           <div className="mt-5 h-px w-24 bg-linear-to-r from-transparent via-[#e4c36a] to-transparent" />
           <p className="font-bengali mt-5 max-w-xs text-sm leading-relaxed text-[#f0d9b0]/85">
-            নদীর স্রোতে হাল ধরো। অন্য নৌকায় ধাক্কা লাগলে তুমি ডুবে যাবে। বৈঠার হাতল দিয়ে পাশের নৌকা সরিয়ে পয়েন্ট নাও।
+            নদীর মাঝে শক্তি কুড়াও — কুড়াল দিয়ে কার্ট ভাঙো। পা দিয়ে অন্য নৌকা ঠেলো। ধাক্কা লাগলে ডুবে যাবে।
           </p>
           <p className="mt-2 max-w-xs text-[0.65rem] tracking-[0.14em] text-[#e4c36a]/75 uppercase">
-            Colliding sinks you · rowing oars shove nearby boats and score
+            Grab axe orbs in open water to smash logs · kick with your feet · steer away when rivals kick back
           </p>
 
           <p
@@ -133,8 +133,19 @@ export function MainMenu() {
             <button
               type="button"
               disabled={playDisabled}
-              onClick={() => beginRun()}
+              onClick={() => beginFestivalRun()}
               className="font-bengali min-w-44 rounded-sm border border-[#e4c36a] bg-[#9b1c1c] px-8 py-3 text-lg font-semibold tracking-wide text-[#f6e6c2] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition hover:bg-[#b32626] focus-visible:ring-2 focus-visible:ring-[#e4c36a] focus-visible:outline-none disabled:cursor-wait disabled:opacity-55"
+            >
+              উৎসব হিট · ৯০সে
+            </button>
+            <p className="text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
+              Festival Heat · 90s podium
+            </p>
+            <button
+              type="button"
+              disabled={playDisabled}
+              onClick={() => beginRun()}
+              className="font-bengali min-w-44 rounded-sm border border-[#e4c36a]/70 bg-[#1a0c08]/70 px-8 py-3 text-lg font-semibold tracking-wide text-[#f6e6c2] transition hover:border-[#e4c36a] hover:bg-[#1a0c08]/90 focus-visible:ring-2 focus-visible:ring-[#e4c36a] focus-visible:outline-none disabled:cursor-wait disabled:opacity-55"
             >
               অনন্ত দৌড়
             </button>

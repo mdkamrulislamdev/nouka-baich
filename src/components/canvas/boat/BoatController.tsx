@@ -11,6 +11,7 @@ import { clamp } from "@/lib/clamp";
 import { getCrashPose } from "@/lib/crashFeedback";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { getKickPose } from "@/lib/kickCombat";
+import { tickPlayerImpulse } from "@/lib/playerImpulse";
 import { useGameStore } from "@/store/useGameStore";
 
 type BoatControllerProps = {
@@ -82,6 +83,14 @@ export function BoatController({ children }: BoatControllerProps) {
 
     const dt = clampGameDelta(delta);
     const laneLimit = getLaneLimit();
+    const impulse = tickPlayerImpulse(dt);
+    if (Math.abs(impulse.vx) > 0.001) {
+      laneRef.current = clamp(
+        laneRef.current + impulse.vx * dt,
+        -laneLimit,
+        laneLimit,
+      );
+    }
     const keyboardAxis = getKeyboardAxis();
     const pointerPressed = pointer.isPressed();
     const pointerAxis = pointer.getAxis();
@@ -121,7 +130,9 @@ export function BoatController({ children }: BoatControllerProps) {
     const kick = getKickPose();
     group.rotation.z = dampToward(
       group.rotation.z,
-      -steerAxis * STEER.rollMax + kick.side * kick.strength * KICK.hullRoll,
+      -steerAxis * STEER.rollMax +
+        kick.side * kick.strength * KICK.hullRoll +
+        impulse.roll,
       STEER.tiltDamping,
       dt,
     );

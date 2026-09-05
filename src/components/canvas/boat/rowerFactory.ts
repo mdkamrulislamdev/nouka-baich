@@ -67,7 +67,7 @@ export function addBoatCrew(
     holder.position.set(seat.x, seat.y, seat.z);
 
     const rower = createSeatedRower(rowerSource, targetHeight);
-    rower.rotation.y = seat.side === -1 ? Math.PI / 2 : -Math.PI / 2;
+    rower.rotation.y = Math.PI;
     rower.traverse((child) => {
       child.frustumCulled = true;
     });

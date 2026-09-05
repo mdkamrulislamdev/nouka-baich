@@ -13,6 +13,7 @@ import {
   BOAT_MODEL,
   SCENERY_MODELS,
   DIFFICULTY_PRESETS,
+  INTRO,
   KICK,
   BUMP,
   type Difficulty,
@@ -44,14 +45,18 @@ import { useGltfModel } from "@/lib/gltf";
 import { clamp } from "@/lib/clamp";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { seededRandom } from "@/lib/mathUtils";
+import { getJuice } from "@/lib/actionJuice";
+import { isHitStopped } from "@/lib/hitStop";
 import {
   acquireIdleObstacle,
   acquirePreferredObstacle,
   clearObstacles,
   createObstacleRecord,
+  drainDirectedSpawns,
   forEachActiveObstacle,
   registerObstacle,
   resetObstacleCombat,
+  type DirectedSpawn,
   type ObstacleKind,
   type ObstacleRecord,
 } from "@/lib/obstacleWorld";
@@ -319,7 +324,7 @@ function placeRacingBoat(record: ObstacleRecord, seed: number, z: number): void 
   record.halfZ = RACING_BOAT_EXTENTS.halfZ * scale;
 
   const travelLimit = Math.max(0.6, laneLimit - record.halfX);
-  const amplitude = 0.55 + seededRandom(seed * 2.6) * 0.95;
+  const amplitude = 0.18 + seededRandom(seed * 2.6) * 0.28;
   const maxOrigin = Math.max(0, travelLimit - amplitude);
 
   record.originX = laneX(seed, maxOrigin, 1);
@@ -344,6 +349,7 @@ function placeRacingBoat(record: ObstacleRecord, seed: number, z: number): void 
         (RACING_BOAT_OBSTACLE.sameDirMaxSpeed -
           RACING_BOAT_OBSTACLE.sameDirMinSpeed);
   }
+  record.cruiseSpeed = record.forwardSpeed;
 }
 
 function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
@@ -371,6 +377,92 @@ function placeDinghy(record: ObstacleRecord, seed: number, z: number): void {
     DINGHY_OBSTACLE.minSpeed +
     seededRandom(seed * 5.1) *
       (DINGHY_OBSTACLE.maxSpeed - DINGHY_OBSTACLE.minSpeed);
+  record.cruiseSpeed = record.forwardSpeed;
+}
+
+function placeDirected(record: ObstacleRecord, spawn: DirectedSpawn): void {
+  resetObstacleCombat(record);
+  record.active = true;
+  record.role = spawn.role;
+  record.heatIndex = spawn.heatIndex;
+  record.passed = false;
+  record.aheadTracked = spawn.z < -5;
+  record.x = spawn.x;
+  record.originX = spawn.x;
+  record.z = spawn.z;
+  record.forwardSpeed = spawn.forwardSpeed;
+  record.cruiseSpeed = spawn.forwardSpeed;
+  record.facing = spawn.facing;
+  record.amplitude = spawn.amplitude;
+  record.phase = 0;
+  record.angularSpeed = spawn.role === "flank" ? 0.32 : 0.5;
+  record.rotX = 0;
+  record.rotZ = 0;
+
+  if (spawn.kind === "racing") {
+    const scale = 0.96;
+    record.scale = scale;
+    record.y = RACING_BOAT_OBSTACLE.y;
+    record.halfX = RACING_BOAT_EXTENTS.halfX * scale;
+    record.halfY = RACING_BOAT_EXTENTS.halfY * scale;
+    record.halfZ = RACING_BOAT_EXTENTS.halfZ * scale;
+    record.rotY = spawn.facing < 0 ? Math.PI : 0;
+    return;
+  }
+
+  if (spawn.kind === "dinghy") {
+    const scale = 0.92;
+    record.scale = scale;
+    record.y = DINGHY_OBSTACLE.y;
+    record.halfX = DINGHY_EXTENTS.halfX * scale;
+    record.halfY = DINGHY_EXTENTS.halfY * scale;
+    record.halfZ = DINGHY_EXTENTS.halfZ * scale;
+    record.rotY = 0;
+    return;
+  }
+
+  if (spawn.kind === "rock") {
+    const scale = 0.72;
+    record.scale = scale;
+    record.y = ROCK_MODEL.embedY;
+    record.rotY = spawn.x * 0.35;
+    record.halfX = ROCK_MODEL.targetWidth * 0.45 * scale;
+    record.halfY = ROCK_MODEL.targetWidth * 0.35 * scale;
+    record.halfZ = ROCK_MODEL.targetWidth * 0.45 * scale;
+    record.forwardSpeed = 0;
+    record.cruiseSpeed = 0;
+    return;
+  }
+
+  const scale = 0.95;
+  record.scale = scale;
+  record.y = LOG_OBSTACLE.y;
+  record.rotY = -0.12;
+  record.halfX = LOG_EXTENTS.halfX * scale;
+  record.halfY = LOG_EXTENTS.halfY * scale;
+  record.halfZ = LOG_EXTENTS.halfZ * scale;
+  record.forwardSpeed = 0;
+  record.cruiseSpeed = 0;
+}
+
+function consumeDirectedSpawns(
+  items: PooledObstacle[],
+  pools: ObstaclePools,
+  root: Group,
+): void {
+  const requests = drainDirectedSpawns();
+  for (let index = 0; index < requests.length; index += 1) {
+    const spawn = requests[index];
+    const slot = acquireIdleObstacle(spawn.kind);
+    if (!slot) {
+      continue;
+    }
+    const item = findItem(items, slot);
+    if (item) {
+      activateObstacle(item, pools, root);
+    }
+    placeDirected(slot, spawn);
+  }
 }
 
 export function ObstacleSpawner() {
@@ -486,12 +578,34 @@ export function ObstacleSpawner() {
       return;
     }
 
-    const dt = clampGameDelta(delta);
+    const dtRaw = clampGameDelta(delta);
+    const dt = isHitStopped() ? 0 : dtRaw;
     const dz = speed * dt;
     distanceRef.current += dz;
 
+    consumeDirectedSpawns(items, pools, root);
+
     forEachActiveObstacle((obstacle) => {
       if (obstacle.sinking) {
+        if (obstacle.smash || obstacle.kind === "log") {
+          obstacle.smashT += dt / 0.56;
+          const t = Math.min(1, obstacle.smashT);
+          const burst = 1 - (1 - t) * (1 - t);
+          obstacle.y = obstacle.sinkStartY + burst * 0.9 - t * t * 1.55;
+          obstacle.x += obstacle.sinkSide * 3.6 * dt;
+          obstacle.z += 1.2 * dt;
+          obstacle.rotZ = obstacle.sinkSide * burst * 2.7;
+          obstacle.rotX = burst * 1.9;
+          obstacle.rotY += dt * 9.5;
+          obstacle.scale = Math.max(0.04, obstacle.smashScale * (1 - t * 0.94));
+          if (t >= 1) {
+            const item = findItem(items, obstacle);
+            if (item) {
+              recycleObstacle(item, pools);
+            }
+          }
+          return;
+        }
         obstacle.sinkT += dt / KICK.sinkDuration;
         const t = Math.min(1, obstacle.sinkT);
         const ease = t * 0.25 + t * t * 0.75;
@@ -521,6 +635,21 @@ export function ObstacleSpawner() {
 
       const laneLimit = getLaneLimit();
       const travelLimit = Math.max(0.4, laneLimit - obstacle.halfX);
+
+      if (
+        (obstacle.role === "heat" || obstacle.role === "pace") &&
+        obstacle.bumpTimer <= 0
+      ) {
+        if (obstacle.z > 7.5) {
+          obstacle.forwardSpeed = speed + 3.4;
+        } else if (obstacle.z < -26) {
+          obstacle.forwardSpeed = speed - 3.2;
+        } else if (obstacle.cruiseSpeed !== 0) {
+          obstacle.forwardSpeed +=
+            (obstacle.cruiseSpeed - obstacle.forwardSpeed) *
+            (1 - Math.exp(-1.15 * dt));
+        }
+      }
 
       if (obstacle.bumpTimer > 0) {
         obstacle.bumpTimer = Math.max(0, obstacle.bumpTimer - dt);
@@ -558,6 +687,11 @@ export function ObstacleSpawner() {
         }
       }
       if (obstacle.z > OBSTACLE_SPAWN.recycleZ) {
+        if (obstacle.role === "heat") {
+          obstacle.z = 8.5;
+          obstacle.passed = true;
+          return;
+        }
         const item = findItem(items, obstacle);
         if (item) {
           recycleObstacle(item, pools);
@@ -565,9 +699,14 @@ export function ObstacleSpawner() {
       }
     });
 
-    const interval = getSpawnInterval(level, difficulty);
+    const interval = getSpawnInterval(level, difficulty, state.distance);
     let spawnsThisFrame = 0;
-    while (distanceRef.current >= interval && spawnsThisFrame < MAX_SPAWNS_PER_FRAME) {
+    const introHold = getJuice().runElapsed < INTRO.holdSpawnUntil;
+    while (
+      !introHold &&
+      distanceRef.current >= interval &&
+      spawnsThisFrame < MAX_SPAWNS_PER_FRAME
+    ) {
       distanceRef.current -= interval;
       spawnCountRef.current += 1;
       spawnsThisFrame += 1;

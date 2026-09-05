@@ -13,11 +13,11 @@ export function ScoreEngine() {
       return;
     }
 
-    const { speed, distance, score, setDistance, setScore } = state;
+    const { speed, distance, score, feverCombo, setDistance, setScore } = state;
 
     const dt = clampGameDelta(delta);
     const deltaDistance = speed * dt;
-    const multiplier = speed / SCORE.referenceSpeed;
+    const multiplier = (speed / SCORE.referenceSpeed) * Math.max(1, feverCombo);
     const nextDistance = distance + deltaDistance;
     const nextScore = score + deltaDistance * multiplier;
 

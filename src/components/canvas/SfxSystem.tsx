@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 
 import { AUDIO } from "@/components/canvas/sceneConfig";
+import { punchFov } from "@/lib/actionJuice";
 import { audio } from "@/lib/audio";
 import { queryNearMiss } from "@/lib/collision";
 import { triggerNearMissShake } from "@/lib/crashFeedback";
@@ -56,6 +57,7 @@ export function SfxSystem() {
     const near = queryNearMiss(laneOffset);
     if (near && !heardNearMiss.has(near.id)) {
       heardNearMiss.add(near.id);
+      punchFov(1.1);
       audio.playSfx("nearMiss", { volume: 0.45 });
       triggerNearMissShake(laneOffset - near.x);
       useGameStore.getState().triggerCloseCall();

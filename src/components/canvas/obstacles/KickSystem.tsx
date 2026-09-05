@@ -2,32 +2,122 @@
 
 import { useFrame } from "@react-three/fiber";
 
-import { BUMP, KICK, OAR_HIT } from "@/components/canvas/sceneConfig";
+import {
+  BOAT_BOUNDS,
+  BUMP,
+  INTRO,
+  JUICE,
+  KICK,
+  NPC_KICK,
+  STROKE,
+} from "@/components/canvas/sceneConfig";
+import { addSurge, getJuice, punchFov } from "@/lib/actionJuice";
 import { audio } from "@/lib/audio";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { triggerNearMissShake } from "@/lib/crashFeedback";
+import { triggerHitStop } from "@/lib/hitStop";
 import {
   beginKick,
-  beginOarStrike,
   consumeKickRequest,
   isKickOnCooldown,
   pickAutoKick,
   queryKickTargets,
-  queryOarHits,
   resetKickCombat,
   tickKick,
-  tickOarStrike,
   type KickSide,
 } from "@/lib/kickCombat";
-import { shoveNpcBoat } from "@/lib/obstacleWorld";
-import { getRowingPhase } from "@/lib/rowingClock";
+import { triggerLogBreakFx } from "@/lib/logBreakFx";
+import {
+  beginLogSmash,
+  forEachActiveObstacle,
+  isSinkableKind,
+  shoveNpcBoat,
+} from "@/lib/obstacleWorld";
+import { shovePlayer } from "@/lib/playerImpulse";
+import { isStrokeWindow } from "@/lib/strokeWindow";
 import { useGameStore } from "@/store/useGameStore";
+
+function tickNpcKicks(dt: number, laneOffset: number): void {
+  const juice = getJuice();
+  const state = useGameStore.getState();
+  const playerHalfX = BOAT_BOUNDS.width * 0.5;
+  let warning = false;
+
+  if (juice.runElapsed < INTRO.graceSec) {
+    juice.npcKickWarn = false;
+    return;
+  }
+
+  forEachActiveObstacle((obstacle) => {
+    if (
+      !isSinkableKind(obstacle.kind) ||
+      obstacle.sinking ||
+      obstacle.bumpTimer > 0 ||
+      obstacle.facing < 0
+    ) {
+      return;
+    }
+
+    obstacle.npcKickCool = Math.max(0, obstacle.npcKickCool - dt);
+
+    const dz = Math.abs(obstacle.z);
+    const dx = obstacle.x - laneOffset;
+    const gapX = Math.abs(dx) - playerHalfX - obstacle.halfX;
+    const inRange =
+      dz <= NPC_KICK.rangeZ && gapX > 0.08 && gapX <= NPC_KICK.rangeX;
+    const side: KickSide = dx >= 0 ? 1 : -1;
+
+    if (!inRange && obstacle.npcKickT <= 0) {
+      return;
+    }
+
+    if (obstacle.npcKickT <= 0) {
+      if (!inRange || obstacle.npcKickCool > 0) {
+        return;
+      }
+      obstacle.npcKickT = 0.001;
+      obstacle.sinkSide = side;
+    }
+
+    obstacle.npcKickT += dt;
+    const wind = Math.min(1, obstacle.npcKickT / NPC_KICK.windup);
+    obstacle.rotZ = -side * wind * 0.28;
+    warning = true;
+
+    if (obstacle.npcKickT < NPC_KICK.windup) {
+      return;
+    }
+
+    obstacle.npcKickT = 0;
+    obstacle.npcKickCool = NPC_KICK.cooldown;
+    obstacle.rotZ = 0;
+
+    const stillClose =
+      Math.abs(obstacle.z) <= NPC_KICK.rangeZ &&
+      gapX > 0.08 &&
+      gapX <= NPC_KICK.dodgeGap;
+
+    if (!stillClose) {
+      state.triggerDodge();
+      audio.playSfx("nearMiss", { volume: 0.4 });
+      return;
+    }
+
+    const shoveDir: KickSide = dx >= 0 ? -1 : 1;
+    shovePlayer(shoveDir, NPC_KICK.impulse, 0.18);
+    punchFov(JUICE.fovPunchShove);
+    triggerNearMissShake(shoveDir);
+    audio.playSfx("kick", { rate: 0.82, volume: 0.7 });
+    audio.playSfx("bump", { volume: 0.45 });
+  });
+
+  juice.npcKickWarn = warning;
+}
 
 export function KickSystem() {
   useFrame((_, delta) => {
     const dt = clampGameDelta(delta);
     tickKick(dt);
-    tickOarStrike(dt);
 
     const state = useGameStore.getState();
     if (!isGameplayActive(state)) {
@@ -35,11 +125,13 @@ export function KickSystem() {
       if (state.status === "MENU" || state.status === "GAMEOVER") {
         resetKickCombat();
         state.setKickHud(false, false, true);
+        getJuice().npcKickWarn = false;
       }
       return;
     }
 
-    const found = queryKickTargets(state.laneOffset);
+    const canBreakLogs = state.logBreakCharges > 0;
+    const found = queryKickTargets(state.laneOffset, canBreakLogs);
     const ready = !isKickOnCooldown();
     state.setKickHud(found.left !== null, found.right !== null, ready);
 
@@ -61,9 +153,25 @@ export function KickSystem() {
       }
 
       beginKick(side);
-      beginOarStrike(side);
 
-      if (target && (target.kind === "racing" || target.kind === "dinghy")) {
+      if (isStrokeWindow()) {
+        punchFov(JUICE.fovPunchStroke);
+        addSurge(STROKE.boost);
+        audio.playSfx("row", { rate: 1.25, volume: 0.55 });
+        state.triggerPerfectStroke();
+      }
+
+      if (!target) {
+        audio.playSfx("kick", { rate: 1.05, volume: 0.4 });
+      } else if (target.kind === "log") {
+        if (state.consumeLogBreak()) {
+          beginLogSmash(target, side);
+          triggerLogBreakFx(target.x, target.y + 0.15, target.z, side);
+          punchFov(JUICE.fovPunchShove);
+          audio.playSfx("crash", { volume: 0.55 });
+          audio.playSfx("splash", { rate: 0.7, volume: 0.4 });
+        }
+      } else if (target.kind === "racing" || target.kind === "dinghy") {
         shoveNpcBoat(
           target,
           side,
@@ -73,34 +181,16 @@ export function KickSystem() {
           BUMP.speedMul,
           BUMP.duration,
         );
+        triggerHitStop(JUICE.hitStopSec);
+        punchFov(JUICE.fovPunchShove);
         triggerNearMissShake(side);
-        audio.playSfx("bump", { rate: 1.05 + Math.random() * 0.16, volume: 0.88 });
+        audio.playSfx("kick", { rate: 1.05 + Math.random() * 0.16, volume: 0.88 });
         audio.playSfx("splash", { rate: 0.82 + Math.random() * 0.18, volume: 0.4 });
         state.triggerSink(target.kind);
       }
     }
 
-    const oarHits = queryOarHits(state.laneOffset, getRowingPhase());
-    for (let index = 0; index < oarHits.length; index += 1) {
-      const hit = oarHits[index];
-      if (hit.target.kind !== "racing" && hit.target.kind !== "dinghy") {
-        continue;
-      }
-      shoveNpcBoat(
-        hit.target,
-        hit.side,
-        OAR_HIT.popX,
-        OAR_HIT.impulseX,
-        OAR_HIT.impulseZ,
-        OAR_HIT.speedMul,
-        BUMP.duration,
-      );
-      beginOarStrike(hit.side);
-      triggerNearMissShake(hit.side);
-      audio.playSfx("bump", { rate: 1.12 + Math.random() * 0.18, volume: 0.78 });
-      audio.playSfx("splash", { rate: 1.08 + Math.random() * 0.14, volume: 0.32 });
-      state.triggerSink(hit.target.kind);
-    }
+    tickNpcKicks(dt, state.laneOffset);
   }, 1);
 
   return null;

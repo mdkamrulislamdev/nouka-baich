@@ -9,6 +9,7 @@ export function GameOverModal() {
   const status = useGameStore((state) => state.status);
   const runOutcome = useGameStore((state) => state.runOutcome);
   const gameMode = useGameStore((state) => state.gameMode);
+  const podiumPlace = useGameStore((state) => state.podiumPlace);
   const score = useGameStore((state) => Math.floor(state.score));
   const highScore = useGameStore((state) => state.highScore);
   const distance = useGameStore((state) => Math.floor(state.distance));
@@ -19,7 +20,6 @@ export function GameOverModal() {
 
   useEffect(() => {
     if (status !== "GAMEOVER") {
-      setShowCard(false);
       return;
     }
     const delay = runOutcome === "crash" ? 900 : 200;
@@ -28,6 +28,7 @@ export function GameOverModal() {
     }, delay);
     return () => {
       window.clearTimeout(timer);
+      setShowCard(false);
     };
   }, [status, runOutcome]);
 
@@ -36,6 +37,16 @@ export function GameOverModal() {
   }
 
   const finished = runOutcome === "finish";
+  const festival = gameMode === "festival";
+  const place = podiumPlace;
+  const placeCopy =
+    place === 1
+      ? { bn: "স্বর্ণ", en: "1st · Gold" }
+      : place === 2
+        ? { bn: "রৌপ্য", en: "2nd · Silver" }
+        : place === 3
+          ? { bn: "ব্রোঞ্জ", en: "3rd · Bronze" }
+          : { bn: "চতুর্থ", en: "4th" };
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center bg-[#1a0c08]/60 px-4 backdrop-blur-[2px]">
@@ -44,13 +55,27 @@ export function GameOverModal() {
 
         <div className="relative flex flex-col items-center text-center">
           <p className="font-bengali text-[0.7rem] tracking-[0.32em] text-[#e4c36a] uppercase">
-            {finished ? "লক্ষ্য পূর্ণ" : "প্রতিযোগিতা শেষ"}
+            {festival
+              ? "উৎসব হিট"
+              : finished
+                ? "লক্ষ্য পূর্ণ"
+                : "প্রতিযোগিতা শেষ"}
           </p>
           <h2 className="font-bengali mt-2 text-3xl font-bold text-[#f6e6c2]">
-            {finished ? "ফিনিশ!" : "নৌকা ডুবেছে"}
+            {festival && finished
+              ? placeCopy.bn
+              : finished
+                ? "ফিনিশ!"
+                : "নৌকা ডুবেছে"}
           </h2>
           <p className="mt-1 text-[0.65rem] tracking-[0.32em] text-[#e4c36a]/80 uppercase">
-            {finished ? "Race Complete" : "Game Over"}
+            {festival && finished
+              ? placeCopy.en
+              : finished
+                ? "Race Complete"
+                : festival
+                  ? "Sank · DNF"
+                  : "Game Over"}
           </p>
 
           {isNewHighScore ? (
@@ -96,7 +121,11 @@ export function GameOverModal() {
             onClick={replayRun}
             className="font-bengali mt-8 min-w-44 rounded-sm border border-[#e4c36a] bg-[#9b1c1c] px-8 py-3 text-lg font-semibold tracking-wide text-[#f6e6c2] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition hover:bg-[#b32626] focus-visible:ring-2 focus-visible:ring-[#e4c36a] focus-visible:outline-none"
           >
-            {gameMode === "sprint" ? "আবার স্প্রিন্ট" : "আবার খেলুন"}
+            {gameMode === "festival"
+              ? "আবার হিট"
+              : gameMode === "sprint"
+                ? "আবার স্প্রিন্ট"
+                : "আবার খেলুন"}
           </button>
           <p className="mt-2 text-[0.65rem] tracking-[0.28em] text-[#e4c36a]/80 uppercase">
             Replay

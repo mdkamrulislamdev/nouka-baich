@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-import { SCORE, type Difficulty, type GameMode } from "@/components/canvas/sceneConfig";
+import { FEVER, FESTIVAL, PICKUPS, SCORE, type Difficulty, type GameMode } from "@/components/canvas/sceneConfig";
+import { markFeverAction } from "@/lib/actionJuice";
 
 export type GameStatus = "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER";
 export type GraphicsQuality = "high" | "low";
@@ -36,6 +37,16 @@ export type GameState = {
   kickInRangeLeft: boolean;
   kickInRangeRight: boolean;
   kickReady: boolean;
+  logBreakCharges: number;
+  feverCombo: number;
+  scorePopFlash: number;
+  scorePopAmount: number;
+  scorePopLabel: string;
+  slingshotFlash: number;
+  overtakeFlash: number;
+  strokeFlash: number;
+  podiumPlace: number;
+  heatTimeLeft: number;
   /** True once GLTF + WebGL scene have finished first warm load on the menu. */
   assetsReady: boolean;
   /** 0..100 progress while warming assets on the landing screen. */
@@ -63,6 +74,15 @@ export type GameActions = {
   triggerCloseCall: () => void;
   triggerSink: (kind: "racing" | "dinghy") => void;
   triggerBump: () => void;
+  triggerOvertake: () => void;
+  triggerSlingshot: () => void;
+  triggerPerfectStroke: () => void;
+  collectBreaker: () => void;
+  collectBonus: () => void;
+  consumeLogBreak: () => boolean;
+  triggerDodge: () => void;
+  dropFeverCombo: (combo: number) => void;
+  setHeatTimeLeft: (heatTimeLeft: number) => void;
   setKickHud: (
     kickInRangeLeft: boolean,
     kickInRangeRight: boolean,
@@ -70,7 +90,7 @@ export type GameActions = {
   ) => void;
   startGame: (gameMode?: GameMode) => void;
   endGame: () => void;
-  finishRace: () => void;
+  finishRace: (podiumPlace?: number) => void;
   resetGame: () => void;
 };
 
@@ -105,9 +125,23 @@ const INITIAL_STATE: GameState = {
   kickInRangeLeft: false,
   kickInRangeRight: false,
   kickReady: true,
+  logBreakCharges: 0,
+  feverCombo: 1,
+  scorePopFlash: 0,
+  scorePopAmount: 0,
+  scorePopLabel: "",
+  slingshotFlash: 0,
+  overtakeFlash: 0,
+  strokeFlash: 0,
+  podiumPlace: 0,
+  heatTimeLeft: FESTIVAL.duration,
   assetsReady: false,
   assetProgress: 0,
 };
+
+function nextFever(combo: number): number {
+  return Math.min(FEVER.max, combo + 1);
+}
 
 export const useGameStore = create<GameStore>()(
   subscribeWithSelector((set) => ({
@@ -145,40 +179,38 @@ export const useGameStore = create<GameStore>()(
       set({ assetsReady, assetProgress: assetsReady ? 100 : 0 }),
     triggerCloseCall: () =>
       set((state) => {
-        const now = Date.now();
-        const withinCombo =
-          state.lastNearMissAt > 0 &&
-          now - state.lastNearMissAt < SCORE.nearMissComboWindowMs;
-        const combo = withinCombo
-          ? Math.min(state.nearMissCombo + 1, SCORE.nearMissComboMax)
-          : 1;
-        const bonus = SCORE.nearMissBonus * combo;
+        const feverCombo = nextFever(state.feverCombo);
+        const bonus = Math.round(SCORE.nearMissBonus * feverCombo);
+        markFeverAction();
         return {
-          nearMissCombo: combo,
-          lastNearMissAt: now,
+          feverCombo,
+          nearMissCombo: feverCombo,
+          lastNearMissAt: Date.now(),
           closeCallBonus: bonus,
           score: state.score + bonus,
           closeCallFlash: state.closeCallFlash + 1,
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: bonus,
+          scorePopLabel: "CLOSE CALL",
         };
       }),
     triggerSink: (kind) =>
       set((state) => {
-        const now = Date.now();
-        const withinCombo =
-          state.lastSinkAt > 0 &&
-          now - state.lastSinkAt < SCORE.sinkComboWindowMs;
-        const combo = withinCombo
-          ? Math.min(state.sinkCombo + 1, SCORE.sinkComboMax)
-          : 1;
+        const feverCombo = nextFever(state.feverCombo);
         const base =
           kind === "racing" ? SCORE.sinkRacingBonus : SCORE.sinkDinghyBonus;
-        const bonus = base * combo;
+        const bonus = Math.round(base * feverCombo);
+        markFeverAction();
         return {
-          sinkCombo: combo,
-          lastSinkAt: now,
+          feverCombo,
+          sinkCombo: feverCombo,
+          lastSinkAt: Date.now(),
           sinkBonus: bonus,
           score: state.score + bonus,
           sinkFlash: state.sinkFlash + 1,
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: bonus,
+          scorePopLabel: kind === "racing" ? "SHOVE" : "BUMP",
         };
       }),
     triggerBump: () =>
@@ -186,6 +218,118 @@ export const useGameStore = create<GameStore>()(
         bumpFlash: state.bumpFlash + 1,
         score: state.score + SCORE.bumpBonus,
       })),
+    triggerOvertake: () =>
+      set((state) => {
+        const feverCombo = nextFever(state.feverCombo);
+        const bonus = Math.round(SCORE.overtakeBonus * feverCombo);
+        markFeverAction();
+        return {
+          feverCombo,
+          score: state.score + bonus,
+          overtakeFlash: state.overtakeFlash + 1,
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: bonus,
+          scorePopLabel: "OVERTAKE",
+        };
+      }),
+    triggerSlingshot: () =>
+      set((state) => {
+        const feverCombo = nextFever(state.feverCombo);
+        const bonus = Math.round(SCORE.slingshotBonus * feverCombo);
+        markFeverAction();
+        return {
+          feverCombo,
+          score: state.score + bonus,
+          slingshotFlash: state.slingshotFlash + 1,
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: bonus,
+          scorePopLabel: "SLINGSHOT",
+        };
+      }),
+    triggerPerfectStroke: () =>
+      set((state) => {
+        const feverCombo = nextFever(state.feverCombo);
+        const bonus = Math.round(SCORE.strokeBonus * feverCombo);
+        markFeverAction();
+        return {
+          feverCombo,
+          score: state.score + bonus,
+          strokeFlash: state.strokeFlash + 1,
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: bonus,
+          scorePopLabel: "PERFECT",
+        };
+      }),
+    collectBreaker: () =>
+      set((state) => {
+        markFeverAction();
+        return {
+          logBreakCharges: state.logBreakCharges + PICKUPS.breakerCharges,
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: 0,
+          scorePopLabel: "AXE POWER",
+        };
+      }),
+    collectBonus: () =>
+      set((state) => {
+        const feverCombo = nextFever(state.feverCombo);
+        const bonus = Math.round(SCORE.bonusPickup * feverCombo);
+        markFeverAction();
+        return {
+          feverCombo,
+          score: state.score + bonus,
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: bonus,
+          scorePopLabel: "BONUS",
+        };
+      }),
+    consumeLogBreak: () => {
+      const state = useGameStore.getState();
+      if (state.logBreakCharges <= 0) {
+        return false;
+      }
+      const feverCombo = nextFever(state.feverCombo);
+      const bonus = Math.round(SCORE.logSmashBonus * feverCombo);
+      markFeverAction();
+      set({
+        logBreakCharges: state.logBreakCharges - 1,
+        feverCombo,
+        score: state.score + bonus,
+        scorePopFlash: state.scorePopFlash + 1,
+        scorePopAmount: bonus,
+        scorePopLabel: "LOG SMASH",
+      });
+      return true;
+    },
+    triggerDodge: () =>
+      set((state) => {
+        const feverCombo = nextFever(state.feverCombo);
+        const bonus = Math.round(SCORE.dodgeBonus * feverCombo);
+        markFeverAction();
+        return {
+          feverCombo,
+          score: state.score + bonus,
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: bonus,
+          scorePopLabel: "DODGED",
+        };
+      }),
+    dropFeverCombo: (combo) =>
+      set((state) => {
+        const next = Math.max(1, Math.min(FEVER.max, combo));
+        if (next === state.feverCombo) {
+          return state;
+        }
+        return { feverCombo: next };
+      }),
+    setHeatTimeLeft: (heatTimeLeft) =>
+      set((state) => {
+        const next = Math.max(0, heatTimeLeft);
+        if (Math.abs(next - state.heatTimeLeft) < 0.04) {
+          return state;
+        }
+        return { heatTimeLeft: next };
+      }),
     setKickHud: (kickInRangeLeft, kickInRangeRight, kickReady) =>
       set((state) => {
         if (
@@ -212,6 +356,7 @@ export const useGameStore = create<GameStore>()(
         isNewHighScore: false,
         settingsOpen: false,
         gameMode,
+        heatTimeLeft: gameMode === "festival" ? FESTIVAL.duration : 0,
         runOutcome: "playing",
         status: "PLAYING",
       })),
@@ -222,16 +367,29 @@ export const useGameStore = create<GameStore>()(
           status: "GAMEOVER",
           runOutcome: "crash",
           score: finalScore,
+          podiumPlace: state.gameMode === "festival" ? 4 : 0,
           isNewHighScore: finalScore > state.highScore,
           highScore: Math.max(state.highScore, finalScore),
         };
       }),
-    finishRace: () =>
+    finishRace: (podiumPlace = 0) =>
       set((state) => {
-        const finalScore = Math.floor(state.score);
+        const place = podiumPlace || state.podiumPlace;
+        const placeBonus =
+          state.gameMode === "festival"
+            ? place === 1
+              ? 1200
+              : place === 2
+                ? 700
+                : place === 3
+                  ? 350
+                  : 0
+            : 0;
+        const finalScore = Math.floor(state.score + placeBonus);
         return {
           status: "GAMEOVER",
           runOutcome: "finish",
+          podiumPlace: place,
           score: finalScore,
           isNewHighScore: finalScore > state.highScore,
           highScore: Math.max(state.highScore, finalScore),

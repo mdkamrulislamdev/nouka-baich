@@ -6,6 +6,7 @@ import { useRef } from "react";
 import { type PerspectiveCamera as ThreePerspectiveCamera } from "three";
 
 import { CAMERA } from "@/components/canvas/sceneConfig";
+import { getJuice, getSpeedFov, sampleFovPunch } from "@/lib/actionJuice";
 import { sampleCrashOffset } from "@/lib/crashFeedback";
 import { clampGameDelta } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
@@ -30,7 +31,7 @@ export function ChaseCamera() {
     }
 
     const dt = clampGameDelta(delta);
-    const { laneOffset, status } = useGameStore.getState();
+    const { laneOffset, status, speed } = useGameStore.getState();
     const targetX = status === "MENU" ? 0 : laneOffset;
     followXRef.current = dampToward(
       followXRef.current,
@@ -40,6 +41,13 @@ export function ChaseCamera() {
     );
 
     const shake = sampleCrashOffset(dt);
+    const juice = getJuice();
+    const fov =
+      CAMERA.fov +
+      getSpeedFov(status === "PLAYING" ? speed : 11, juice.drafting) +
+      sampleFovPunch(dt);
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
     const x = followXRef.current + shake.x;
     camera.position.set(
       x,

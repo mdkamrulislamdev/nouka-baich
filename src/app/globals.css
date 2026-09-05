@@ -71,3 +71,55 @@ body {
 .kick-button-armed {
   animation: kick-armed-pulse 1.1s ease-out infinite;
 }
+
+@keyframes score-pop-fly {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.7);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-12px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-36px) scale(0.94);
+  }
+}
+
+.score-pop {
+  animation: score-pop-fly 0.85s ease-out forwards;
+}
+
+@keyframes action-chip-pop {
+  0%,
+  25% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.action-chip {
+  animation: action-chip-pop 1.1s ease-out forwards;
+  border: 1px solid rgba(228, 195, 106, 0.7);
+  background: rgba(155, 28, 28, 0.88);
+  color: #f6e6c2;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.stroke-beat {
+  transition:
+    transform 80ms linear,
+    opacity 80ms linear;
+}

@@ -8,7 +8,7 @@ import { createSeatedRower } from "@/components/canvas/boat/rowerFactory";
 import { LONGBOAT_RIG, OARS, SCENERY_MODELS } from "@/components/canvas/sceneConfig";
 import { detachObject } from "@/lib/dispose";
 import { useGltfModel } from "@/lib/gltf";
-import { getOarStrike } from "@/lib/kickCombat";
+import { getKickPose } from "@/lib/kickCombat";
 import { getRowingPhase } from "@/lib/rowingClock";
 import { isGameplayActive } from "@/lib/gameplay";
 import { useGameStore } from "@/store/useGameStore";
@@ -39,6 +39,7 @@ function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
     const state = useGameStore.getState();
     if (!isGameplayActive(state)) {
       root.rotation.x = 0;
+      root.rotation.y = 0;
       root.rotation.z = 0;
       return;
     }
@@ -47,17 +48,16 @@ function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
     const zPhase = Math.sin(t);
     const backward = Math.max(0, -zPhase);
     const dip = Math.pow(backward, 0.65);
-    const oarHit = getOarStrike(side);
-    root.rotation.x = dip * 0.38 * side + oarHit * 0.22 * side;
-    root.rotation.z = oarHit * 0.55 * side;
+    const kick = getKickPose();
+    const kicking = kick.active && kick.side === side ? kick.strength : 0;
+    root.rotation.x = -dip * 0.22 - kicking * 0.12;
+    root.rotation.z = side * kicking * 0.55;
+    root.rotation.y = kicking * side * 0.08;
   });
 
   return (
     <group position={[side * 0.32, LONGBOAT_RIG.seatY + 0.01, seatZ]}>
-      <group
-        rotation={[0, side === -1 ? Math.PI / 2 : -Math.PI / 2, 0]}
-        ref={rowerRef}
-      >
+      <group rotation={[0, Math.PI, 0]} ref={rowerRef}>
         <primitive object={rower} />
       </group>
     </group>

@@ -13,7 +13,6 @@ import {
 
 import { LONGBOAT_RIG, OARS } from "@/components/canvas/sceneConfig";
 import { isGameplayActive } from "@/lib/gameplay";
-import { getOarStrike } from "@/lib/kickCombat";
 import { getRowingPhase } from "@/lib/rowingClock";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -68,7 +67,6 @@ export function OarSplashes() {
   const pointsRef = useRef<Points>(null);
   const cursorRef = useRef(0);
   const lastContactRef = useRef<boolean[]>(Array.from({ length: OAR_COUNT }, () => false));
-  const lastStrikeRef = useRef<boolean[]>(Array.from({ length: OAR_COUNT }, () => false));
 
   const geometry = useMemo(() => {
     const geo = new BufferGeometry();
@@ -125,7 +123,6 @@ export function OarSplashes() {
       sizeAttr.needsUpdate = true;
       for (let i = 0; i < lastContactRef.current.length; i += 1) {
         lastContactRef.current[i] = false;
-        lastStrikeRef.current[i] = false;
       }
       return;
     }
@@ -148,34 +145,29 @@ export function OarSplashes() {
         const oarIndex = seatIndex * SIDES.length + sideIndex;
         const contact = dip > 0.22;
         const last = lastContactRef.current[oarIndex];
-        const strike = getOarStrike(side);
-        const strikeEdge = strike > 0.72 && !lastStrikeRef.current[oarIndex];
 
-        if ((contact && !last) || strikeEdge) {
-          const burst = strikeEdge
-            ? 8 + Math.floor(Math.random() * 5)
-            : 3 + Math.floor(Math.random() * 3);
+        if (contact && !last) {
+          const burst = 3 + Math.floor(Math.random() * 3);
           for (let emit = 0; emit < burst; emit += 1) {
             const index = cursorRef.current;
             cursorRef.current = (index + 1) % COUNT;
             const i3 = index * 3;
 
-            const spread = strikeEdge ? 0.22 + Math.random() * 0.2 : 0.08 + Math.random() * 0.12;
+            const spread = 0.08 + Math.random() * 0.12;
             positions[i3] = laneOffset + side * (bladeX + (Math.random() - 0.5) * spread);
             positions[i3 + 1] = baseY - dip * 0.03 + Math.random() * 0.01;
             positions[i3 + 2] = thwartZ[seatIndex] + (Math.random() - 0.5) * 0.08;
 
-            velocities[i3] = side * ((strikeEdge ? 0.55 : 0.2) + Math.random() * 0.28);
+            velocities[i3] = side * (0.2 + Math.random() * 0.28);
             velocities[i3 + 1] = 0.17 + Math.random() * 0.22 + dip * 0.06;
             velocities[i3 + 2] = (Math.random() - 0.5) * 0.1;
 
             lives[index] = 1;
-            sizes[index] = (strikeEdge ? 10 : 6) + Math.random() * 8;
+            sizes[index] = 6 + Math.random() * 8;
           }
         }
 
         lastContactRef.current[oarIndex] = contact;
-        lastStrikeRef.current[oarIndex] = strike > 0.2;
       }
     }
 

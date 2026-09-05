@@ -1,5 +1,6 @@
 "use client";
 
+import { useThree } from "@react-three/fiber";
 import {
   Bloom,
   DepthOfField,
@@ -15,10 +16,16 @@ import { useGameStore } from "@/store/useGameStore";
  * Adaptive-low only dims effects — never unmounts (unmount froze the boat ~8s).
  */
 export function ScenePostProcessing() {
+  const gl = useThree((state) => state.gl);
   const graphicsQuality = useGameStore((state) => state.graphicsQuality);
   const adaptiveLow = useGameStore((state) => state.adaptiveLow);
 
   if (graphicsQuality !== "high") {
+    return null;
+  }
+
+  // Lost GPU context: getContextAttributes() is null and EffectComposer throws.
+  if (!gl.getContextAttributes()) {
     return null;
   }
 

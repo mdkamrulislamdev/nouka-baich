@@ -5,6 +5,7 @@ import { Suspense, useRef } from "react";
 import { type Group } from "three";
 
 import { ObstacleSpawner } from "@/components/canvas/obstacles/ObstacleSpawner";
+import { PickupSpawner } from "@/components/canvas/obstacles/PickupSpawner";
 import { FinishLine } from "@/components/canvas/world/FinishLine";
 import { PooledScenery } from "@/components/canvas/world/PooledScenery";
 import { RiverBankMesh } from "@/components/canvas/world/RiverBankMesh";
@@ -67,6 +68,7 @@ export function ScrollingWorld() {
       <Suspense fallback={null}>
         <PooledScenery />
         <ObstacleSpawner />
+        <PickupSpawner />
       </Suspense>
 
       <FinishLine />

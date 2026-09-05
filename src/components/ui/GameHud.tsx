@@ -32,13 +32,16 @@ export function GameHud() {
   const speed = useGameStore((state) => Math.round(state.speed));
   const distance = useGameStore((state) => Math.floor(state.distance));
   const score = useGameStore((state) => Math.floor(state.score));
-  const level = useGameStore((state) => state.level);
   const highScore = useGameStore((state) => state.highScore);
+  const heatTimeLeft = useGameStore((state) => state.heatTimeLeft);
+  const feverCombo = useGameStore((state) => state.feverCombo);
 
   const sprintRemaining =
     gameMode === "sprint"
       ? Math.max(0, SPRINT.targetDistance - distance)
       : null;
+  const festivalClock =
+    gameMode === "festival" ? Math.max(0, Math.ceil(heatTimeLeft)) : null;
 
   if (status !== "PLAYING" && status !== "PAUSED") {
     return null;
@@ -60,13 +63,22 @@ export function GameHud() {
             />
             <div className="w-px self-stretch bg-[#e4c36a]/25" />
           </>
+        ) : festivalClock !== null ? (
+          <>
+            <HudStat
+              bangla="সময়"
+              label="Heat"
+              value={`${festivalClock}s`}
+            />
+            <div className="w-px self-stretch bg-[#e4c36a]/25" />
+          </>
         ) : (
           <>
             <HudStat bangla="দূরত্ব" label="Distance" value={`${distance}m`} />
             <div className="w-px self-stretch bg-[#e4c36a]/25" />
           </>
         )}
-        <HudStat bangla="স্তর" label="Level" value={`${level}`} />
+        <HudStat bangla="জ্বর" label="Fever" value={`x${feverCombo}`} />
         <div className="w-px self-stretch bg-[#e4c36a]/25" />
         <HudStat bangla="সেরা" label="Best" value={highScore.toLocaleString()} />
         <div className="hidden items-center sm:flex">

@@ -2,10 +2,9 @@
 
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import { type Group, type MeshStandardMaterial } from "three";
+import { type Group } from "three";
 
-import { LONGBOAT_RIG, KICK, OARS } from "@/components/canvas/sceneConfig";
-import { getKickPose, getOarStrike } from "@/lib/kickCombat";
+import { LONGBOAT_RIG, OARS } from "@/components/canvas/sceneConfig";
 import { updateRowingClock } from "@/lib/rowingClock";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -72,16 +71,12 @@ export function OarRig() {
   const pivotsRef = useRef<Array<Group | null>>(
     Array.from({ length: OAR_COUNT }, () => null),
   );
-  const flashRef = useRef<Array<MeshStandardMaterial | null>>(
-    Array.from({ length: OAR_COUNT }, () => null),
-  );
   const phaseRef = useRef(0);
 
   useFrame((_, delta) => {
     const { status, speed } = useGameStore.getState();
     const dt = Math.min(delta, 0.05);
     phaseRef.current = updateRowingClock(dt, status, speed);
-    const kick = getKickPose();
 
     for (let seat = 0; seat < LONGBOAT_RIG.thwartZ.length; seat += 1) {
       const zPhase = Math.sin(phaseRef.current + seat * OARS.stagger);
@@ -96,29 +91,14 @@ export function OarRig() {
           continue;
         }
 
-        const strike = getOarStrike(side);
-        const flash = flashRef.current[index];
-        if (flash) {
-          flash.opacity = 0.15 + strike * 0.85;
-          flash.emissiveIntensity = strike * 2.4;
-          flash.visible = strike > 0.04;
-        }
-
         if (status === "MENU") {
           pivot.rotation.y = 0;
           pivot.rotation.z = side * OARS.restTilt;
           continue;
         }
 
-        pivot.rotation.y =
-          side * zPhase * OARS.stroke + side * dip * 0.38 + side * strike * 0.95;
-        pivot.rotation.z =
-          side * (OARS.restTilt - dip * OARS.lift) + side * strike * 0.28;
-
-        if (kick.strength > 0.01 && side === kick.side) {
-          pivot.rotation.y += side * kick.strength * KICK.oarSweep;
-          pivot.rotation.z += side * kick.strength * 0.35;
-        }
+        pivot.rotation.y = side * zPhase * OARS.stroke + side * dip * 0.38;
+        pivot.rotation.z = side * (OARS.restTilt - dip * OARS.lift);
       }
     }
   });
@@ -136,24 +116,6 @@ export function OarRig() {
             rotation={[0, 0, side * OARS.restTilt]}
           >
             <OarMesh side={side} />
-            <mesh
-              position={[side * (OARS.length - OARS.bladeLength * 0.2), 0.02, 0]}
-            >
-              <sphereGeometry args={[0.055, 8, 6]} />
-              <meshStandardMaterial
-                ref={(node) => {
-                  flashRef.current[seat * SIDES.length + sideIndex] = node;
-                }}
-                color="#fff3c0"
-                emissive="#ffe08a"
-                emissiveIntensity={0}
-                transparent
-                opacity={0}
-                roughness={0.35}
-                metalness={0.1}
-                visible={false}
-              />
-            </mesh>
           </group>
         )),
       )}

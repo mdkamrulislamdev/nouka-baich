@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense, type ReactNode } from "react";
 import { PCFShadowMap } from "three";
 
+import { ActionDirector } from "@/components/canvas/ActionDirector";
 import { CollisionSystem } from "@/components/canvas/obstacles/CollisionSystem";
 import { KickSystem } from "@/components/canvas/obstacles/KickSystem";
 import { AssetWarmup } from "@/components/canvas/AssetWarmup";
@@ -20,6 +21,7 @@ import { SceneLighting } from "@/components/canvas/SceneLighting";
 import { ScenePostProcessing } from "@/components/canvas/ScenePostProcessing";
 import { WeatherSystem } from "@/components/canvas/WeatherSystem";
 import { WaterWake } from "@/components/canvas/fx/WaterWake";
+import { LogBreakBurst } from "@/components/canvas/fx/LogBreakBurst";
 import { OarSplashes } from "@/components/canvas/fx/OarSplashes";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { getAtmosphere } from "@/components/canvas/sceneConfig";
@@ -78,6 +80,8 @@ export function GameCanvas({ children }: GameCanvasProps) {
         <WeatherSystem />
         <WaterWake />
         <OarSplashes />
+        <LogBreakBurst />
+        <ActionDirector />
         <KickSystem />
         <CollisionSystem />
         <SfxSystem />
