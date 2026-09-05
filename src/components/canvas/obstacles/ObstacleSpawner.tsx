@@ -193,6 +193,7 @@ function placeMarkerAt(
   z: number,
   scaleFactor = 1,
 ): void {
+  resetObstacleCombat(record);
   record.active = true;
   record.x = x;
   record.y = OBSTACLE_SPAWN.y;
@@ -268,6 +269,7 @@ function spawnMarkerCluster(
 }
 
 function placeRock(record: ObstacleRecord, seed: number, z: number): void {
+  resetObstacleCombat(record);
   const laneLimit = getLaneLimit();
   const scale = 0.62 + seededRandom(seed * 5.2) * 0.32;
   record.active = true;
@@ -283,6 +285,7 @@ function placeRock(record: ObstacleRecord, seed: number, z: number): void {
 }
 
 function placeLog(record: ObstacleRecord, seed: number, z: number): void {
+  resetObstacleCombat(record);
   const laneLimit = getLaneLimit();
   const scale = 0.85 + seededRandom(seed * 4.8) * 0.3;
   const halfLength = LOG_EXTENTS.halfX * scale;

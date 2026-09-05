@@ -44,17 +44,19 @@ export const LONGBOAT_RIG = {
 } as const;
 
 export const OARS = {
-  length: 1.05,
-  shaftRadius: 0.016,
-  bladeWidth: 0.08,
-  bladeLength: 0.2,
-  pivotX: 0.5,
-  pivotY: 0.48,
-  handleLength: 0.2,
-  handleRadius: 0.018,
-  stroke: 0.4,
-  lift: 0.15,
-  restTilt: 0.24,
+  length: 0.92,
+  shaftRadius: 0.015,
+  bladeWidth: 0.07,
+  bladeLength: 0.16,
+  pivotX: 0.44,
+  pivotY: 0.46,
+  handleLength: 0.15,
+  handleRadius: 0.016,
+  stroke: 0.18,
+  /** Extra dip into the water on the catch — blades stay submerged. */
+  lift: 0.18,
+  /** Steep outboard angle so most of the loom sits under the opaque water. */
+  restTilt: 1.12,
   baseRate: 1.05,
   speedRate: 0.11,
   stagger: 0.4,
@@ -70,7 +72,8 @@ export const WAKE = {
 } as const;
 
 export const BOAT_BOUNDS = {
-  width: BOAT_MODEL.halfWidth * 2.08,
+  /** Hull only — oars are visual and must not count as a ram. */
+  width: BOAT_MODEL.halfWidth * 1.55,
   height: 0.95,
   length: BOAT_MODEL.targetLength * 0.94,
   centerY: 0.4,
@@ -380,9 +383,10 @@ export const RIVAL_NAMES = [
 
 /** Foot kick: Q / E / Space, then a short-range hit check. */
 export const KICK = {
+  /** Slightly longer than the visible foot so a near miss still connects. */
   rangeX: 0.7,
   minGap: 0.1,
-  rangeZ: 1.55,
+  rangeZ: 1.38,
   duration: 0.5,
   cooldownMs: 720,
   sinkDuration: 3.8,

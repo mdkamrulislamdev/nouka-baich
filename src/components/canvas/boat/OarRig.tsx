@@ -97,8 +97,8 @@ export function OarRig() {
           continue;
         }
 
-        pivot.rotation.y = side * zPhase * OARS.stroke + side * dip * 0.38;
-        pivot.rotation.z = side * (OARS.restTilt - dip * OARS.lift);
+        pivot.rotation.y = side * zPhase * OARS.stroke;
+        pivot.rotation.z = side * (OARS.restTilt + dip * OARS.lift);
       }
     }
   });

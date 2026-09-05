@@ -119,6 +119,7 @@ export function isSinkableKind(kind: ObstacleKind): boolean {
 
 export function resetObstacleCombat(record: ObstacleRecord): void {
   record.rotX = 0;
+  record.rotY = 0;
   record.rotZ = 0;
   record.sinking = false;
   record.sinkT = 0;

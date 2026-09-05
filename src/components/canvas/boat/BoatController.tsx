@@ -46,6 +46,8 @@ export function BoatController({ children }: BoatControllerProps) {
     if (prevStatusRef.current !== status) {
       if (status === "PLAYING" || status === "MENU") {
         laneRef.current = state.laneOffset;
+        group.rotation.set(0, 0, 0);
+        group.position.set(laneRef.current, BOAT_SPAWN[1], BOAT_SPAWN[2]);
       }
       prevStatusRef.current = status;
     }
@@ -121,6 +123,7 @@ export function BoatController({ children }: BoatControllerProps) {
     }
 
     group.position.set(laneRef.current, BOAT_SPAWN[1], BOAT_SPAWN[2]);
+    group.rotation.x = 0;
     group.rotation.y = dampToward(
       group.rotation.y,
       -steerAxis * STEER.yawMax,

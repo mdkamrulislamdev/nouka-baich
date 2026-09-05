@@ -11,44 +11,25 @@ const SIDES = [-1, 1] as const;
 const SEAT_COUNT = LONGBOAT_RIG.thwartZ.length;
 const LEG_COUNT = SEAT_COUNT * SIDES.length;
 
-/** Seated hip sits above the gunwale — kick stays over the water, never under the hull. */
-const HIP_Y = LONGBOAT_RIG.seatY + 0.26;
-const HIP_X = 0.46;
-const THIGH_LEN = 0.3;
-const SHIN_LEN = 0.28;
+const HIP_Y = LONGBOAT_RIG.seatY + 0.24;
+const HIP_X = 0.44;
+const THIGH_LEN = 0.24;
+const SHIN_LEN = 0.21;
 const HORIZONTAL = Math.PI * 0.5;
 
-const SKIN = "#e2b48a";
-const SKIN_EMISSIVE = "#5a3318";
-const LUNGI = "#c43c2e";
-const SANDAL = "#7a4a28";
-
-function skinMaterial() {
-  return (
-    <meshStandardMaterial
-      color={SKIN}
-      emissive={SKIN_EMISSIVE}
-      emissiveIntensity={0.22}
-      roughness={0.52}
-      metalness={0.04}
-    />
-  );
-}
+const LEG = "#121212";
+const FOOT = "#1c1c1c";
 
 function KickLegMesh() {
   return (
     <>
       <mesh position={[0, -THIGH_LEN * 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.055, THIGH_LEN * 0.72, 4, 8]} />
-        <meshStandardMaterial
-          color={LUNGI}
-          roughness={0.7}
-          metalness={0.04}
-        />
+        <capsuleGeometry args={[0.048, THIGH_LEN * 0.7, 4, 8]} />
+        <meshStandardMaterial color={LEG} roughness={0.72} metalness={0.06} />
       </mesh>
-      <mesh position={[0, -THIGH_LEN * 0.12, 0]} castShadow>
-        <sphereGeometry args={[0.058, 8, 6]} />
-        {skinMaterial()}
+      <mesh position={[0, -THIGH_LEN * 0.1, 0]} castShadow>
+        <sphereGeometry args={[0.05, 8, 6]} />
+        <meshStandardMaterial color={LEG} roughness={0.7} metalness={0.06} />
       </mesh>
     </>
   );
@@ -58,33 +39,25 @@ function KickShinMesh({ side }: { side: KickSide }) {
   return (
     <>
       <mesh position={[0, -SHIN_LEN * 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.044, SHIN_LEN * 0.7, 4, 8]} />
-        {skinMaterial()}
+        <capsuleGeometry args={[0.038, SHIN_LEN * 0.68, 4, 8]} />
+        <meshStandardMaterial color={LEG} roughness={0.7} metalness={0.06} />
       </mesh>
       <mesh position={[0, -SHIN_LEN, 0]} castShadow>
-        <sphereGeometry args={[0.05, 8, 6]} />
-        {skinMaterial()}
+        <sphereGeometry args={[0.042, 8, 6]} />
+        <meshStandardMaterial color={LEG} roughness={0.68} metalness={0.06} />
       </mesh>
       <mesh
-        position={[side * 0.02, -SHIN_LEN - 0.04, 0.07]}
-        rotation={[0.35, 0, 0]}
+        position={[side * 0.01, -SHIN_LEN - 0.024, 0.048]}
+        rotation={[0.22, 0, 0]}
         castShadow
       >
-        <boxGeometry args={[0.1, 0.05, 0.22]} />
-        <meshStandardMaterial
-          color={SANDAL}
-          roughness={0.78}
-          metalness={0.05}
-        />
+        <boxGeometry args={[0.085, 0.04, 0.15]} />
+        <meshStandardMaterial color={FOOT} roughness={0.78} metalness={0.04} />
       </mesh>
     </>
   );
 }
 
-/**
- * Road Rash crew kick: all three rowers on that gunwale snap a straight
- * horizontal leg out at hip height.
- */
 export function KickLimb() {
   const hipRefs = useRef<Array<Group | null>>(
     Array.from({ length: LEG_COUNT }, () => null),

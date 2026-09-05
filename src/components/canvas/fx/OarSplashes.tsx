@@ -130,8 +130,7 @@ export function OarSplashes() {
     const { laneOffset } = state;
     const phase = getRowingPhase();
 
-    const bladeX =
-      OARS.pivotX + (OARS.length - OARS.bladeLength * 0.45); // pivot + blade center offset
+    const bladeX = OARS.pivotX + 0.2;
     const baseY = 0.04;
 
     // Emit on "contact" edges (dip threshold crossing).
