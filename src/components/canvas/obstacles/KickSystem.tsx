@@ -5,11 +5,11 @@ import { useFrame } from "@react-three/fiber";
 import {
   BOAT_BOUNDS,
   BUMP,
-  INTRO,
   JUICE,
   KICK,
   NPC_KICK,
   STROKE,
+  getGraceSec,
 } from "@/components/canvas/sceneConfig";
 import { addSurge, getJuice, punchFov } from "@/lib/actionJuice";
 import { audio } from "@/lib/audio";
@@ -43,7 +43,7 @@ function tickNpcKicks(dt: number, laneOffset: number): void {
   const playerHalfX = BOAT_BOUNDS.width * 0.5;
   let warning = false;
 
-  if (juice.runElapsed < INTRO.graceSec) {
+  if (juice.runElapsed < getGraceSec(state.gameMode)) {
     juice.npcKickWarn = false;
     return;
   }

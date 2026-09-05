@@ -22,6 +22,7 @@ import { clamp } from "@/lib/clamp";
 import { triggerNearMissShake } from "@/lib/crashFeedback";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { isHitStopped, tickHitStop } from "@/lib/hitStop";
+import { pickBankLaneX, pickRiverLaneX, seededRandom } from "@/lib/mathUtils";
 import {
   forEachActiveObstacle,
   isSinkableKind,
@@ -32,6 +33,39 @@ import {
 import { isStrokeWindow } from "@/lib/strokeWindow";
 import { audio } from "@/lib/audio";
 import { useGameStore } from "@/store/useGameStore";
+
+function queueRiverThreat(options: {
+  kind: DirectedSpawn["kind"];
+  role: ObstacleRole;
+  z: number;
+  playerSpeed: number;
+  speedDelta: number;
+  heatIndex: number;
+  seed: number;
+}): void {
+  const laneLimit = getLaneLimit();
+  const rockSide: -1 | 1 = seededRandom(options.seed * 2.1) < 0.5 ? -1 : 1;
+  const x =
+    options.kind === "rock"
+      ? pickBankLaneX(
+          options.seed,
+          laneLimit,
+          rockSide,
+          seededRandom(options.seed * 4.4) < 0.55 ? "lip" : "shoulder",
+        )
+      : pickRiverLaneX(options.seed, 0, Math.max(0.8, laneLimit - 0.55));
+  const moving = options.kind === "racing" || options.kind === "dinghy";
+  queueDirectedSpawn({
+    kind: options.kind,
+    x,
+    z: options.z,
+    forwardSpeed: moving ? options.playerSpeed + options.speedDelta : 0,
+    facing: 1,
+    role: options.role,
+    heatIndex: options.heatIndex,
+    amplitude: options.role === "heat" || options.role === "pace" ? 0.05 : 0.12,
+  });
+}
 
 function queueRelative(options: {
   kind: DirectedSpawn["kind"];
@@ -44,20 +78,11 @@ function queueRelative(options: {
   heatIndex: number;
 }): void {
   const laneLimit = getLaneLimit();
-  const minSep = BOAT_BOUNDS.width * 0.5 + 1.2;
-  let x = clamp(options.laneOffset + options.xOff, -laneLimit + 0.5, laneLimit - 0.5);
-  if (options.kind === "racing" || options.kind === "dinghy") {
-    if (Math.abs(x - options.laneOffset) < minSep) {
-      const side = options.xOff >= 0 ? 1 : -1;
-      const pushed = options.laneOffset + side * minSep;
-      if (Math.abs(pushed) <= laneLimit - 0.5) {
-        x = pushed;
-      } else {
-        x = options.laneOffset - side * minSep;
-        x = clamp(x, -laneLimit + 0.5, laneLimit - 0.5);
-      }
-    }
-  }
+  const rockSide: -1 | 1 = options.xOff >= 0 ? 1 : -1;
+  const x =
+    options.kind === "rock"
+      ? pickBankLaneX(options.z + 8, laneLimit, rockSide, "lip")
+      : clamp(options.laneOffset + options.xOff, -laneLimit + 0.5, laneLimit - 0.5);
   const moving = options.kind === "racing" || options.kind === "dinghy";
   queueDirectedSpawn({
     kind: options.kind,
@@ -112,16 +137,13 @@ export function ActionDirector() {
       setHeatTimeLeft(juice.heatTimeLeft);
     }
 
-    if (juice.introIndex < INTRO.beats.length) {
+    if (gameMode !== "festival" && juice.introIndex < INTRO.beats.length) {
       while (
         juice.introIndex < INTRO.beats.length &&
         juice.runElapsed >= INTRO.beats[juice.introIndex].at
       ) {
         const beat = INTRO.beats[juice.introIndex];
         juice.introIndex += 1;
-        if (gameMode === "festival" && beat.role === "pace") {
-          continue;
-        }
         queueRelative({
           kind: beat.kind,
           role: beat.role,
@@ -137,17 +159,18 @@ export function ActionDirector() {
 
     if (gameMode === "festival" && !juice.heatSeeded) {
       juice.heatSeeded = true;
-      for (let index = 0; index < FESTIVAL.starts.length; index += 1) {
-        const start = FESTIVAL.starts[index];
-        queueRelative({
+      juice.introIndex = INTRO.beats.length;
+      juice.packNext = FESTIVAL.packMin;
+      for (let index = 0; index < FESTIVAL.boatCount; index += 1) {
+        const seed = juice.eventSeed + index * 17;
+        queueRiverThreat({
           kind: "racing",
           role: "heat",
-          laneOffset,
-          xOff: start.xOff,
-          z: start.z,
+          z: -16 - seededRandom(seed * 2.2) * 32,
           playerSpeed: speed,
-          speedDelta: start.speedDelta,
-          heatIndex: start.heatIndex,
+          speedDelta: -1.6 + seededRandom(seed * 4.8) * 2.4,
+          heatIndex: index,
+          seed,
         });
       }
     }
@@ -242,36 +265,60 @@ export function ActionDirector() {
     juice.prevLane = laneOffset;
 
     juice.packTimer += clampGameDelta(delta);
-    if (juice.packTimer >= RIVAL.packCheckSec && juice.runElapsed > RIVAL.packAfter) {
+    if (juice.packTimer >= juice.packNext && juice.runElapsed > (gameMode === "festival" ? 1.8 : RIVAL.packAfter)) {
       juice.packTimer = 0;
+      juice.eventSeed += 1;
+      juice.packNext =
+        gameMode === "festival"
+          ? FESTIVAL.packMin + seededRandom(juice.eventSeed * 9.1) * FESTIVAL.packSpan
+          : 1.5 + seededRandom(juice.eventSeed * 9.1) * 2.8;
       const heatCount = countHeatBoats();
-      if (!hasPace && !(gameMode === "festival" && heatCount >= FESTIVAL.boatCount)) {
-        queueRelative({
-          kind: "racing",
-          role: gameMode === "festival" ? "heat" : "pace",
-          laneOffset,
-          xOff: 0.18,
-          z: -13.5,
+      const eventRoll = seededRandom(juice.eventSeed * 3.3);
+
+      if (gameMode === "festival") {
+        const kinds: DirectedSpawn["kind"][] = [
+          "racing",
+          "racing",
+          "log",
+          "dinghy",
+          "log",
+          "racing",
+        ];
+        const kind = kinds[Math.floor(seededRandom(juice.eventSeed * 5.7) * kinds.length)];
+        const asHeat =
+          kind === "racing" && heatCount < FESTIVAL.boatCount + 2 && eventRoll < 0.72;
+        queueRiverThreat({
+          kind,
+          role: asHeat ? "heat" : kind === "racing" || kind === "dinghy" ? "flank" : "none",
+          z: -12 - seededRandom(juice.eventSeed * 6.4) * 36,
           playerSpeed: speed,
-          speedDelta: -RIVAL.paceCatch,
-          heatIndex: gameMode === "festival" ? heatCount : 0,
+          speedDelta: -2.1 + seededRandom(juice.eventSeed * 8.2) * 3.4,
+          heatIndex: asHeat ? heatCount % RIVAL_NAMES.length : -1,
+          seed: juice.eventSeed * 13,
         });
-      }
-      if (!hasFlank) {
-        const laneLimit = getLaneLimit();
-        const leftRoom = laneOffset + laneLimit;
-        const rightRoom = laneLimit - laneOffset;
-        const side = rightRoom >= leftRoom ? 1 : -1;
-        queueRelative({
-          kind: "racing",
-          role: "flank",
-          laneOffset,
-          xOff: side * RIVAL.flankGap,
-          z: RIVAL.flankZ,
-          playerSpeed: speed,
-          speedDelta: -0.7,
-          heatIndex: -1,
-        });
+      } else {
+        if (!hasPace) {
+          queueRiverThreat({
+            kind: "racing",
+            role: "pace",
+            z: -11 - seededRandom(juice.eventSeed * 2.4) * 10,
+            playerSpeed: speed,
+            speedDelta: -RIVAL.paceCatch,
+            heatIndex: 0,
+            seed: juice.eventSeed * 11,
+          });
+        }
+        if (!hasFlank && eventRoll > 0.28) {
+          queueRiverThreat({
+            kind: eventRoll > 0.72 ? "dinghy" : "racing",
+            role: "flank",
+            z: -8 - seededRandom(juice.eventSeed * 4.1) * 16,
+            playerSpeed: speed,
+            speedDelta: -1.2 + seededRandom(juice.eventSeed * 7.5) * 1.8,
+            heatIndex: -1,
+            seed: juice.eventSeed * 19,
+          });
+        }
       }
     }
   }, -1);

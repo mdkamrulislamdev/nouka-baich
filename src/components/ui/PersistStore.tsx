@@ -24,6 +24,7 @@ export function PersistStore() {
       (state) =>
         persistedKey({
           highScore: state.highScore,
+          festivalBest: state.festivalBest,
           musicMuted: state.musicMuted,
           sfxMuted: state.sfxMuted,
           graphicsQuality: state.graphicsQuality,
@@ -33,6 +34,7 @@ export function PersistStore() {
         const state = useGameStore.getState();
         savePersistedSettings({
           highScore: state.highScore,
+          festivalBest: state.festivalBest,
           musicMuted: state.musicMuted,
           sfxMuted: state.sfxMuted,
           graphicsQuality: state.graphicsQuality,

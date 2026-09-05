@@ -5,6 +5,7 @@ import { resetCrashShake } from "@/lib/crashFeedback";
 import { resetHitStop } from "@/lib/hitStop";
 import { resetKickCombat } from "@/lib/kickCombat";
 import { resetLogBreakFx } from "@/lib/logBreakFx";
+import { resetRockBreakFx } from "@/lib/rockBreakFx";
 import { resetPlayerImpulse } from "@/lib/playerImpulse";
 import { clearDirectedSpawns, deactivateAllObstacles } from "@/lib/obstacleWorld";
 import { requestLandscapeLock } from "@/lib/orientation";
@@ -21,6 +22,7 @@ function beginRunWithMode(gameMode: GameMode): void {
   resetHitStop();
   resetPlayerImpulse();
   resetLogBreakFx();
+  resetRockBreakFx();
   resetActionJuice(FESTIVAL.duration);
   resetPowers();
   useGameStore.getState().startGame(gameMode);
@@ -51,6 +53,7 @@ export function returnToMenu(): void {
   resetHitStop();
   resetPlayerImpulse();
   resetLogBreakFx();
+  resetRockBreakFx();
   resetActionJuice();
   resetPowers();
   useGameStore.getState().resetGame();

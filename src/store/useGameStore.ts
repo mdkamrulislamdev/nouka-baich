@@ -3,6 +3,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 
 import { FEVER, FESTIVAL, PICKUPS, SCORE, type Difficulty, type GameMode } from "@/components/canvas/sceneConfig";
 import { markFeverAction } from "@/lib/actionJuice";
+import { skillBonus } from "@/lib/festivalScore";
 import { draftPlayerName } from "@/lib/leaderboard";
 import { grantDrag, grantHaste, grantRam } from "@/lib/powerUps";
 
@@ -21,6 +22,7 @@ export type GameState = {
   laneOffset: number;
   level: number;
   highScore: number;
+  festivalBest: number;
   playerName: string;
   isNewHighScore: boolean;
   musicMuted: boolean;
@@ -41,6 +43,7 @@ export type GameState = {
   kickInRangeRight: boolean;
   kickReady: boolean;
   logBreakCharges: number;
+  rockBreakCharges: number;
   feverCombo: number;
   scorePopFlash: number;
   scorePopAmount: number;
@@ -82,11 +85,13 @@ export type GameActions = {
   triggerSlingshot: () => void;
   triggerPerfectStroke: () => void;
   collectBreaker: () => void;
+  collectCrusher: () => void;
   collectBonus: () => void;
   collectHaste: () => void;
   collectDrag: () => void;
   collectRam: () => void;
   consumeLogBreak: () => boolean;
+  consumeRockBreak: () => boolean;
   triggerDodge: () => void;
   dropFeverCombo: (combo: number) => void;
   setHeatTimeLeft: (heatTimeLeft: number) => void;
@@ -114,6 +119,7 @@ const INITIAL_STATE: GameState = {
   laneOffset: 0,
   level: 1,
   highScore: 0,
+  festivalBest: 0,
   playerName: "Rower",
   isNewHighScore: false,
   musicMuted: false,
@@ -134,6 +140,7 @@ const INITIAL_STATE: GameState = {
   kickInRangeRight: false,
   kickReady: true,
   logBreakCharges: 0,
+  rockBreakCharges: 0,
   feverCombo: 1,
   scorePopFlash: 0,
   scorePopAmount: 0,
@@ -189,7 +196,7 @@ export const useGameStore = create<GameStore>()(
     triggerCloseCall: () =>
       set((state) => {
         const feverCombo = nextFever(state.feverCombo);
-        const bonus = Math.round(SCORE.nearMissBonus * feverCombo);
+        const bonus = skillBonus(SCORE.nearMissBonus, feverCombo, state.gameMode);
         markFeverAction();
         return {
           feverCombo,
@@ -208,7 +215,7 @@ export const useGameStore = create<GameStore>()(
         const feverCombo = nextFever(state.feverCombo);
         const base =
           kind === "racing" ? SCORE.sinkRacingBonus : SCORE.sinkDinghyBonus;
-        const bonus = Math.round(base * feverCombo);
+        const bonus = skillBonus(base, feverCombo, state.gameMode);
         markFeverAction();
         return {
           feverCombo,
@@ -225,12 +232,12 @@ export const useGameStore = create<GameStore>()(
     triggerBump: () =>
       set((state) => ({
         bumpFlash: state.bumpFlash + 1,
-        score: state.score + SCORE.bumpBonus,
+        score: state.score + skillBonus(SCORE.bumpBonus, 1, state.gameMode),
       })),
     triggerOvertake: () =>
       set((state) => {
         const feverCombo = nextFever(state.feverCombo);
-        const bonus = Math.round(SCORE.overtakeBonus * feverCombo);
+        const bonus = skillBonus(SCORE.overtakeBonus, feverCombo, state.gameMode);
         markFeverAction();
         return {
           feverCombo,
@@ -244,7 +251,7 @@ export const useGameStore = create<GameStore>()(
     triggerSlingshot: () =>
       set((state) => {
         const feverCombo = nextFever(state.feverCombo);
-        const bonus = Math.round(SCORE.slingshotBonus * feverCombo);
+        const bonus = skillBonus(SCORE.slingshotBonus, feverCombo, state.gameMode);
         markFeverAction();
         return {
           feverCombo,
@@ -258,7 +265,7 @@ export const useGameStore = create<GameStore>()(
     triggerPerfectStroke: () =>
       set((state) => {
         const feverCombo = nextFever(state.feverCombo);
-        const bonus = Math.round(SCORE.strokeBonus * feverCombo);
+        const bonus = skillBonus(SCORE.strokeBonus, feverCombo, state.gameMode);
         markFeverAction();
         return {
           feverCombo,
@@ -282,10 +289,23 @@ export const useGameStore = create<GameStore>()(
           scorePopLabel: "AXE",
         };
       }),
+    collectCrusher: () =>
+      set((state) => {
+        markFeverAction();
+        return {
+          rockBreakCharges: Math.min(
+            PICKUPS.crusherCap,
+            state.rockBreakCharges + PICKUPS.crusherCharges,
+          ),
+          scorePopFlash: state.scorePopFlash + 1,
+          scorePopAmount: 0,
+          scorePopLabel: "HAMMER",
+        };
+      }),
     collectBonus: () =>
       set((state) => {
         const feverCombo = nextFever(state.feverCombo);
-        const bonus = Math.round(SCORE.bonusPickup * feverCombo);
+        const bonus = skillBonus(SCORE.bonusPickup, feverCombo, state.gameMode);
         markFeverAction();
         return {
           feverCombo,
@@ -328,7 +348,7 @@ export const useGameStore = create<GameStore>()(
         return false;
       }
       const feverCombo = nextFever(state.feverCombo);
-      const bonus = Math.round(SCORE.logSmashBonus * feverCombo);
+      const bonus = skillBonus(SCORE.logSmashBonus, feverCombo, state.gameMode);
       markFeverAction();
       set({
         logBreakCharges: state.logBreakCharges - 1,
@@ -340,10 +360,28 @@ export const useGameStore = create<GameStore>()(
       });
       return true;
     },
+    consumeRockBreak: () => {
+      const state = useGameStore.getState();
+      if (state.rockBreakCharges <= 0) {
+        return false;
+      }
+      const feverCombo = nextFever(state.feverCombo);
+      const bonus = skillBonus(SCORE.rockSmashBonus, feverCombo, state.gameMode);
+      markFeverAction();
+      set({
+        rockBreakCharges: state.rockBreakCharges - 1,
+        feverCombo,
+        score: state.score + bonus,
+        scorePopFlash: state.scorePopFlash + 1,
+        scorePopAmount: bonus,
+        scorePopLabel: "ROCK SMASH",
+      });
+      return true;
+    },
     triggerDodge: () =>
       set((state) => {
         const feverCombo = nextFever(state.feverCombo);
-        const bonus = Math.round(SCORE.dodgeBonus * feverCombo);
+        const bonus = skillBonus(SCORE.dodgeBonus, feverCombo, state.gameMode);
         markFeverAction();
         return {
           feverCombo,
@@ -384,6 +422,7 @@ export const useGameStore = create<GameStore>()(
       set((state) => ({
         ...INITIAL_STATE,
         highScore: state.highScore,
+        festivalBest: state.festivalBest,
         playerName: state.playerName,
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
@@ -403,42 +442,53 @@ export const useGameStore = create<GameStore>()(
     endGame: () =>
       set((state) => {
         const finalScore = Math.floor(state.score);
+        const festivalBest =
+          state.gameMode === "festival"
+            ? Math.max(state.festivalBest, finalScore)
+            : state.festivalBest;
+        const isNewBest =
+          state.gameMode === "festival"
+            ? finalScore > state.festivalBest
+            : finalScore > state.highScore;
         return {
           status: "GAMEOVER",
           runOutcome: "crash",
           score: finalScore,
           podiumPlace: state.gameMode === "festival" ? 4 : 0,
-          isNewHighScore: finalScore > state.highScore,
+          isNewHighScore: isNewBest,
           highScore: Math.max(state.highScore, finalScore),
+          festivalBest,
         };
       }),
     finishRace: (podiumPlace = 0) =>
       set((state) => {
         const place = podiumPlace || state.podiumPlace;
-        const placeBonus =
+        const surviveBonus =
+          state.gameMode === "festival" ? FESTIVAL.surviveBonus : 0;
+        const finalScore = Math.floor(state.score + surviveBonus);
+        const festivalBest =
           state.gameMode === "festival"
-            ? place === 1
-              ? 1200
-              : place === 2
-                ? 700
-                : place === 3
-                  ? 350
-                  : 0
-            : 0;
-        const finalScore = Math.floor(state.score + placeBonus);
+            ? Math.max(state.festivalBest, finalScore)
+            : state.festivalBest;
+        const isNewBest =
+          state.gameMode === "festival"
+            ? finalScore > state.festivalBest
+            : finalScore > state.highScore;
         return {
           status: "GAMEOVER",
           runOutcome: "finish",
           podiumPlace: place,
           score: finalScore,
-          isNewHighScore: finalScore > state.highScore,
+          isNewHighScore: isNewBest,
           highScore: Math.max(state.highScore, finalScore),
+          festivalBest,
         };
       }),
     resetGame: () =>
       set((state) => ({
         ...INITIAL_STATE,
         highScore: state.highScore,
+        festivalBest: state.festivalBest,
         playerName: state.playerName,
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,

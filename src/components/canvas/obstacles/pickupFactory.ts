@@ -14,10 +14,11 @@ import {
   TorusGeometry,
 } from "three";
 
-export type PickupKind = "breaker" | "bonus" | "haste" | "drag" | "ram";
+export type PickupKind = "breaker" | "crusher" | "bonus" | "haste" | "drag" | "ram";
 
 export const PICKUP_KINDS: readonly PickupKind[] = [
   "breaker",
+  "crusher",
   "bonus",
   "haste",
   "drag",
@@ -64,8 +65,8 @@ function makeTextSprite(text: string, fill: string): Sprite {
       fog: false,
     }),
   );
-  sprite.scale.set(3.1, 0.96, 1);
-  sprite.position.y = 1.05;
+  sprite.scale.set(2.2, 0.7, 1);
+  sprite.position.set(1.05, 0.42, 0);
   sprite.renderOrder = 8;
   return sprite;
 }
@@ -90,6 +91,23 @@ function addGlow(group: Group, color: string): void {
   const halo = new Mesh(ring, glowMat(color, 0.9));
   halo.rotation.x = Math.PI / 2;
   group.add(core, halo);
+}
+
+function makeCrusher(): Group {
+  const group = new Group();
+  addGlow(group, "#9ec0ff");
+  const hammer = new Group();
+  const handle = new Mesh(haft, solidMat("#4a3424"));
+  handle.rotation.z = -0.35;
+  const head = new Mesh(axePoll, solidMat("#c5d0dc"));
+  head.scale.set(2.4, 1.6, 1.8);
+  head.position.set(-0.08, 0.22, 0);
+  head.rotation.z = -0.35;
+  hammer.add(handle, head);
+  hammer.scale.setScalar(1.25);
+  group.add(hammer, makeTextSprite("HAMMER", "#c5d0dc"));
+  group.userData.kind = "crusher";
+  return group;
 }
 
 function makeBreaker(): Group {
@@ -171,6 +189,9 @@ export function createPickup(kind: PickupKind): Group {
     case "breaker":
       group = makeBreaker();
       break;
+    case "crusher":
+      group = makeCrusher();
+      break;
     case "haste":
       group = makeHaste();
       break;
@@ -197,6 +218,8 @@ export function pickupSpinRate(kind: PickupKind): number {
       return 3.1;
     case "breaker":
       return 2.4;
+    case "crusher":
+      return 2.6;
     case "bonus":
       return 2.2;
     default:

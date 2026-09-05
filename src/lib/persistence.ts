@@ -5,6 +5,7 @@ export const STORAGE_KEY = "nouka-baich-3d:v1";
 
 export type PersistedSettings = {
   highScore: number;
+  festivalBest: number;
   musicMuted: boolean;
   sfxMuted: boolean;
   graphicsQuality: GraphicsQuality;
@@ -15,8 +16,12 @@ function isGraphicsQuality(value: unknown): value is GraphicsQuality {
   return value === "high" || value === "low";
 }
 
-function isPersistedSettings(value: unknown): value is Omit<PersistedSettings, "playerName"> & {
+function isPersistedSettings(value: unknown): value is Omit<
+  PersistedSettings,
+  "playerName" | "festivalBest"
+> & {
   playerName?: string;
+  festivalBest?: number;
 } {
   if (!value || typeof value !== "object") {
     return false;
@@ -50,6 +55,14 @@ export function loadPersistedSettings(): PersistedSettings | null {
 
     return {
       highScore: Math.max(0, Math.floor(parsed.highScore)),
+      festivalBest: Math.max(
+        0,
+        Math.floor(
+          typeof parsed.festivalBest === "number" && Number.isFinite(parsed.festivalBest)
+            ? parsed.festivalBest
+            : 0,
+        ),
+      ),
       musicMuted: parsed.musicMuted,
       sfxMuted: parsed.sfxMuted,
       graphicsQuality: parsed.graphicsQuality,
@@ -75,5 +88,5 @@ export function savePersistedSettings(settings: PersistedSettings): void {
 }
 
 export function persistedKey(settings: PersistedSettings): string {
-  return `${settings.highScore}|${settings.musicMuted}|${settings.sfxMuted}|${settings.graphicsQuality}|${settings.playerName}`;
+  return `${settings.highScore}|${settings.festivalBest}|${settings.musicMuted}|${settings.sfxMuted}|${settings.graphicsQuality}|${settings.playerName}`;
 }

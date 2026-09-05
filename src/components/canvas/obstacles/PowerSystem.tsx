@@ -7,6 +7,7 @@ import { audio } from "@/lib/audio";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { beginLogSmash, forEachActiveObstacle } from "@/lib/obstacleWorld";
 import { triggerLogBreakFx } from "@/lib/logBreakFx";
+import { triggerRockBreakFx } from "@/lib/rockBreakFx";
 import { isRamActive, tickPowers } from "@/lib/powerUps";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -40,7 +41,11 @@ export function PowerSystem() {
       const dx = obstacle.x - lane;
       const side: -1 | 1 = dx >= 0 ? 1 : -1;
       beginLogSmash(obstacle, side);
-      triggerLogBreakFx(obstacle.x, obstacle.y + 0.2, obstacle.z, side);
+      if (obstacle.kind === "rock") {
+        triggerRockBreakFx(obstacle.x, obstacle.y + 0.25, obstacle.z, side);
+      } else {
+        triggerLogBreakFx(obstacle.x, obstacle.y + 0.2, obstacle.z, side);
+      }
       const now = performance.now();
       if (now - lastRamSfx > 90) {
         lastRamSfx = now;

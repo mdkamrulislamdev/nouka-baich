@@ -1,6 +1,6 @@
 import type { GameMode } from "@/components/canvas/sceneConfig";
 
-export const LEADERBOARD_LIMIT = 10;
+export const LEADERBOARD_LIMIT = 24;
 export const PLAYER_NAME_MAX = 16;
 export const LOCAL_BOARD_KEY = "nouka-baich-3d:leaderboard";
 
@@ -95,6 +95,17 @@ export function rankLeaderboard(entries: LeaderboardEntry[]): LeaderboardEntry[]
     }
   }
   return ranked;
+}
+
+export function topForMode(
+  entries: LeaderboardEntry[],
+  mode: GameMode,
+  limit = 5,
+): LeaderboardEntry[] {
+  return rankLeaderboard(entries.filter((entry) => entry.mode === mode)).slice(
+    0,
+    limit,
+  );
 }
 
 export function loadLocalLeaderboard(): LeaderboardEntry[] {

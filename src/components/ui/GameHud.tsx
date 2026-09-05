@@ -1,6 +1,7 @@
 "use client";
 
 import { SPRINT } from "@/components/canvas/sceneConfig";
+import { PowerTimerStrip } from "@/components/ui/PowerTimerStrip";
 import { SettingsButton } from "@/components/ui/SettingsModal";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -84,6 +85,9 @@ export function GameHud() {
         <div className="hidden items-center sm:flex">
           <SettingsButton />
         </div>
+      </div>
+      <div className="mx-auto max-w-3xl">
+        <PowerTimerStrip />
       </div>
       <div className="mt-2 flex justify-end sm:hidden">
         <SettingsButton />

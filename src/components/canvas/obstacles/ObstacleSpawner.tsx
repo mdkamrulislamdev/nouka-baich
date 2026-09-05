@@ -17,6 +17,7 @@ import {
   KICK,
   BUMP,
   type Difficulty,
+  type GameMode,
   getLaneLimit,
   getSpawnInterval,
 } from "@/components/canvas/sceneConfig";
@@ -46,7 +47,7 @@ import { ObjectPool } from "@/lib/ObjectPool";
 import { useGltfModel } from "@/lib/gltf";
 import { clamp } from "@/lib/clamp";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
-import { seededRandom } from "@/lib/mathUtils";
+import { pickBankLaneX, pickRiverLaneX, seededRandom } from "@/lib/mathUtils";
 import { getJuice } from "@/lib/actionJuice";
 import { isHitStopped } from "@/lib/hitStop";
 import {
@@ -75,12 +76,9 @@ const worldSize = new Vector3();
 const worldCenter = new Vector3();
 const MAX_SPAWNS_PER_FRAME = 2;
 
-/** Bias obstacle X toward river edges instead of the center lane. */
+/** Mix left, right, and center so hazards do not always hug the banks. */
 function laneX(seed: number, laneLimit: number, laneScale: number): number {
-  const sideRoll = seededRandom(seed * 3.77);
-  const magnitude = 0.28 + seededRandom(seed * 5.19) ** 0.42 * 0.72;
-  const sign: -1 | 1 = sideRoll < 0.5 ? -1 : 1;
-  return sign * magnitude * laneLimit * laneScale;
+  return pickRiverLaneX(seed, 0, laneLimit * laneScale);
 }
 
 function laneXUniform(seed: number, laneLimit: number, laneScale: number): number {
@@ -91,32 +89,40 @@ function pickSpawnKind(
   seed: number,
   level: number,
   difficulty: Difficulty,
+  gameMode: GameMode,
 ): ObstacleKind {
   const roll = seededRandom(seed * 1.7);
   const preset = DIFFICULTY_PRESETS[difficulty];
   const levelT = Math.min(1, Math.max(0, (level - 1) / 3));
 
+  if (gameMode === "festival") {
+    if (roll < 0.2) return "rock";
+    if (roll < 0.48) return "log";
+    if (roll < 0.66) return "dinghy";
+    if (roll < 0.94) return "racing";
+    return "marker";
+  }
+
   if (difficulty === "easy") {
-    if (roll < 0.32) return "rock";
-    if (roll < 0.56) return "log";
-    if (roll < 0.78) return "dinghy";
+    if (roll < 0.22) return "rock";
+    if (roll < 0.5) return "log";
+    if (roll < 0.76) return "dinghy";
     return "racing";
   }
 
   if (difficulty === "hard") {
-    const racingEnd = 0.82 - 0.04 * levelT;
-    if (roll < 0.18) return "rock";
-    if (roll < 0.34) return "log";
-    if (roll < 0.5) return "dinghy";
+    const racingEnd = 0.84 - 0.04 * levelT;
+    if (roll < 0.2) return "rock";
+    if (roll < 0.42) return "log";
+    if (roll < 0.58) return "dinghy";
     if (roll < racingEnd) return "racing";
     return "marker";
   }
 
-  // medium
   const racingEnd = 0.9 - 0.06 * levelT;
-  if (roll < 0.24) return "rock";
-  if (roll < 0.44) return "log";
-  if (roll < 0.6) return "dinghy";
+  if (roll < 0.22) return "rock";
+  if (roll < 0.48) return "log";
+  if (roll < 0.66) return "dinghy";
   if (roll < racingEnd) return "racing";
   if (preset.skipMarkers) return "log";
   return "marker";
@@ -279,16 +285,39 @@ function spawnMarkerCluster(
 function placeRock(record: ObstacleRecord, seed: number, z: number): void {
   resetObstacleCombat(record);
   const laneLimit = getLaneLimit();
-  const scale = 0.62 + seededRandom(seed * 5.2) * 0.32;
+  const scale = 0.38 + seededRandom(seed * 5.2) * 0.22;
+  const bankSide: -1 | 1 = seededRandom(seed * 2.9) < 0.5 ? -1 : 1;
+  const band = seededRandom(seed * 4.7) < 0.55 ? "lip" : "shoulder";
   record.active = true;
-  record.x = laneX(seed, laneLimit, OBSTACLE_SPAWN.rockLaneScale);
+  record.x = pickBankLaneX(seed, laneLimit, bankSide, band);
   record.y = ROCK_MODEL.embedY;
   record.z = z;
   record.rotY = seededRandom(seed * 3.4) * Math.PI * 2;
   record.scale = scale;
-  record.halfX = ROCK_MODEL.targetWidth * 0.45 * scale;
-  record.halfY = ROCK_MODEL.targetWidth * 0.35 * scale;
-  record.halfZ = ROCK_MODEL.targetWidth * 0.45 * scale;
+  record.halfX = ROCK_MODEL.targetWidth * 0.4 * scale;
+  record.halfY = ROCK_MODEL.targetWidth * 0.32 * scale;
+  record.halfZ = ROCK_MODEL.targetWidth * 0.4 * scale;
+  record.forwardSpeed = 0;
+}
+
+function placeBankRock(
+  record: ObstacleRecord,
+  seed: number,
+  z: number,
+  side: -1 | 1,
+): void {
+  resetObstacleCombat(record);
+  const laneLimit = getLaneLimit();
+  const scale = 0.4 + seededRandom(seed * 5.2) * 0.2;
+  record.active = true;
+  record.x = pickBankLaneX(seed, laneLimit, side, "lip");
+  record.y = ROCK_MODEL.embedY;
+  record.z = z + (seededRandom(seed * 4.6) - 0.5) * 6;
+  record.rotY = seededRandom(seed * 3.4) * Math.PI * 2;
+  record.scale = scale;
+  record.halfX = ROCK_MODEL.targetWidth * 0.42 * scale;
+  record.halfY = ROCK_MODEL.targetWidth * 0.34 * scale;
+  record.halfZ = ROCK_MODEL.targetWidth * 0.42 * scale;
   record.forwardSpeed = 0;
 }
 
@@ -433,10 +462,15 @@ function placeDirected(record: ObstacleRecord, spawn: DirectedSpawn): void {
   }
 
   if (spawn.kind === "rock") {
-    const scale = 0.72;
+    const scale = 0.46;
+    const laneLimit = getLaneLimit();
+    const side: -1 | 1 = spawn.x >= 0 ? 1 : -1;
+    const band = Math.abs(spawn.x) > laneLimit * 0.88 ? "lip" : "shoulder";
+    record.x = pickBankLaneX(spawn.z + 11, laneLimit, side, band);
+    record.originX = record.x;
     record.scale = scale;
     record.y = ROCK_MODEL.embedY;
-    record.rotY = spawn.x * 0.35;
+    record.rotY = record.x * 0.35;
     record.halfX = ROCK_MODEL.targetWidth * 0.45 * scale;
     record.halfY = ROCK_MODEL.targetWidth * 0.35 * scale;
     record.halfZ = ROCK_MODEL.targetWidth * 0.45 * scale;
@@ -454,6 +488,25 @@ function placeDirected(record: ObstacleRecord, spawn: DirectedSpawn): void {
   record.halfZ = LOG_EXTENTS.halfZ * scale;
   record.forwardSpeed = 0;
   record.cruiseSpeed = 0;
+}
+
+function spawnBankGutterRock(
+  items: PooledObstacle[],
+  pools: ObstaclePools,
+  root: Group,
+  seed: number,
+  z: number,
+  side: -1 | 1,
+): void {
+  const slot = acquireIdleObstacle("rock");
+  if (!slot) {
+    return;
+  }
+  const item = findItem(items, slot);
+  if (item) {
+    activateObstacle(item, pools, root);
+  }
+  placeBankRock(slot, seed, z, side);
 }
 
 function consumeDirectedSpawns(
@@ -485,6 +538,7 @@ export function ObstacleSpawner() {
   const poolsRef = useRef<ObstaclePools | null>(null);
   const distanceRef = useRef(0);
   const spawnCountRef = useRef(0);
+  const bankDistanceRef = useRef(0);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -582,6 +636,7 @@ export function ObstacleSpawner() {
       }
       distanceRef.current = OBSTACLE_SPAWN.interval * 0.35;
       spawnCountRef.current = 0;
+      bankDistanceRef.current = 0;
       return;
     }
 
@@ -596,8 +651,54 @@ export function ObstacleSpawner() {
 
     consumeDirectedSpawns(items, pools, root);
 
+    bankDistanceRef.current += dz;
+    if (bankDistanceRef.current >= OBSTACLE_SPAWN.bankRockEvery) {
+      bankDistanceRef.current -= OBSTACLE_SPAWN.bankRockEvery;
+      const bankSeed = spawnCountRef.current * 13 + Math.floor(state.distance);
+      const side: -1 | 1 = seededRandom(bankSeed * 2.9) < 0.5 ? -1 : 1;
+      spawnBankGutterRock(
+        items,
+        pools,
+        root,
+        bankSeed,
+        OBSTACLE_SPAWN.bankSpawnZ,
+        side,
+      );
+      if (seededRandom(bankSeed * 4.1) > 0.72) {
+        spawnBankGutterRock(
+          items,
+          pools,
+          root,
+          bankSeed + 9,
+          OBSTACLE_SPAWN.bankSpawnZ - 10,
+          side < 0 ? 1 : -1,
+        );
+      }
+    }
+
     forEachActiveObstacle((obstacle) => {
       if (obstacle.sinking) {
+        if (obstacle.smash && obstacle.kind === "rock") {
+          obstacle.smashT += dt / 0.28;
+          const t = Math.min(1, obstacle.smashT);
+          const burst = 1 - (1 - t) * (1 - t);
+          obstacle.y = obstacle.sinkStartY + burst * 0.55;
+          obstacle.x += obstacle.sinkSide * 4.6 * dt;
+          obstacle.rotX = burst * 4.2;
+          obstacle.rotY += dt * 28;
+          obstacle.rotZ = obstacle.sinkSide * burst * 5.2;
+          obstacle.scale = Math.max(
+            0.02,
+            obstacle.smashScale * (1 + burst * 0.9) * (1 - t * t * t),
+          );
+          if (t >= 1) {
+            const item = findItem(items, obstacle);
+            if (item) {
+              recycleObstacle(item, pools);
+            }
+          }
+          return;
+        }
         if (obstacle.smash && obstacle.kind === "log") {
           obstacle.smashT += dt / 0.92;
           const t = Math.min(1, obstacle.smashT);
@@ -718,8 +819,16 @@ export function ObstacleSpawner() {
       }
       if (obstacle.z > OBSTACLE_SPAWN.recycleZ) {
         if (obstacle.role === "heat") {
-          obstacle.z = 8.5;
-          obstacle.passed = true;
+          const wrapLimit = Math.max(0.6, getLaneLimit() - obstacle.halfX);
+          obstacle.z = -24 - seededRandom(obstacle.id * 8.4 + obstacle.z) * 30;
+          obstacle.originX = pickRiverLaneX(
+            obstacle.id * 5.1 + Math.floor(state.distance),
+            0,
+            wrapLimit,
+          );
+          obstacle.x = obstacle.originX;
+          obstacle.passed = false;
+          obstacle.aheadTracked = true;
           return;
         }
         const item = findItem(items, obstacle);
@@ -729,18 +838,32 @@ export function ObstacleSpawner() {
       }
     });
 
-    const interval = getSpawnInterval(level, difficulty, state.distance);
+    const interval = getSpawnInterval(
+      level,
+      difficulty,
+      state.distance,
+      state.gameMode,
+    );
     let spawnsThisFrame = 0;
-    const introHold = getJuice().runElapsed < INTRO.holdSpawnUntil;
+    const introHold =
+      state.gameMode === "festival"
+        ? getJuice().runElapsed < 1.05
+        : getJuice().runElapsed < INTRO.holdSpawnUntil;
+    const spawnCap = state.gameMode === "festival" ? 3 : MAX_SPAWNS_PER_FRAME;
     while (
       !introHold &&
       distanceRef.current >= interval &&
-      spawnsThisFrame < MAX_SPAWNS_PER_FRAME
+      spawnsThisFrame < spawnCap
     ) {
       distanceRef.current -= interval;
       spawnCountRef.current += 1;
       spawnsThisFrame += 1;
-      const kind = pickSpawnKind(spawnCountRef.current, level, difficulty);
+      const kind = pickSpawnKind(
+        spawnCountRef.current,
+        level,
+        difficulty,
+        state.gameMode,
+      );
 
       if (kind === "marker") {
         if (

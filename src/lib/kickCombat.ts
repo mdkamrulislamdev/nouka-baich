@@ -42,7 +42,7 @@ const targets: KickTargets = {
 };
 
 /** Boats this close to the player center can be hit from either side. */
-const SIDE_OVERLAP = 0.35;
+const SIDE_OVERLAP = 1.15;
 
 function nowMs(): number {
   return typeof performance === "undefined" ? Date.now() : performance.now();
@@ -126,7 +126,7 @@ export function queryKickTargets(
   const playerHalfX = BOAT_BOUNDS.width * 0.5;
 
   forEachActiveObstacle((obstacle) => {
-    if (obstacle.sinking || obstacle.bumpTimer > 0) {
+    if (obstacle.sinking) {
       return;
     }
     const boat = isSinkableKind(obstacle.kind);
@@ -142,7 +142,8 @@ export function queryKickTargets(
 
     const dx = obstacle.x - laneOffset;
     const gapX = Math.abs(dx) - playerHalfX - obstacle.halfX;
-    if (gapX < KICK.minGap || gapX > KICK.rangeX) {
+    // Overlap is still a valid kick — only ignore boats too far beside the hull.
+    if (gapX > KICK.rangeX) {
       return;
     }
 

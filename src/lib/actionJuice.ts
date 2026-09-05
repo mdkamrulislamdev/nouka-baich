@@ -14,6 +14,8 @@ export type JuiceState = {
   runElapsed: number;
   introIndex: number;
   packTimer: number;
+  packNext: number;
+  eventSeed: number;
   goUntil: number;
   prevLane: number;
   heatSeeded: boolean;
@@ -34,6 +36,8 @@ const juice: JuiceState = {
   runElapsed: 0,
   introIndex: 0,
   packTimer: 0,
+  packNext: 2.1,
+  eventSeed: 1,
   goUntil: 0,
   prevLane: 0,
   heatSeeded: false,
@@ -60,6 +64,8 @@ export function resetActionJuice(heatDuration = FESTIVAL.duration): void {
   juice.runElapsed = 0;
   juice.introIndex = 0;
   juice.packTimer = 0;
+  juice.packNext = 1.8 + Math.random() * 1.6;
+  juice.eventSeed = 1 + Math.floor(Math.random() * 90000);
   juice.goUntil = 1.15;
   juice.prevLane = 0;
   juice.heatSeeded = false;

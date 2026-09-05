@@ -23,6 +23,7 @@ import { ScenePostProcessing } from "@/components/canvas/ScenePostProcessing";
 import { WeatherSystem } from "@/components/canvas/WeatherSystem";
 import { WaterWake } from "@/components/canvas/fx/WaterWake";
 import { LogBreakBurst } from "@/components/canvas/fx/LogBreakBurst";
+import { RockBreakBurst } from "@/components/canvas/fx/RockBreakBurst";
 import { OarSplashes } from "@/components/canvas/fx/OarSplashes";
 import { ScrollingWorld } from "@/components/canvas/world/ScrollingWorld";
 import { getAtmosphere } from "@/components/canvas/sceneConfig";
@@ -83,6 +84,7 @@ export function GameCanvas({ children }: GameCanvasProps) {
         <WaterWake />
         <OarSplashes />
         <LogBreakBurst />
+        <RockBreakBurst />
         <ActionDirector />
         <KickSystem />
         <PowerSystem />

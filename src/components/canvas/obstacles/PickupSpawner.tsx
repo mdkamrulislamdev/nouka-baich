@@ -12,7 +12,7 @@ import { getJuice } from "@/lib/actionJuice";
 import { audio } from "@/lib/audio";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
 import { forEachActiveObstacle } from "@/lib/obstacleWorld";
-import { seededRandom } from "@/lib/mathUtils";
+import { pickRiverLaneX, seededRandom } from "@/lib/mathUtils";
 import { detachObject } from "@/lib/dispose";
 import {
   createPickup,
@@ -45,11 +45,13 @@ function isCorridorClear(x: number, z: number): boolean {
 const PICKUP_ORDER: PickupKind[] = [
   "breaker",
   "haste",
+  "crusher",
   "bonus",
   "drag",
   "breaker",
   "bonus",
   "haste",
+  "crusher",
   "drag",
   "bonus",
 ];
@@ -63,14 +65,7 @@ function pickKind(seed: number): PickupKind {
 
 function pickPickupX(seed: number, attempt: number, kind: PickupKind): number {
   const limit = getLaneLimit() * (kind === "ram" ? 0.86 : 0.94);
-  const roll = seededRandom(seed * 7.13 + attempt * 3.91);
-  if (roll < 0.34) {
-    return -limit * (0.18 + seededRandom(seed * 11.7 + attempt) * 0.82);
-  }
-  if (roll < 0.68) {
-    return limit * (0.18 + seededRandom(seed * 11.7 + attempt) * 0.82);
-  }
-  return (seededRandom(seed * 19.3 + attempt) * 2 - 1) * limit * 0.4;
+  return pickRiverLaneX(seed, attempt, limit);
 }
 
 function pickPickupZ(seed: number, kind: PickupKind): number {
@@ -89,6 +84,10 @@ function collectPickup(kind: PickupKind): void {
     case "breaker":
       state.collectBreaker();
       audio.playSfx("kick", { rate: 0.92, volume: 0.7 });
+      break;
+    case "crusher":
+      state.collectCrusher();
+      audio.playSfx("crash", { rate: 1.35, volume: 0.38 });
       break;
     case "haste":
       state.collectHaste();

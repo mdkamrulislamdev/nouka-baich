@@ -13,13 +13,13 @@ export function ScorePopLayer() {
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[12%] z-20 flex justify-center px-4 sm:top-[10%]">
-      <div key={flash} className="score-pop text-center">
-        <p className="text-[0.7rem] tracking-[0.32em] text-[#e4c36a] uppercase">
+    <div className="pointer-events-none absolute top-24 right-3 z-20 flex max-w-[42vw] flex-col items-end sm:top-28 sm:right-5">
+      <div key={flash} className="score-pop text-right">
+        <p className="text-[0.62rem] tracking-[0.22em] text-[#e4c36a] uppercase">
           {label}
         </p>
         {amount > 0 ? (
-          <p className="font-mono text-4xl font-bold text-[#f6e6c2] tabular-nums sm:text-5xl">
+          <p className="font-mono text-2xl font-bold text-[#f6e6c2] tabular-nums sm:text-3xl">
             +{amount.toLocaleString()}
           </p>
         ) : null}

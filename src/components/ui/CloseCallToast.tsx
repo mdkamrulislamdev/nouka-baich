@@ -16,17 +16,17 @@ export function CloseCallToast() {
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-24 z-20 flex justify-center px-4 sm:top-28">
+    <div className="pointer-events-none absolute top-40 right-3 z-20 max-w-[42vw] sm:top-44 sm:right-5">
       <div
         key={closeCallFlash}
-        className="close-call-toast rounded-sm border border-[#e4c36a] bg-[#9b1c1c]/88 px-5 py-2.5 text-center shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-[2px]"
+        className="close-call-toast rounded-sm border border-[#e4c36a] bg-[#9b1c1c]/88 px-3 py-2 text-right shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
       >
-        <p className="font-bengali text-lg font-bold text-[#f6e6c2]">
+        <p className="font-bengali text-sm font-bold text-[#f6e6c2]">
           খুব কাছে!
         </p>
-        <p className="text-[0.65rem] tracking-[0.28em] text-[#e4c36a] uppercase">
+        <p className="text-[0.58rem] tracking-[0.18em] text-[#e4c36a] uppercase">
           Close Call! +{closeCallBonus.toLocaleString()}
-          {nearMissCombo > 1 ? ` · x${nearMissCombo} combo` : ""}
+          {nearMissCombo > 1 ? ` · x${nearMissCombo}` : ""}
         </p>
       </div>
     </div>

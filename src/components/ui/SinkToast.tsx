@@ -13,17 +13,17 @@ export function SinkToast() {
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-36 z-20 flex justify-center px-4 sm:top-40">
+    <div className="pointer-events-none absolute top-40 left-3 z-20 max-w-[42vw] sm:top-44 sm:left-5">
       <div
         key={sinkFlash}
-        className="close-call-toast rounded-sm border border-[#7ad0ff] bg-[#0d3a4a]/90 px-5 py-2.5 text-center shadow-[0_12px_40px_rgba(0,0,0,0.45)] backdrop-blur-[2px]"
+        className="close-call-toast rounded-sm border border-[#7ad0ff] bg-[#0d3a4a]/90 px-3 py-2 text-left shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
       >
-        <p className="font-bengali text-lg font-bold text-[#f6e6c2]">
+        <p className="font-bengali text-sm font-bold text-[#f6e6c2]">
           সরে গেল!
         </p>
-        <p className="text-[0.65rem] tracking-[0.28em] text-[#7ad0ff] uppercase">
+        <p className="text-[0.58rem] tracking-[0.18em] text-[#7ad0ff] uppercase">
           Boat shoved! +{sinkBonus.toLocaleString()}
-          {sinkCombo > 1 ? ` · x${sinkCombo} combo` : ""}
+          {sinkCombo > 1 ? ` · x${sinkCombo}` : ""}
         </p>
       </div>
     </div>

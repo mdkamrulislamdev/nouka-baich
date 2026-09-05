@@ -165,7 +165,7 @@ export const PALM_MODEL = {
 
 export const ROCK_MODEL = {
   path: "/models/stylized_rocks/scene.gltf",
-  targetWidth: 1.35,
+  targetWidth: 1.05,
   embedY: -0.28,
 } as const;
 
@@ -279,20 +279,21 @@ export const AUDIO = {
 
 export const SCORE = {
   referenceSpeed: 12,
-  nearMissBonus: 60,
+  nearMissBonus: 95,
   nearMissComboWindowMs: 4000,
   nearMissComboMax: 8,
-  sinkRacingBonus: 200,
-  sinkDinghyBonus: 125,
+  sinkRacingBonus: 280,
+  sinkDinghyBonus: 160,
   sinkComboWindowMs: 3500,
   sinkComboMax: 8,
-  bumpBonus: 60,
-  overtakeBonus: 320,
-  slingshotBonus: 180,
-  strokeBonus: 75,
+  bumpBonus: 80,
+  overtakeBonus: 420,
+  slingshotBonus: 220,
+  strokeBonus: 85,
   bonusPickup: 100,
-  logSmashBonus: 240,
-  dodgeBonus: 120,
+  logSmashBonus: 360,
+  rockSmashBonus: 320,
+  dodgeBonus: 150,
 } as const;
 
 export const FEVER = {
@@ -391,9 +392,9 @@ export const RIVAL_NAMES = [
 /** Foot kick: Q / E / Space, then a short-range hit check. */
 export const KICK = {
   /** Wider than the small visible foot so nearby boats still get shoved. */
-  rangeX: 0.95,
-  minGap: 0.06,
-  rangeZ: 1.7,
+  rangeX: 1.15,
+  minGap: -1.8,
+  rangeZ: 2.05,
   duration: 0.58,
   cooldownMs: 620,
   sinkDuration: 3.8,
@@ -455,14 +456,25 @@ export const SPRINT = {
 } as const;
 
 export const FESTIVAL = {
-  duration: 90,
-  boatCount: 3,
+  duration: 100,
+  boatCount: 5,
+  speedMul: 1.2,
+  spawnMul: 0.5,
+  packMin: 0.7,
+  packSpan: 1.15,
+  actionMul: 1.45,
+  surviveBonus: 700,
+  graceSec: 1.05,
   starts: [
     { z: -20, xOff: -2.45, speedDelta: -0.35, heatIndex: 0 },
     { z: -30, xOff: 2.5, speedDelta: -0.9, heatIndex: 1 },
     { z: -42, xOff: -2.2, speedDelta: 0.25, heatIndex: 2 },
   ],
 } as const;
+
+export function getGraceSec(mode: GameMode): number {
+  return mode === "festival" ? FESTIVAL.graceSec : INTRO.graceSec;
+}
 
 export const PROGRESSION = {
   metersPerLevel: 220,
@@ -480,31 +492,37 @@ export function getLevelForDistance(distance: number): number {
 export function getTargetSpeed(
   level: number,
   difficulty: Difficulty = "medium",
+  gameMode: GameMode = "endless",
 ): number {
   const t = Math.max(0, level - 1);
   const preset = DIFFICULTY_PRESETS[difficulty];
-  return PROGRESSION.baseSpeed * 1.12 ** t * preset.speedMul;
+  const heat = gameMode === "festival" ? FESTIVAL.speedMul : 1;
+  return PROGRESSION.baseSpeed * 1.12 ** t * preset.speedMul * heat;
 }
 
 export function getSpawnInterval(
   level: number,
   difficulty: Difficulty = "medium",
   distance = 0,
+  gameMode: GameMode = "endless",
 ): number {
   const preset = DIFFICULTY_PRESETS[difficulty];
-  if (distance < 55) {
-    return 18 * preset.spawnMul;
-  }
-  if (level <= 1) {
-    return 11 * preset.spawnMul;
-  }
-  return (
-    Math.max(
-      PROGRESSION.minInterval,
-      OBSTACLE_SPAWN.interval *
-        PROGRESSION.intervalDecay ** Math.max(0, level - 1),
-    ) * preset.spawnMul
-  );
+  const wave = 0.72 + seededIntervalJitter(distance) * 0.56;
+  const base =
+    level <= 1
+      ? 10.4 * preset.spawnMul
+      : Math.max(
+          PROGRESSION.minInterval,
+          OBSTACLE_SPAWN.interval *
+            PROGRESSION.intervalDecay ** Math.max(0, level - 1),
+        ) * preset.spawnMul;
+  const heat = gameMode === "festival" ? FESTIVAL.spawnMul : 1;
+  return base * wave * heat;
+}
+
+function seededIntervalJitter(distance: number): number {
+  const value = Math.sin((Math.floor(distance / 7) + 1) * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
 }
 
 export const POWERS = {
@@ -527,16 +545,19 @@ export const PICKUPS = {
   ramSpawnZ: -138,
   recycleZ: 16,
   y: 2.35,
-  poolSize: 10,
+  poolSize: 12,
   breakerCharges: 1,
   breakerCap: 2,
+  crusherCharges: 1,
+  crusherCap: 2,
   collectRadius: 0.95,
   bonusSpread: 2.05,
   clearX: 2.4,
   clearZ: 10,
   weights: {
     bonus: 0.24,
-    breaker: 0.24,
+    breaker: 0.2,
+    crusher: 0.18,
     haste: 0.22,
     drag: 0.22,
     ram: 0.03,
@@ -548,13 +569,15 @@ export const OBSTACLE_SPAWN = {
   spawnZ: -96,
   recycleZ: 22,
   poolSize: 6,
-  rockPoolSize: 8,
+  rockPoolSize: 14,
   logPoolSize: 8,
   dinghyPoolSize: 8,
   racingPoolSize: 10,
   y: -0.2,
   laneScale: 0.96,
-  rockLaneScale: 0.96,
+  rockLaneScale: 0.98,
+  bankRockEvery: 20,
+  bankSpawnZ: -70,
   dinghyLaneScale: 0.94,
   racingLaneScale: 0.94,
 } as const;

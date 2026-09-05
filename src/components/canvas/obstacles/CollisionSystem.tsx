@@ -2,7 +2,7 @@
 
 import { useFrame } from "@react-three/fiber";
 
-import { BUMP, INTRO } from "@/components/canvas/sceneConfig";
+import { BUMP, getGraceSec } from "@/components/canvas/sceneConfig";
 import { getJuice } from "@/lib/actionJuice";
 import { audio } from "@/lib/audio";
 import { clearLastCollision, queryObstacleCollision } from "@/lib/collision";
@@ -10,6 +10,7 @@ import { resetCrashShake, triggerCrashShake } from "@/lib/crashFeedback";
 import { isGameplayActive } from "@/lib/gameplay";
 import { beginLogSmash, isSinkableKind, shoveNpcBoat } from "@/lib/obstacleWorld";
 import { triggerLogBreakFx } from "@/lib/logBreakFx";
+import { triggerRockBreakFx } from "@/lib/rockBreakFx";
 import { isRamActive } from "@/lib/powerUps";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -34,9 +35,21 @@ export function CollisionSystem() {
     const side: -1 | 1 = hit.x >= laneOffset ? 1 : -1;
     if (isRamActive()) {
       beginLogSmash(hit, side);
-      triggerLogBreakFx(hit.x, hit.y + 0.2, hit.z, side);
+      if (hit.kind === "rock") {
+        triggerRockBreakFx(hit.x, hit.y + 0.25, hit.z, side);
+      } else {
+        triggerLogBreakFx(hit.x, hit.y + 0.2, hit.z, side);
+      }
       audio.playSfx("crash", { rate: 1.1, volume: 0.4 });
       return;
+    }
+    if (hit.kind === "rock" && state.rockBreakCharges > 0) {
+      if (state.consumeRockBreak()) {
+        beginLogSmash(hit, side);
+        triggerRockBreakFx(hit.x, hit.y + 0.25, hit.z, side);
+        audio.playSfx("crash", { rate: 0.82, volume: 0.55 });
+        return;
+      }
     }
     if (hit.kind === "log" && state.logBreakCharges > 0) {
       if (state.consumeLogBreak()) {
@@ -48,7 +61,7 @@ export function CollisionSystem() {
     }
     if (
       isSinkableKind(hit.kind) &&
-      getJuice().runElapsed < INTRO.graceSec
+      getJuice().runElapsed < getGraceSec(state.gameMode)
     ) {
       shoveNpcBoat(hit, side, 1.35, 5.2, 2.4, BUMP.speedMul, BUMP.duration);
       return;
