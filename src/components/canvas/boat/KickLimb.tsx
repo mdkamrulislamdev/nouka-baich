@@ -12,24 +12,19 @@ const SEAT_COUNT = LONGBOAT_RIG.thwartZ.length;
 const LEG_COUNT = SEAT_COUNT * SIDES.length;
 
 const HIP_Y = LONGBOAT_RIG.seatY + 0.24;
-const HIP_X = 0.44;
-const THIGH_LEN = 0.24;
-const SHIN_LEN = 0.21;
-const HORIZONTAL = Math.PI * 0.5;
+const HIP_X = 0.62;
+const THIGH_LEN = 0.26;
+const SHIN_LEN = 0.2;
 
-const LEG = "#121212";
-const FOOT = "#1c1c1c";
+const LEG = "#141414";
+const FOOT = "#111111";
 
-function KickLegMesh() {
+function KickThighMesh() {
   return (
     <>
       <mesh position={[0, -THIGH_LEN * 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.048, THIGH_LEN * 0.7, 4, 8]} />
-        <meshStandardMaterial color={LEG} roughness={0.72} metalness={0.06} />
-      </mesh>
-      <mesh position={[0, -THIGH_LEN * 0.1, 0]} castShadow>
-        <sphereGeometry args={[0.05, 8, 6]} />
-        <meshStandardMaterial color={LEG} roughness={0.7} metalness={0.06} />
+        <capsuleGeometry args={[0.032, THIGH_LEN * 0.62, 4, 8]} />
+        <meshStandardMaterial color={LEG} roughness={0.78} metalness={0.04} />
       </mesh>
     </>
   );
@@ -39,20 +34,16 @@ function KickShinMesh({ side }: { side: KickSide }) {
   return (
     <>
       <mesh position={[0, -SHIN_LEN * 0.5, 0]} castShadow>
-        <capsuleGeometry args={[0.038, SHIN_LEN * 0.68, 4, 8]} />
-        <meshStandardMaterial color={LEG} roughness={0.7} metalness={0.06} />
-      </mesh>
-      <mesh position={[0, -SHIN_LEN, 0]} castShadow>
-        <sphereGeometry args={[0.042, 8, 6]} />
-        <meshStandardMaterial color={LEG} roughness={0.68} metalness={0.06} />
+        <capsuleGeometry args={[0.026, SHIN_LEN * 0.58, 4, 8]} />
+        <meshStandardMaterial color={LEG} roughness={0.76} metalness={0.04} />
       </mesh>
       <mesh
-        position={[side * 0.01, -SHIN_LEN - 0.024, 0.048]}
-        rotation={[0.22, 0, 0]}
+        position={[side * 0.006, -SHIN_LEN - 0.012, 0.028]}
+        rotation={[0.16, 0, 0]}
         castShadow
       >
-        <boxGeometry args={[0.085, 0.04, 0.15]} />
-        <meshStandardMaterial color={FOOT} roughness={0.78} metalness={0.04} />
+        <boxGeometry args={[0.048, 0.022, 0.08]} />
+        <meshStandardMaterial color={FOOT} roughness={0.82} metalness={0.03} />
       </mesh>
     </>
   );
@@ -83,25 +74,25 @@ export function KickLimb() {
         }
 
         const side = SIDES[sideIndex];
-        const lag = seat * 0.08;
+        const lag = seat * 0.07;
         const raw =
           kick.active && kick.side === side
-            ? Math.max(0, (kick.strength - lag) / (1 - lag * 0.5))
+            ? Math.max(0, (kick.strength - lag) / (1 - lag * 0.45))
             : 0;
         const t = Math.min(1, raw);
-        hip.visible = t > 0.03;
+        hip.visible = t > 0.04;
 
-        const chamber = Math.min(1, t / 0.38);
-        const extend = Math.max(0, (t - 0.28) / 0.72);
-        const out = 0.42 + chamber * 0.38 + extend * (HORIZONTAL - 0.8);
+        const chamber = Math.min(1, t / 0.32);
+        const extend = Math.max(0, (t - 0.22) / 0.78);
+        const out = 0.55 + chamber * 0.42 + extend * 0.52;
 
         thigh.rotation.z = side * out;
-        thigh.rotation.x = -0.04 + extend * 0.06;
-        shin.rotation.z = side * (0.95 - extend * 0.95);
-        shin.rotation.x = 0.08 - extend * 0.08;
+        thigh.rotation.x = -0.05 + extend * 0.08;
+        shin.rotation.z = side * (0.95 - extend * 0.9);
+        shin.rotation.x = 0.08 - extend * 0.06;
       }
     }
-  });
+  }, 2);
 
   return (
     <group>
@@ -121,15 +112,15 @@ export function KickLimb() {
                 ref={(node) => {
                   thighRefs.current[index] = node;
                 }}
-                rotation={[0, 0, side * 0.42]}
+                rotation={[0, 0, side * 0.55]}
               >
-                <KickLegMesh />
+                <KickThighMesh />
                 <group
                   ref={(node) => {
                     shinRefs.current[index] = node;
                   }}
                   position={[0, -THIGH_LEN, 0]}
-                  rotation={[0, 0, side * 0.9]}
+                  rotation={[0, 0, side * 0.95]}
                 >
                   <KickShinMesh side={side} />
                 </group>

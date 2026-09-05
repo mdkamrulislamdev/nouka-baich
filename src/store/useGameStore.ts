@@ -3,6 +3,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 
 import { FEVER, FESTIVAL, PICKUPS, SCORE, type Difficulty, type GameMode } from "@/components/canvas/sceneConfig";
 import { markFeverAction } from "@/lib/actionJuice";
+import { grantDrag, grantHaste, grantRam } from "@/lib/powerUps";
 
 export type GameStatus = "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER";
 export type GraphicsQuality = "high" | "low";
@@ -79,6 +80,9 @@ export type GameActions = {
   triggerPerfectStroke: () => void;
   collectBreaker: () => void;
   collectBonus: () => void;
+  collectHaste: () => void;
+  collectDrag: () => void;
+  collectRam: () => void;
   consumeLogBreak: () => boolean;
   triggerDodge: () => void;
   dropFeverCombo: (combo: number) => void;
@@ -264,10 +268,13 @@ export const useGameStore = create<GameStore>()(
       set((state) => {
         markFeverAction();
         return {
-          logBreakCharges: state.logBreakCharges + PICKUPS.breakerCharges,
+          logBreakCharges: Math.min(
+            PICKUPS.breakerCap,
+            state.logBreakCharges + PICKUPS.breakerCharges,
+          ),
           scorePopFlash: state.scorePopFlash + 1,
           scorePopAmount: 0,
-          scorePopLabel: "AXE POWER",
+          scorePopLabel: "AXE",
         };
       }),
     collectBonus: () =>
@@ -280,9 +287,36 @@ export const useGameStore = create<GameStore>()(
           score: state.score + bonus,
           scorePopFlash: state.scorePopFlash + 1,
           scorePopAmount: bonus,
-          scorePopLabel: "BONUS",
+          scorePopLabel: "100 PTS",
         };
       }),
+    collectHaste: () => {
+      grantHaste();
+      markFeverAction();
+      set((state) => ({
+        scorePopFlash: state.scorePopFlash + 1,
+        scorePopAmount: 0,
+        scorePopLabel: "SPEED+",
+      }));
+    },
+    collectDrag: () => {
+      grantDrag();
+      markFeverAction();
+      set((state) => ({
+        scorePopFlash: state.scorePopFlash + 1,
+        scorePopAmount: 0,
+        scorePopLabel: "SLOW",
+      }));
+    },
+    collectRam: () => {
+      grantRam();
+      markFeverAction();
+      set((state) => ({
+        scorePopFlash: state.scorePopFlash + 1,
+        scorePopAmount: 0,
+        scorePopLabel: "RAM",
+      }));
+    },
     consumeLogBreak: () => {
       const state = useGameStore.getState();
       if (state.logBreakCharges <= 0) {

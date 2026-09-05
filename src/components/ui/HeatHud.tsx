@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { FESTIVAL } from "@/components/canvas/sceneConfig";
 import { getJuice } from "@/lib/actionJuice";
+import { getPowers } from "@/lib/powerUps";
 import { useGameStore } from "@/store/useGameStore";
 
 export function HeatHud() {
@@ -18,6 +19,9 @@ export function HeatHud() {
   const draftRef = useRef<HTMLDivElement>(null);
   const goRef = useRef<HTMLDivElement>(null);
   const warnRef = useRef<HTMLDivElement>(null);
+  const hasteRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<HTMLDivElement>(null);
+  const ramRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let frame = 0;
@@ -42,6 +46,22 @@ export function HeatHud() {
       }
       if (warnRef.current) {
         warnRef.current.style.opacity = juice.npcKickWarn ? "1" : "0";
+      }
+      const powers = getPowers();
+      if (hasteRef.current) {
+        hasteRef.current.style.opacity = powers.hasteLeft > 0 ? "1" : "0";
+        hasteRef.current.textContent =
+          powers.hasteLeft > 0 ? `SPEED+ · ${powers.hasteLeft.toFixed(1)}s` : "SPEED+";
+      }
+      if (dragRef.current) {
+        dragRef.current.style.opacity = powers.dragLeft > 0 ? "1" : "0";
+        dragRef.current.textContent =
+          powers.dragLeft > 0 ? `SLOW · ${powers.dragLeft.toFixed(1)}s` : "SLOW";
+      }
+      if (ramRef.current) {
+        ramRef.current.style.opacity = powers.ramLeft > 0 ? "1" : "0";
+        ramRef.current.textContent =
+          powers.ramLeft > 0 ? `RAM · ${powers.ramLeft.toFixed(1)}s` : "RAM";
       }
       frame = window.requestAnimationFrame(tick);
     };
@@ -95,9 +115,27 @@ export function HeatHud() {
         >
           DRAFTING
         </div>
+        <div
+          ref={hasteRef}
+          className="rounded-sm border border-[#3dffc0]/85 bg-[#06382c]/88 px-3 py-1 text-[0.62rem] tracking-[0.18em] text-[#7affd8] uppercase opacity-0"
+        >
+          SPEED+
+        </div>
+        <div
+          ref={dragRef}
+          className="rounded-sm border border-[#b47aff]/85 bg-[#2a1644]/88 px-3 py-1 text-[0.62rem] tracking-[0.18em] text-[#d4a6ff] uppercase opacity-0"
+        >
+          SLOW
+        </div>
+        <div
+          ref={ramRef}
+          className="rounded-sm border border-[#ff3d6e]/90 bg-[#4a1020]/90 px-3 py-1 text-[0.62rem] tracking-[0.18em] text-[#ff7a9a] uppercase opacity-0"
+        >
+          RAM
+        </div>
         {logBreakCharges > 0 ? (
           <div className="rounded-sm border border-[#ffb347]/85 bg-[#6b2a08]/88 px-3 py-1 text-[0.62rem] tracking-[0.2em] text-[#ffd36a] uppercase">
-            Log break · {logBreakCharges}
+            AXE · {logBreakCharges}
           </div>
         ) : null}
         {overtakeFlash > 0 ? (

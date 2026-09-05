@@ -10,6 +10,7 @@ import { resetCrashShake, triggerCrashShake } from "@/lib/crashFeedback";
 import { isGameplayActive } from "@/lib/gameplay";
 import { beginLogSmash, isSinkableKind, shoveNpcBoat } from "@/lib/obstacleWorld";
 import { triggerLogBreakFx } from "@/lib/logBreakFx";
+import { isRamActive } from "@/lib/powerUps";
 import { useGameStore } from "@/store/useGameStore";
 
 export function CollisionSystem() {
@@ -31,6 +32,11 @@ export function CollisionSystem() {
     }
 
     const side: -1 | 1 = hit.x >= laneOffset ? 1 : -1;
+    if (isRamActive()) {
+      beginLogSmash(hit, side);
+      audio.playSfx("crash", { rate: 1.1, volume: 0.4 });
+      return;
+    }
     if (hit.kind === "log" && state.logBreakCharges > 0) {
       if (state.consumeLogBreak()) {
         beginLogSmash(hit, side);

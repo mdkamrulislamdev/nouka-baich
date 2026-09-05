@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import { Box3, FrontSide, Group, Mesh, Vector3, type Material } from "three";
 
 import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
 import { KickLimb } from "@/components/canvas/boat/KickLimb";
 import { LongboatSeats } from "@/components/canvas/boat/LongboatSeats";
 import { OarRig } from "@/components/canvas/boat/OarRig";
+import { isRamActive } from "@/lib/powerUps";
 import { detachObject } from "@/lib/dispose";
 import {
   cloneGltfScene,
@@ -87,6 +89,33 @@ function prepareBoatScene(source: Group): Group {
   return wrapper;
 }
 
+function RamAura() {
+  const groupRef = useRef<Group>(null);
+
+  useFrame(({ clock }) => {
+    const group = groupRef.current;
+    if (!group) {
+      return;
+    }
+    const on = isRamActive();
+    group.visible = on;
+    if (!on) {
+      return;
+    }
+    const pulse = 1 + Math.sin(clock.elapsedTime * 9) * 0.1;
+    group.scale.setScalar(pulse);
+  });
+
+  return (
+    <group ref={groupRef} visible={false} position={[0, 0.38, -2.15]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.82, 0.045, 8, 22]} />
+        <meshBasicMaterial color="#ff3d6e" transparent opacity={0.78} />
+      </mesh>
+    </group>
+  );
+}
+
 export function PlayerBoat() {
   const { scene } = useGltfModel(BOAT_MODEL.path);
   const boat = useMemo(() => prepareBoatScene(scene), [scene]);
@@ -103,6 +132,7 @@ export function PlayerBoat() {
       <LongboatSeats />
       <OarRig />
       <KickLimb />
+      <RamAura />
     </group>
   );
 }

@@ -44,19 +44,18 @@ export const LONGBOAT_RIG = {
 } as const;
 
 export const OARS = {
-  length: 0.92,
+  length: 1.22,
   shaftRadius: 0.015,
   bladeWidth: 0.07,
   bladeLength: 0.16,
-  pivotX: 0.44,
-  pivotY: 0.46,
-  handleLength: 0.15,
+  /** Outer hand of the seated 0.9 m rower. */
+  pivotX: 0.5,
+  pivotY: 0.86,
+  handleLength: 0.18,
   handleRadius: 0.016,
-  stroke: 0.18,
-  /** Extra dip into the water on the catch — blades stay submerged. */
+  stroke: 0.12,
   lift: 0.18,
-  /** Steep outboard angle so most of the loom sits under the opaque water. */
-  restTilt: 1.12,
+  restTilt: 1.18,
   baseRate: 1.05,
   speedRate: 0.11,
   stagger: 0.4,
@@ -272,27 +271,27 @@ export const AUDIO = {
 
 export const SCORE = {
   referenceSpeed: 12,
-  nearMissBonus: 45,
+  nearMissBonus: 60,
   nearMissComboWindowMs: 4000,
   nearMissComboMax: 8,
-  sinkRacingBonus: 180,
-  sinkDinghyBonus: 110,
+  sinkRacingBonus: 200,
+  sinkDinghyBonus: 125,
   sinkComboWindowMs: 3500,
   sinkComboMax: 8,
-  bumpBonus: 48,
-  overtakeBonus: 260,
-  slingshotBonus: 140,
-  strokeBonus: 55,
-  bonusPickup: 160,
-  logSmashBonus: 220,
-  dodgeBonus: 90,
+  bumpBonus: 60,
+  overtakeBonus: 320,
+  slingshotBonus: 180,
+  strokeBonus: 75,
+  bonusPickup: 100,
+  logSmashBonus: 240,
+  dodgeBonus: 120,
 } as const;
 
 export const FEVER = {
   max: 8,
-  idleSec: 2.15,
-  drainSec: 1.35,
-  recoverHeat: 0.42,
+  idleSec: 1.65,
+  drainSec: 1.15,
+  recoverHeat: 0.5,
 } as const;
 
 export const RIVAL = {
@@ -302,31 +301,31 @@ export const RIVAL = {
   flankZ: -9.5,
   flankGap: 2.35,
   packCheckSec: 1.15,
-  packAfter: 7,
+  packAfter: 5,
 } as const;
 
 export const DRAFT = {
   minZ: -3.55,
   maxZ: -1.12,
-  maxGapX: 0.58,
-  speedMul: 0.16,
-  readySec: 0.7,
-  slingshotBoost: 4.6,
-  slingshotSec: 0.72,
+  maxGapX: 0.7,
+  speedMul: 0.2,
+  readySec: 0.55,
+  slingshotBoost: 5.4,
+  slingshotSec: 0.8,
   exitSteer: 0.07,
 } as const;
 
 export const STROKE = {
-  catchMin: 0.76,
-  boost: 0.55,
+  catchMin: 0.7,
+  boost: 0.72,
 } as const;
 
 export const NPC_KICK = {
   rangeX: 0.95,
   rangeZ: 1.75,
-  windup: 0.48,
-  cooldown: 1.55,
-  impulse: 5.2,
+  windup: 0.42,
+  cooldown: 1.2,
+  impulse: 5.4,
   pop: 0.55,
   dodgeGap: 0.88,
 } as const;
@@ -342,8 +341,8 @@ export const JUICE = {
 } as const;
 
 export const INTRO = {
-  holdSpawnUntil: 9.5,
-  graceSec: 3.4,
+  holdSpawnUntil: 7.2,
+  graceSec: 3.2,
   beats: [
     {
       at: 0.55,
@@ -383,18 +382,18 @@ export const RIVAL_NAMES = [
 
 /** Foot kick: Q / E / Space, then a short-range hit check. */
 export const KICK = {
-  /** Slightly longer than the visible foot so a near miss still connects. */
-  rangeX: 0.7,
-  minGap: 0.1,
-  rangeZ: 1.38,
-  duration: 0.5,
-  cooldownMs: 720,
+  /** Wider than the small visible foot so nearby boats still get shoved. */
+  rangeX: 0.95,
+  minGap: 0.06,
+  rangeZ: 1.7,
+  duration: 0.58,
+  cooldownMs: 620,
   sinkDuration: 3.8,
   sinkDepth: 2.6,
   knockPop: 1.2,
   knockSpeed: 5.4,
   knockBack: 1.8,
-  hullRoll: 0.12,
+  hullRoll: 0.2,
 } as const;
 
 /** Knockback when an oar connects. Hull contact is fatal. */
@@ -461,8 +460,8 @@ export const PROGRESSION = {
   metersPerLevel: 220,
   baseSpeed: 11,
   speedPerLevel: 1.8,
-  minInterval: 9,
-  intervalDecay: 0.88,
+  minInterval: 7.2,
+  intervalDecay: 0.86,
   speedDamping: 1.35,
 } as const;
 
@@ -485,11 +484,11 @@ export function getSpawnInterval(
   distance = 0,
 ): number {
   const preset = DIFFICULTY_PRESETS[difficulty];
-  if (distance < 70) {
-    return 24 * preset.spawnMul;
+  if (distance < 55) {
+    return 18 * preset.spawnMul;
   }
   if (level <= 1) {
-    return 14 * preset.spawnMul;
+    return 11 * preset.spawnMul;
   }
   return (
     Math.max(
@@ -500,18 +499,35 @@ export function getSpawnInterval(
   );
 }
 
+export const POWERS = {
+  hasteSec: 5.5,
+  hasteMul: 1.38,
+  dragSec: 4.5,
+  dragMul: 0.64,
+  ramSec: 6,
+  ramAhead: 8.2,
+  ramWidth: 1.9,
+} as const;
+
 export const PICKUPS = {
-  interval: 38,
-  spawnZ: -72,
+  interval: 42,
+  spawnZ: -74,
   recycleZ: 16,
-  y: 0.98,
-  poolSize: 8,
-  breakerChance: 0.38,
-  breakerCharges: 3,
-  collectRadius: 1.22,
-  bonusSpread: 2.15,
-  clearX: 3.4,
-  clearZ: 16,
+  y: 0.92,
+  poolSize: 10,
+  breakerCharges: 1,
+  breakerCap: 2,
+  collectRadius: 0.88,
+  bonusSpread: 2.05,
+  clearX: 2.4,
+  clearZ: 10,
+  weights: {
+    bonus: 0.32,
+    breaker: 0.14,
+    haste: 0.22,
+    drag: 0.16,
+    ram: 0.16,
+  },
 } as const;
 
 export const OBSTACLE_SPAWN = {

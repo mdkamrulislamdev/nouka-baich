@@ -12,25 +12,15 @@ const SIDES = [-1, 1] as const;
 const OAR_COUNT = LONGBOAT_RIG.thwartZ.length * SIDES.length;
 
 function OarMesh({ side }: { side: -1 | 1 }) {
-  const shaftLength = OARS.length - OARS.bladeLength * 0.35;
-  const out = side * (shaftLength * 0.5);
-  const handleMid = -side * (OARS.handleLength * 0.5);
-  const knob = -side * OARS.handleLength;
+  const shaftLength = OARS.length - OARS.bladeLength * 0.28;
+  const grip = side * (OARS.handleLength * 0.28);
+  const shaftMid = side * (shaftLength * 0.5);
+  const blade = side * (OARS.length - OARS.bladeLength * 0.42);
 
   return (
     <group>
-      <mesh position={[handleMid, 0.01, 0]} rotation={[0, 0, Math.PI / 2]} castShadow>
-        <cylinderGeometry
-          args={[OARS.handleRadius, OARS.handleRadius * 0.9, OARS.handleLength, 8]}
-        />
-        <meshStandardMaterial
-          color="#6b3e1c"
-          roughness={0.62}
-          metalness={0.06}
-        />
-      </mesh>
-      <mesh position={[knob, 0.01, 0]} castShadow>
-        <sphereGeometry args={[OARS.handleRadius * 1.35, 8, 6]} />
+      <mesh castShadow>
+        <sphereGeometry args={[OARS.handleRadius * 1.45, 8, 6]} />
         <meshStandardMaterial
           color="#3d2412"
           roughness={0.55}
@@ -38,12 +28,26 @@ function OarMesh({ side }: { side: -1 | 1 }) {
         />
       </mesh>
       <mesh
-        position={[out, 0, 0]}
+        position={[grip, 0, 0]}
         rotation={[0, 0, Math.PI / 2]}
         castShadow
       >
         <cylinderGeometry
-          args={[OARS.shaftRadius, OARS.shaftRadius * 0.82, shaftLength, 6]}
+          args={[OARS.handleRadius, OARS.handleRadius * 0.92, OARS.handleLength, 8]}
+        />
+        <meshStandardMaterial
+          color="#6b3e1c"
+          roughness={0.62}
+          metalness={0.06}
+        />
+      </mesh>
+      <mesh
+        position={[shaftMid, 0, 0]}
+        rotation={[0, 0, Math.PI / 2]}
+        castShadow
+      >
+        <cylinderGeometry
+          args={[OARS.shaftRadius, OARS.shaftRadius * 0.8, shaftLength, 6]}
         />
         <meshStandardMaterial
           color="#5c3a1e"
@@ -52,11 +56,11 @@ function OarMesh({ side }: { side: -1 | 1 }) {
         />
       </mesh>
       <mesh
-        position={[side * (OARS.length - OARS.bladeLength * 0.45), -0.03, 0]}
+        position={[blade, -0.02, 0]}
         rotation={[0, 0, Math.PI / 2]}
         castShadow
       >
-        <boxGeometry args={[OARS.bladeWidth, OARS.bladeLength, 0.04]} />
+        <boxGeometry args={[OARS.bladeWidth, OARS.bladeLength, 0.045]} />
         <meshStandardMaterial
           color="#3d2412"
           roughness={0.7}
@@ -93,12 +97,12 @@ export function OarRig() {
 
         if (status === "MENU") {
           pivot.rotation.y = 0;
-          pivot.rotation.z = side * OARS.restTilt;
+          pivot.rotation.z = -side * OARS.restTilt;
           continue;
         }
 
         pivot.rotation.y = side * zPhase * OARS.stroke;
-        pivot.rotation.z = side * (OARS.restTilt + dip * OARS.lift);
+        pivot.rotation.z = -side * (OARS.restTilt + dip * OARS.lift);
       }
     }
   });
@@ -113,7 +117,7 @@ export function OarRig() {
               pivotsRef.current[seat * SIDES.length + sideIndex] = node;
             }}
             position={[side * OARS.pivotX, OARS.pivotY, z]}
-            rotation={[0, 0, side * OARS.restTilt]}
+            rotation={[0, 0, -side * OARS.restTilt]}
           >
             <OarMesh side={side} />
           </group>

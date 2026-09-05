@@ -11,13 +11,13 @@ import { INTRO, PICKUPS } from "@/components/canvas/sceneConfig";
 import { getJuice } from "@/lib/actionJuice";
 import { audio } from "@/lib/audio";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
-import {
-  forEachActiveObstacle,
-} from "@/lib/obstacleWorld";
+import { forEachActiveObstacle } from "@/lib/obstacleWorld";
 import { seededRandom } from "@/lib/mathUtils";
 import { detachObject } from "@/lib/dispose";
 import {
   createPickup,
+  PICKUP_KINDS,
+  pickupSpinRate,
   type PickupKind,
 } from "@/components/canvas/obstacles/pickupFactory";
 import { useGameStore } from "@/store/useGameStore";
@@ -42,6 +42,52 @@ function isCorridorClear(x: number, z: number): boolean {
   return clear;
 }
 
+function pickKind(seed: number): PickupKind {
+  const roll = seededRandom(seed * 2.17);
+  const { weights } = PICKUPS;
+  const entries: Array<[PickupKind, number]> = [
+    ["bonus", weights.bonus],
+    ["breaker", weights.breaker],
+    ["haste", weights.haste],
+    ["drag", weights.drag],
+    ["ram", weights.ram],
+  ];
+  let acc = 0;
+  for (let index = 0; index < entries.length; index += 1) {
+    acc += entries[index][1];
+    if (roll < acc) {
+      return entries[index][0];
+    }
+  }
+  return "bonus";
+}
+
+function collectPickup(kind: PickupKind): void {
+  const state = useGameStore.getState();
+  switch (kind) {
+    case "breaker":
+      state.collectBreaker();
+      audio.playSfx("kick", { rate: 0.92, volume: 0.7 });
+      break;
+    case "haste":
+      state.collectHaste();
+      audio.playSfx("row", { rate: 1.4, volume: 0.6 });
+      break;
+    case "drag":
+      state.collectDrag();
+      audio.playSfx("splash", { rate: 0.7, volume: 0.5 });
+      break;
+    case "ram":
+      state.collectRam();
+      audio.playSfx("crash", { volume: 0.45 });
+      break;
+    default:
+      state.collectBonus();
+      audio.playSfx("splash", { rate: 1.35, volume: 0.45 });
+      break;
+  }
+}
+
 type PickupSlot = {
   kind: PickupKind;
   object: Group;
@@ -63,15 +109,14 @@ export function PickupSpawner() {
     }
 
     const slots: PickupSlot[] = [];
-    const half = Math.ceil(PICKUPS.poolSize / 2);
     for (let index = 0; index < PICKUPS.poolSize; index += 1) {
-      const kind: PickupKind = index < half ? "breaker" : "bonus";
+      const kind = PICKUP_KINDS[index % PICKUP_KINDS.length];
       const object = createPickup(kind);
       root.add(object);
       slots.push({ kind, object, active: false, x: 0, z: 0 });
     }
     slotsRef.current = slots;
-    distanceRef.current = PICKUPS.interval * 0.4;
+    distanceRef.current = PICKUPS.interval * 0.55;
     spawnCountRef.current = 0;
 
     return () => {
@@ -94,7 +139,7 @@ export function PickupSpawner() {
         slot.object.visible = false;
         slot.object.position.set(0, -8, 0);
       }
-      distanceRef.current = PICKUPS.interval * 0.4;
+      distanceRef.current = PICKUPS.interval * 0.55;
       spawnCountRef.current = 0;
       return;
     }
@@ -114,23 +159,19 @@ export function PickupSpawner() {
         continue;
       }
       slot.z += dz;
-      slot.object.position.set(slot.x, PICKUPS.y, slot.z);
-      slot.object.rotation.y += dt * (slot.kind === "breaker" ? 1.8 : 2.6);
-      const pulse = 1.12 + Math.sin(elapsed * 4.6 + index) * 0.16;
+      const pulse = 1 + Math.sin(elapsed * 4.2 + index) * 0.08;
       slot.object.scale.setScalar(pulse);
-      slot.object.position.y =
-        PICKUPS.y + Math.sin(elapsed * 3.8 + index) * 0.2;
+      slot.object.rotation.y += dt * pickupSpinRate(slot.kind);
+      slot.object.position.set(
+        slot.x,
+        PICKUPS.y + Math.sin(elapsed * 3.1 + index) * 0.08,
+        slot.z,
+      );
 
       const collectDx = Math.abs(slot.x - state.laneOffset);
       const collectDz = Math.abs(slot.z);
-      if (collectDx < PICKUPS.collectRadius && collectDz < 1.35) {
-        if (slot.kind === "breaker") {
-          state.collectBreaker();
-          audio.playSfx("kick", { rate: 0.92, volume: 0.7 });
-        } else {
-          state.collectBonus();
-          audio.playSfx("splash", { rate: 1.35, volume: 0.45 });
-        }
+      if (collectDx < PICKUPS.collectRadius && collectDz < 1.05) {
+        collectPickup(slot.kind);
         slot.active = false;
         slot.object.visible = false;
         continue;
@@ -153,8 +194,7 @@ export function PickupSpawner() {
     spawnCountRef.current += 1;
 
     const seed = spawnCountRef.current;
-    const wantBreaker = seededRandom(seed * 2.17) < PICKUPS.breakerChance;
-    const kind: PickupKind = wantBreaker ? "breaker" : "bonus";
+    const kind = pickKind(seed);
     let free: PickupSlot | null = null;
     for (let index = 0; index < slots.length; index += 1) {
       if (!slots[index].active && slots[index].kind === kind) {
@@ -166,38 +206,18 @@ export function PickupSpawner() {
       return;
     }
 
-    const candidatesX = kind === "breaker" ? [0, 0.85, -0.85, 1.4, -1.4] : [
-      (seededRandom(seed * 4.1) - 0.5) * PICKUPS.bonusSpread * 2,
-    ];
-    const candidatesZ =
-      kind === "breaker"
-        ? [PICKUPS.spawnZ, PICKUPS.spawnZ - 14, PICKUPS.spawnZ - 28]
-        : [PICKUPS.spawnZ];
-
-    let placedX = candidatesX[0];
-    let placedZ = candidatesZ[0];
-    let foundClear = kind !== "breaker";
-    if (kind === "breaker") {
-      outer: for (let zi = 0; zi < candidatesZ.length; zi += 1) {
-        for (let xi = 0; xi < candidatesX.length; xi += 1) {
-          if (isCorridorClear(candidatesX[xi], candidatesZ[zi])) {
-            placedX = candidatesX[xi];
-            placedZ = candidatesZ[zi];
-            foundClear = true;
-            break outer;
-          }
-        }
-      }
-    }
-    if (!foundClear) {
+    const lane =
+      (seededRandom(seed * 4.1) - 0.5) * PICKUPS.bonusSpread * 2;
+    if (!isCorridorClear(lane, PICKUPS.spawnZ)) {
       return;
     }
 
     free.active = true;
-    free.x = placedX;
-    free.z = placedZ;
+    free.x = lane;
+    free.z = PICKUPS.spawnZ;
     free.object.visible = true;
     free.object.position.set(free.x, PICKUPS.y, free.z);
+    free.object.scale.setScalar(1);
   });
 
   return <group ref={rootRef} />;

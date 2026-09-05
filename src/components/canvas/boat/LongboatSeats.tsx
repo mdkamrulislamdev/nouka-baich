@@ -51,8 +51,8 @@ function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
     const kick = getKickPose();
     const kicking = kick.active && kick.side === side ? kick.strength : 0;
     root.rotation.x = -dip * 0.22 - kicking * 0.12;
-    root.rotation.z = side * kicking * 0.55;
-    root.rotation.y = kicking * side * 0.08;
+    root.rotation.z = side * kicking * 0.34;
+    root.rotation.y = -kicking * side * 0.08;
   });
 
   return (

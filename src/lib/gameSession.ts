@@ -1,5 +1,6 @@
 import { audio } from "@/lib/audio";
 import { resetActionJuice } from "@/lib/actionJuice";
+import { resetPowers } from "@/lib/powerUps";
 import { resetCrashShake } from "@/lib/crashFeedback";
 import { resetHitStop } from "@/lib/hitStop";
 import { resetKickCombat } from "@/lib/kickCombat";
@@ -21,6 +22,7 @@ function beginRunWithMode(gameMode: GameMode): void {
   resetPlayerImpulse();
   resetLogBreakFx();
   resetActionJuice(FESTIVAL.duration);
+  resetPowers();
   useGameStore.getState().startGame(gameMode);
 }
 
@@ -50,5 +52,6 @@ export function returnToMenu(): void {
   resetPlayerImpulse();
   resetLogBreakFx();
   resetActionJuice();
+  resetPowers();
   useGameStore.getState().resetGame();
 }
