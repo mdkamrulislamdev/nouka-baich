@@ -5,10 +5,12 @@ import {
   DoubleSide,
   Mesh,
   MeshStandardMaterial,
+  SRGBColorSpace,
   SkinnedMesh,
   type Group,
   type Material,
   type Object3D,
+  type Texture,
 } from "three";
 import { clone as cloneSkinned } from "three/addons/utils/SkeletonUtils.js";
 
@@ -41,6 +43,15 @@ export function preloadGameGltfAssets(): void {
   }
 }
 
+function sharpenTexture(texture: Texture | null | undefined): void {
+  if (!texture) {
+    return;
+  }
+  texture.anisotropy = 16;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+}
+
 function sanitizeMaterial(
   material: Material,
   envMapIntensity: number,
@@ -55,8 +66,13 @@ function sanitizeMaterial(
     material.envMapIntensity = envMapIntensity;
     material.metalness = Math.min(material.metalness, 0.12);
     material.roughness = Math.max(material.roughness, 0.35);
-    // Preserve textured albedo; only tint untextured meshes.
+    sharpenTexture(material.map);
+    sharpenTexture(material.normalMap);
+    sharpenTexture(material.roughnessMap);
+    sharpenTexture(material.metalnessMap);
+    sharpenTexture(material.aoMap);
     if (material.map) {
+      material.map.colorSpace = SRGBColorSpace;
       material.color.set("#ffffff");
     } else {
       material.color.set("#6b3f22");

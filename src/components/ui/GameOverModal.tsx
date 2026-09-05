@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 
 import { replayRun, returnToMenu } from "@/lib/gameSession";
+import { submitLeaderboardScore } from "@/lib/leaderboard";
 import { useGameStore } from "@/store/useGameStore";
+
+const postedRuns = new Set<string>();
 
 export function GameOverModal() {
   const status = useGameStore((state) => state.status);
@@ -31,6 +34,27 @@ export function GameOverModal() {
       setShowCard(false);
     };
   }, [status, runOutcome]);
+
+  useEffect(() => {
+    if (status !== "GAMEOVER") {
+      return;
+    }
+    const state = useGameStore.getState();
+    const finalScore = Math.floor(state.score);
+    if (finalScore < 1) {
+      return;
+    }
+    const key = `${state.gameMode}:${finalScore}:${Math.floor(state.distance)}:${state.level}:${state.runOutcome}`;
+    if (postedRuns.has(key)) {
+      return;
+    }
+    postedRuns.add(key);
+    void submitLeaderboardScore({
+      name: state.playerName,
+      score: finalScore,
+      mode: state.gameMode,
+    });
+  }, [status, score, gameMode]);
 
   if (status !== "GAMEOVER" || !showCard) {
     return null;

@@ -8,6 +8,7 @@ import {
   persistedKey,
   savePersistedSettings,
 } from "@/lib/persistence";
+import { sanitizePlayerName } from "@/lib/leaderboard";
 import { useGameStore } from "@/store/useGameStore";
 
 export function PersistStore() {
@@ -26,6 +27,7 @@ export function PersistStore() {
           musicMuted: state.musicMuted,
           sfxMuted: state.sfxMuted,
           graphicsQuality: state.graphicsQuality,
+          playerName: state.playerName,
         }),
       () => {
         const state = useGameStore.getState();
@@ -34,6 +36,7 @@ export function PersistStore() {
           musicMuted: state.musicMuted,
           sfxMuted: state.sfxMuted,
           graphicsQuality: state.graphicsQuality,
+          playerName: sanitizePlayerName(state.playerName),
         });
       },
     );

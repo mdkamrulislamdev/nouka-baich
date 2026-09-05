@@ -45,9 +45,9 @@ export function triggerLogBreakFx(
     chip.x = x;
     chip.y = y + 0.12;
     chip.z = z;
-    chip.vx = Math.cos(yaw) * (2.4 + (index % 3) * 0.8) + side * 1.1;
-    chip.vy = 2.8 + (index % 4) * 0.55;
-    chip.vz = Math.sin(yaw) * (1.6 + (index % 2) * 0.7);
+    chip.vx = Math.cos(yaw) * 1.1 + side * (4.8 + (index % 3) * 1.2);
+    chip.vy = 2.2 + (index % 4) * 0.45;
+    chip.vz = Math.sin(yaw) * 0.55;
     chip.rx = Math.random() * Math.PI;
     chip.ry = Math.random() * Math.PI;
     chip.rz = Math.random() * Math.PI;

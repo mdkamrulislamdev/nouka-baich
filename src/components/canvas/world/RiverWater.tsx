@@ -103,7 +103,7 @@ function createRiverWater(sourceNormals: Texture): Water {
   normals.wrapS = RepeatWrapping;
   normals.wrapT = RepeatWrapping;
   normals.repeat.set(3, 8);
-  normals.anisotropy = 8;
+  normals.anisotropy = 16;
   normals.needsUpdate = true;
 
   const geometry = new PlaneGeometry(WORLD_SCROLL.riverWidth, WATER_LENGTH);

@@ -34,6 +34,7 @@ export function CollisionSystem() {
     const side: -1 | 1 = hit.x >= laneOffset ? 1 : -1;
     if (isRamActive()) {
       beginLogSmash(hit, side);
+      triggerLogBreakFx(hit.x, hit.y + 0.2, hit.z, side);
       audio.playSfx("crash", { rate: 1.1, volume: 0.4 });
       return;
     }

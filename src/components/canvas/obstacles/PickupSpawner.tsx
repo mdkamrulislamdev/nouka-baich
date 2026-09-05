@@ -7,7 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Group } from "three";
 
-import { INTRO, PICKUPS } from "@/components/canvas/sceneConfig";
+import { PICKUPS } from "@/components/canvas/sceneConfig";
 import { getJuice } from "@/lib/actionJuice";
 import { audio } from "@/lib/audio";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
@@ -42,24 +42,31 @@ function isCorridorClear(x: number, z: number): boolean {
   return clear;
 }
 
+const PICKUP_ORDER: PickupKind[] = [
+  "breaker",
+  "haste",
+  "bonus",
+  "drag",
+  "breaker",
+  "bonus",
+  "haste",
+  "drag",
+  "bonus",
+];
+
 function pickKind(seed: number): PickupKind {
-  const roll = seededRandom(seed * 2.17);
-  const { weights } = PICKUPS;
-  const entries: Array<[PickupKind, number]> = [
-    ["bonus", weights.bonus],
-    ["breaker", weights.breaker],
-    ["haste", weights.haste],
-    ["drag", weights.drag],
-    ["ram", weights.ram],
-  ];
-  let acc = 0;
-  for (let index = 0; index < entries.length; index += 1) {
-    acc += entries[index][1];
-    if (roll < acc) {
-      return entries[index][0];
-    }
+  if (seed >= 24 && seed % 24 === 0) {
+    return "ram";
   }
-  return "bonus";
+  return PICKUP_ORDER[(seed - 1) % PICKUP_ORDER.length];
+}
+
+function pickLane(seed: number, kind: PickupKind): number {
+  const lanes =
+    kind === "ram"
+      ? [2.15, -2.15, 1.85, -1.85]
+      : [0, 1.15, -1.15, 1.85, -1.85, 0.55, -0.55];
+  return lanes[Math.floor(seededRandom(seed * 4.1) * lanes.length) % lanes.length];
 }
 
 function collectPickup(kind: PickupKind): void {
@@ -116,7 +123,7 @@ export function PickupSpawner() {
       slots.push({ kind, object, active: false, x: 0, z: 0 });
     }
     slotsRef.current = slots;
-    distanceRef.current = PICKUPS.interval * 0.55;
+    distanceRef.current = PICKUPS.interval;
     spawnCountRef.current = 0;
 
     return () => {
@@ -139,7 +146,7 @@ export function PickupSpawner() {
         slot.object.visible = false;
         slot.object.position.set(0, -8, 0);
       }
-      distanceRef.current = PICKUPS.interval * 0.55;
+      distanceRef.current = PICKUPS.interval;
       spawnCountRef.current = 0;
       return;
     }
@@ -159,12 +166,13 @@ export function PickupSpawner() {
         continue;
       }
       slot.z += dz;
-      const pulse = 1 + Math.sin(elapsed * 4.2 + index) * 0.08;
+      const beat = 0.5 + 0.5 * Math.sin(elapsed * 6.4 + index);
+      const pulse = 1.08 + beat * beat * 0.32;
       slot.object.scale.setScalar(pulse);
       slot.object.rotation.y += dt * pickupSpinRate(slot.kind);
       slot.object.position.set(
         slot.x,
-        PICKUPS.y + Math.sin(elapsed * 3.1 + index) * 0.08,
+        PICKUPS.y + Math.sin(elapsed * 3.2 + index) * 0.16,
         slot.z,
       );
 
@@ -183,7 +191,7 @@ export function PickupSpawner() {
       }
     }
 
-    if (elapsed < INTRO.holdSpawnUntil) {
+    if (elapsed < PICKUPS.firstAt) {
       return;
     }
 
@@ -203,18 +211,45 @@ export function PickupSpawner() {
       }
     }
     if (!free) {
+      for (let index = 0; index < slots.length; index += 1) {
+        if (!slots[index].active) {
+          free = slots[index];
+          break;
+        }
+      }
+    }
+    if (!free) {
       return;
     }
 
-    const lane =
-      (seededRandom(seed * 4.1) - 0.5) * PICKUPS.bonusSpread * 2;
-    if (!isCorridorClear(lane, PICKUPS.spawnZ)) {
-      return;
+    const placedZ =
+      kind === "ram"
+        ? PICKUPS.ramSpawnZ
+        : seed <= 2
+          ? PICKUPS.earlySpawnZ
+          : PICKUPS.spawnZ;
+    let placedX = pickLane(seed, kind);
+    let foundClear = isCorridorClear(placedX, placedZ);
+    if (!foundClear) {
+      const lanes =
+        kind === "ram"
+          ? [2.15, -2.15, 1.85, -1.85]
+          : [0, 1.15, -1.15, 1.85, -1.85, 0.55, -0.55];
+      for (let i = 0; i < lanes.length; i += 1) {
+        if (isCorridorClear(lanes[i], placedZ)) {
+          placedX = lanes[i];
+          foundClear = true;
+          break;
+        }
+      }
+    }
+    if (!foundClear) {
+      placedX = pickLane(seed + 3, kind);
     }
 
     free.active = true;
-    free.x = lane;
-    free.z = PICKUPS.spawnZ;
+    free.x = placedX;
+    free.z = placedZ;
     free.object.visible = true;
     free.object.position.set(free.x, PICKUPS.y, free.z);
     free.object.scale.setScalar(1);

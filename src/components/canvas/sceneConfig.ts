@@ -78,6 +78,14 @@ export const BOAT_BOUNDS = {
   centerY: 0.4,
 } as const;
 
+/** Fatal rams use a tighter box than the visual hull / kick range. */
+export const COLLISION = {
+  hullScaleX: 0.52,
+  hullScaleZ: 0.55,
+  obstacleScaleX: 0.7,
+  obstacleScaleZ: 0.68,
+} as const;
+
 export const CAMERA = {
   fov: 52,
   near: 0.1,
@@ -85,7 +93,7 @@ export const CAMERA = {
   /** Straight third-person chase: behind the boat, looking down-river (−Z). */
   position: [0, 3.15, 10.2] as [number, number, number],
   lookAt: [0, 1.05, -18] as [number, number, number],
-  /** Depth-of-field stays on the hull, not the distant look target. */
+  /** Look-at target down-river; post-processing no longer uses a DoF focus. */
   focus: [0, 0.88, -1.2] as [number, number, number],
   follow: 7.2,
 };
@@ -105,7 +113,7 @@ export const LEVEL_ATMOSPHERES: AtmospherePalette[] = [
   {
     zenith: "#4a7eb8",
     horizon: "#d4b896",
-    fogDensity: 0.0065,
+    fogDensity: 0.0036,
     sunColor: "#ffd09a",
     ambient: "#ffd2a8",
     ground: "#3a2718",
@@ -113,7 +121,7 @@ export const LEVEL_ATMOSPHERES: AtmospherePalette[] = [
   {
     zenith: "#5aadcf",
     horizon: "#c8e4c0",
-    fogDensity: 0.0055,
+    fogDensity: 0.0032,
     sunColor: "#fff1c8",
     ambient: "#e7f3ff",
     ground: "#3d4a28",
@@ -121,7 +129,7 @@ export const LEVEL_ATMOSPHERES: AtmospherePalette[] = [
   {
     zenith: "#6a7d88",
     horizon: "#9aab9a",
-    fogDensity: 0.01,
+    fogDensity: 0.0054,
     sunColor: "#d8d0c0",
     ambient: "#c5d0c8",
     ground: "#2c2a24",
@@ -129,7 +137,7 @@ export const LEVEL_ATMOSPHERES: AtmospherePalette[] = [
   {
     zenith: "#3a3068",
     horizon: "#c46b8a",
-    fogDensity: 0.008,
+    fogDensity: 0.0048,
     sunColor: "#ffb08a",
     ambient: "#e0b8d0",
     ground: "#2a1820",
@@ -505,28 +513,33 @@ export const POWERS = {
   dragSec: 4.5,
   dragMul: 0.64,
   ramSec: 6,
-  ramAhead: 8.2,
-  ramWidth: 1.9,
+  ramMul: 1.72,
+  /** Only smash what is beside / just ahead of the hull, then fling it aside. */
+  ramAhead: 3.2,
+  ramWidth: 2.15,
 } as const;
 
 export const PICKUPS = {
-  interval: 42,
-  spawnZ: -74,
+  interval: 30,
+  firstAt: 2.1,
+  spawnZ: -88,
+  earlySpawnZ: -40,
+  ramSpawnZ: -138,
   recycleZ: 16,
-  y: 0.92,
+  y: 2.35,
   poolSize: 10,
   breakerCharges: 1,
   breakerCap: 2,
-  collectRadius: 0.88,
+  collectRadius: 0.95,
   bonusSpread: 2.05,
   clearX: 2.4,
   clearZ: 10,
   weights: {
-    bonus: 0.32,
-    breaker: 0.14,
+    bonus: 0.24,
+    breaker: 0.24,
     haste: 0.22,
-    drag: 0.16,
-    ram: 0.16,
+    drag: 0.22,
+    ram: 0.03,
   },
 } as const;
 

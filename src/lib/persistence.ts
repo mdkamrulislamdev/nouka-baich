@@ -1,4 +1,5 @@
 import type { GraphicsQuality } from "@/store/useGameStore";
+import { sanitizePlayerName } from "@/lib/leaderboard";
 
 export const STORAGE_KEY = "nouka-baich-3d:v1";
 
@@ -7,13 +8,16 @@ export type PersistedSettings = {
   musicMuted: boolean;
   sfxMuted: boolean;
   graphicsQuality: GraphicsQuality;
+  playerName: string;
 };
 
 function isGraphicsQuality(value: unknown): value is GraphicsQuality {
   return value === "high" || value === "low";
 }
 
-function isPersistedSettings(value: unknown): value is PersistedSettings {
+function isPersistedSettings(value: unknown): value is Omit<PersistedSettings, "playerName"> & {
+  playerName?: string;
+} {
   if (!value || typeof value !== "object") {
     return false;
   }
@@ -49,6 +53,9 @@ export function loadPersistedSettings(): PersistedSettings | null {
       musicMuted: parsed.musicMuted,
       sfxMuted: parsed.sfxMuted,
       graphicsQuality: parsed.graphicsQuality,
+      playerName: sanitizePlayerName(
+        typeof parsed.playerName === "string" ? parsed.playerName : "Rower",
+      ),
     };
   } catch {
     return null;
@@ -68,5 +75,5 @@ export function savePersistedSettings(settings: PersistedSettings): void {
 }
 
 export function persistedKey(settings: PersistedSettings): string {
-  return `${settings.highScore}|${settings.musicMuted}|${settings.sfxMuted}|${settings.graphicsQuality}`;
+  return `${settings.highScore}|${settings.musicMuted}|${settings.sfxMuted}|${settings.graphicsQuality}|${settings.playerName}`;
 }

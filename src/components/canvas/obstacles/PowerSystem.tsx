@@ -5,10 +5,8 @@ import { useFrame } from "@react-three/fiber";
 import { POWERS } from "@/components/canvas/sceneConfig";
 import { audio } from "@/lib/audio";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
-import {
-  beginLogSmash,
-  forEachActiveObstacle,
-} from "@/lib/obstacleWorld";
+import { beginLogSmash, forEachActiveObstacle } from "@/lib/obstacleWorld";
+import { triggerLogBreakFx } from "@/lib/logBreakFx";
 import { isRamActive, tickPowers } from "@/lib/powerUps";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -32,15 +30,17 @@ export function PowerSystem() {
       if (obstacle.sinking || obstacle.smash) {
         return;
       }
-      if (obstacle.z > 1.2 || obstacle.z < -POWERS.ramAhead) {
+      if (obstacle.z > 0.45 || obstacle.z < -POWERS.ramAhead) {
         return;
       }
       if (Math.abs(obstacle.x - lane) > POWERS.ramWidth + obstacle.halfX) {
         return;
       }
 
-      const side: -1 | 1 = obstacle.x >= lane ? 1 : -1;
+      const dx = obstacle.x - lane;
+      const side: -1 | 1 = dx >= 0 ? 1 : -1;
       beginLogSmash(obstacle, side);
+      triggerLogBreakFx(obstacle.x, obstacle.y + 0.2, obstacle.z, side);
       const now = performance.now();
       if (now - lastRamSfx > 90) {
         lastRamSfx = now;

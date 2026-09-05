@@ -3,32 +3,33 @@
 import { useEffect, useState } from "react";
 
 const MOBILE_QUERY = "(pointer: coarse), (max-width: 767px)";
-const MOBILE_DPR: [number, number] = [1, 1.5];
-const DESKTOP_DPR: [number, number] = [1, 2];
 
-function readDprRange(): [number, number] {
+function readDpr(): number {
   if (typeof window === "undefined") {
-    return DESKTOP_DPR;
+    return 2;
   }
 
-  return window.matchMedia(MOBILE_QUERY).matches ? MOBILE_DPR : DESKTOP_DPR;
+  const cap = window.matchMedia(MOBILE_QUERY).matches ? 1.75 : 2;
+  return Math.min(cap, Math.max(1, window.devicePixelRatio || 1));
 }
 
-export function useGameDpr(): [number, number] {
-  const [dpr, setDpr] = useState<[number, number]>(readDprRange);
+export function useGameDpr(): number {
+  const [dpr, setDpr] = useState(readDpr);
 
   useEffect(() => {
     const media = window.matchMedia(MOBILE_QUERY);
 
     const sync = () => {
-      setDpr(media.matches ? MOBILE_DPR : DESKTOP_DPR);
+      setDpr(readDpr());
     };
 
     sync();
     media.addEventListener("change", sync);
+    window.addEventListener("resize", sync);
 
     return () => {
       media.removeEventListener("change", sync);
+      window.removeEventListener("resize", sync);
     };
   }, []);
 

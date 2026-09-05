@@ -62,13 +62,14 @@ export function GameCanvas({ children }: GameCanvasProps) {
           </div>
         }
         onCreated={({ gl }) => {
+          const pr = Math.min(2, window.devicePixelRatio || 1);
+          gl.setPixelRatio(pr);
           gl.setClearColor(getAtmosphere(1).horizon);
           gl.toneMappingExposure = 0.78;
         }}
       >
         <ChaseCamera />
         <SceneLighting />
-        {/* Outside Suspense so progress updates while GLTFs stream in. */}
         <AssetWarmup />
         <Suspense fallback={null}>
           <ScrollingWorld />

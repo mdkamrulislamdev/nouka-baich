@@ -12,6 +12,7 @@ import {
 import {
   addBoatCrew,
   dinghyCrewSeats,
+  pickNpcCrewCount,
   racingCrewSeats,
 } from "@/components/canvas/boat/rowerFactory";
 import {
@@ -107,8 +108,16 @@ function prepareNpcBoat(
 
   const seats =
     crew === "racing"
-      ? racingCrewSeats(targetLength, RACING_BOAT_OBSTACLE.beam)
-      : dinghyCrewSeats(targetLength, DINGHY_OBSTACLE.beam);
+      ? racingCrewSeats(
+          targetLength,
+          RACING_BOAT_OBSTACLE.beam,
+          pickNpcCrewCount("racing"),
+        )
+      : dinghyCrewSeats(
+          targetLength,
+          DINGHY_OBSTACLE.beam,
+          pickNpcCrewCount("dinghy"),
+        );
   const rowerHeight =
     crew === "racing"
       ? SCENERY_MODELS.rower.targetHeight

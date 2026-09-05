@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { type Group } from "three";
 
 import { createSeatedRower } from "@/components/canvas/boat/rowerFactory";
+import { SeatKickLeg } from "@/components/canvas/boat/KickLimb";
 import { LONGBOAT_RIG, OARS, SCENERY_MODELS } from "@/components/canvas/sceneConfig";
 import { detachObject } from "@/lib/dispose";
 import { useGltfModel } from "@/lib/gltf";
@@ -50,9 +51,9 @@ function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
     const dip = Math.pow(backward, 0.65);
     const kick = getKickPose();
     const kicking = kick.active && kick.side === side ? kick.strength : 0;
-    root.rotation.x = -dip * 0.22 - kicking * 0.12;
-    root.rotation.z = side * kicking * 0.34;
-    root.rotation.y = -kicking * side * 0.08;
+    root.rotation.x = -dip * 0.22 - kicking * 0.1;
+    root.rotation.z = side * kicking * 0.42;
+    root.rotation.y = -kicking * side * 0.1;
   });
 
   return (
@@ -60,6 +61,7 @@ function Rower({ seatIndex, seatZ, side, source }: RowerProps) {
       <group rotation={[0, Math.PI, 0]} ref={rowerRef}>
         <primitive object={rower} />
       </group>
+      <SeatKickLeg side={side} seatIndex={seatIndex} />
     </group>
   );
 }

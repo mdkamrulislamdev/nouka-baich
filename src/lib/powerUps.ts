@@ -34,6 +34,7 @@ export function grantDrag(): void {
 
 export function grantRam(): void {
   clock.ramLeft = POWERS.ramSec;
+  clock.dragLeft = 0;
 }
 
 export function tickPowers(dt: number): void {
@@ -49,6 +50,9 @@ export function tickPowers(dt: number): void {
 }
 
 export function getSpeedPowerMul(): number {
+  if (clock.ramLeft > 0) {
+    return POWERS.ramMul;
+  }
   if (clock.hasteLeft > 0) {
     return POWERS.hasteMul;
   }

@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
 
-import { BOAT_BOUNDS } from "@/components/canvas/sceneConfig";
+import { BOAT_BOUNDS, COLLISION } from "@/components/canvas/sceneConfig";
 import {
   forEachActiveObstacle,
   type ObstacleRecord,
@@ -10,9 +10,9 @@ const playerBox = new Box3();
 const obstacleBox = new Box3();
 const playerCenter = new Vector3();
 const playerSize = new Vector3(
-  BOAT_BOUNDS.width,
+  BOAT_BOUNDS.width * COLLISION.hullScaleX,
   BOAT_BOUNDS.height,
-  BOAT_BOUNDS.length,
+  BOAT_BOUNDS.length * COLLISION.hullScaleZ,
 );
 const obstacleCenter = new Vector3();
 const obstacleSize = new Vector3();
@@ -24,12 +24,12 @@ export function clearLastCollision(): void {
 }
 
 function writeObstacleBox(obstacle: ObstacleRecord): Box3 {
-  if (obstacle.worldBox) {
-    return obstacle.worldBox;
-  }
-
   obstacleCenter.set(obstacle.x, obstacle.y + obstacle.halfY, obstacle.z);
-  obstacleSize.set(obstacle.halfX * 2, obstacle.halfY * 2, obstacle.halfZ * 2);
+  obstacleSize.set(
+    obstacle.halfX * 2 * COLLISION.obstacleScaleX,
+    obstacle.halfY * 2,
+    obstacle.halfZ * 2 * COLLISION.obstacleScaleZ,
+  );
   return obstacleBox.setFromCenterAndSize(obstacleCenter, obstacleSize);
 }
 
@@ -44,18 +44,24 @@ export function queryObstacleCollision(
   updatePlayerBox(laneOffset);
   lastHit = null;
 
-  const playerHalfZ = BOAT_BOUNDS.length * 0.5;
-  const playerHalfX = BOAT_BOUNDS.width * 0.5;
+  const playerHalfZ = (BOAT_BOUNDS.length * COLLISION.hullScaleZ) * 0.5;
+  const playerHalfX = (BOAT_BOUNDS.width * COLLISION.hullScaleX) * 0.5;
 
   forEachActiveObstacle((obstacle) => {
     if (lastHit || obstacle.sinking || obstacle.bumpTimer > 0) {
       return;
     }
 
-    if (Math.abs(obstacle.z) > playerHalfZ + obstacle.halfZ) {
+    if (
+      Math.abs(obstacle.z) >
+      playerHalfZ + obstacle.halfZ * COLLISION.obstacleScaleZ
+    ) {
       return;
     }
-    if (Math.abs(obstacle.x - laneOffset) > playerHalfX + obstacle.halfX) {
+    if (
+      Math.abs(obstacle.x - laneOffset) >
+      playerHalfX + obstacle.halfX * COLLISION.obstacleScaleX
+    ) {
       return;
     }
 

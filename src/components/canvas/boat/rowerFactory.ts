@@ -77,26 +77,48 @@ export function addBoatCrew(
 }
 
 /** Two thwarts, two rowers each — enough to read as a crew without 6 GLTFs. */
-export function racingCrewSeats(length: number, beam: number): CrewSeat[] {
-  const zs = [length * 0.18, -length * 0.16];
-  const seats: CrewSeat[] = [];
-  for (let index = 0; index < zs.length; index += 1) {
-    const z = zs[index];
-    ([-1, 1] as const).forEach((side) => {
-      seats.push({
-        x: side * beam * 0.3,
-        y: 0.46,
-        z,
-        side,
-      });
-    });
-  }
-  return seats;
+export function racingCrewSeats(
+  length: number,
+  beam: number,
+  count = 2,
+): CrewSeat[] {
+  const catalog: CrewSeat[] = [
+    { x: beam * 0.3, y: 0.46, z: length * 0.18, side: 1 },
+    { x: -beam * 0.3, y: 0.46, z: length * 0.18, side: -1 },
+    { x: beam * 0.3, y: 0.46, z: -length * 0.16, side: 1 },
+    { x: -beam * 0.3, y: 0.46, z: -length * 0.16, side: -1 },
+  ];
+  const n = Math.max(1, Math.min(count, catalog.length));
+  return catalog.slice(0, n);
 }
 
-export function dinghyCrewSeats(length: number, beam: number): CrewSeat[] {
-  return [
-    { x: -beam * 0.28, y: 0.44, z: length * 0.12, side: -1 },
-    { x: beam * 0.28, y: 0.44, z: -length * 0.08, side: 1 },
+export function dinghyCrewSeats(
+  length: number,
+  beam: number,
+  count = 1,
+): CrewSeat[] {
+  const catalog: CrewSeat[] = [
+    { x: beam * 0.28, y: 0.44, z: length * 0.08, side: 1 },
+    { x: -beam * 0.28, y: 0.44, z: -length * 0.08, side: -1 },
   ];
+  const n = Math.max(1, Math.min(count, catalog.length));
+  return catalog.slice(0, n);
+}
+
+/** Typical NPCs carry 1–2 rowers; 3–4 is rare. */
+export function pickNpcCrewCount(kind: "racing" | "dinghy"): number {
+  const roll = Math.random();
+  if (kind === "dinghy") {
+    return roll < 0.74 ? 1 : 2;
+  }
+  if (roll < 0.54) {
+    return 1;
+  }
+  if (roll < 0.9) {
+    return 2;
+  }
+  if (roll < 0.98) {
+    return 3;
+  }
+  return 4;
 }

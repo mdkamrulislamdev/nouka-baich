@@ -61,7 +61,9 @@ export function HeatHud() {
       if (ramRef.current) {
         ramRef.current.style.opacity = powers.ramLeft > 0 ? "1" : "0";
         ramRef.current.textContent =
-          powers.ramLeft > 0 ? `RAM · ${powers.ramLeft.toFixed(1)}s` : "RAM";
+          powers.ramLeft > 0
+            ? `RAM MAX · ${powers.ramLeft.toFixed(1)}s`
+            : "RAM";
       }
       frame = window.requestAnimationFrame(tick);
     };

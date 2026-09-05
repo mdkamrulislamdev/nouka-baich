@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { Box3, FrontSide, Group, Mesh, Vector3, type Material } from "three";
 
 import { BOAT_MODEL } from "@/components/canvas/sceneConfig";
-import { KickLimb } from "@/components/canvas/boat/KickLimb";
 import { LongboatSeats } from "@/components/canvas/boat/LongboatSeats";
 import { OarRig } from "@/components/canvas/boat/OarRig";
 import { isRamActive } from "@/lib/powerUps";
@@ -131,7 +130,6 @@ export function PlayerBoat() {
       <primitive object={boat} />
       <LongboatSeats />
       <OarRig />
-      <KickLimb />
       <RamAura />
     </group>
   );

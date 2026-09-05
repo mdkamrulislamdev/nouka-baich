@@ -591,16 +591,16 @@ export function ObstacleSpawner() {
     forEachActiveObstacle((obstacle) => {
       if (obstacle.sinking) {
         if (obstacle.smash || obstacle.kind === "log") {
-          obstacle.smashT += dt / 0.56;
+          obstacle.smashT += dt / 0.88;
           const t = Math.min(1, obstacle.smashT);
           const burst = 1 - (1 - t) * (1 - t);
-          obstacle.y = obstacle.sinkStartY + burst * 0.9 - t * t * 1.55;
-          obstacle.x += obstacle.sinkSide * 3.6 * dt;
-          obstacle.z += 1.2 * dt;
-          obstacle.rotZ = obstacle.sinkSide * burst * 2.7;
-          obstacle.rotX = burst * 1.9;
-          obstacle.rotY += dt * 9.5;
-          obstacle.scale = Math.max(0.04, obstacle.smashScale * (1 - t * 0.94));
+          obstacle.y = obstacle.sinkStartY + burst * 1.15 - t * t * 0.55;
+          obstacle.x += obstacle.sinkSide * 9.8 * dt;
+          obstacle.z -= 0.35 * dt;
+          obstacle.rotZ = obstacle.sinkSide * burst * 4.2;
+          obstacle.rotX = burst * 1.6;
+          obstacle.rotY += dt * 11;
+          obstacle.scale = Math.max(0.08, obstacle.smashScale * (1 - t * 0.82));
           if (t >= 1) {
             const item = findItem(items, obstacle);
             if (item) {

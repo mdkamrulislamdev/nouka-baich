@@ -3,6 +3,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 
 import { FEVER, FESTIVAL, PICKUPS, SCORE, type Difficulty, type GameMode } from "@/components/canvas/sceneConfig";
 import { markFeverAction } from "@/lib/actionJuice";
+import { draftPlayerName } from "@/lib/leaderboard";
 import { grantDrag, grantHaste, grantRam } from "@/lib/powerUps";
 
 export type GameStatus = "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER";
@@ -20,6 +21,7 @@ export type GameState = {
   laneOffset: number;
   level: number;
   highScore: number;
+  playerName: string;
   isNewHighScore: boolean;
   musicMuted: boolean;
   sfxMuted: boolean;
@@ -62,6 +64,7 @@ export type GameActions = {
   setLaneOffset: (laneOffset: number) => void;
   setLevel: (level: number) => void;
   setHighScore: (highScore: number) => void;
+  setPlayerName: (playerName: string) => void;
   setMusicMuted: (musicMuted: boolean) => void;
   setSfxMuted: (sfxMuted: boolean) => void;
   setGraphicsQuality: (graphicsQuality: GraphicsQuality) => void;
@@ -111,6 +114,7 @@ const INITIAL_STATE: GameState = {
   laneOffset: 0,
   level: 1,
   highScore: 0,
+  playerName: "Rower",
   isNewHighScore: false,
   musicMuted: false,
   sfxMuted: false,
@@ -157,6 +161,7 @@ export const useGameStore = create<GameStore>()(
     setLaneOffset: (laneOffset) => set({ laneOffset }),
     setLevel: (level) => set({ level }),
     setHighScore: (highScore) => set({ highScore }),
+    setPlayerName: (playerName) => set({ playerName: draftPlayerName(playerName) }),
     setMusicMuted: (musicMuted) => set({ musicMuted }),
     setSfxMuted: (sfxMuted) => set({ sfxMuted }),
     setGraphicsQuality: (graphicsQuality) => set({ graphicsQuality }),
@@ -314,7 +319,7 @@ export const useGameStore = create<GameStore>()(
       set((state) => ({
         scorePopFlash: state.scorePopFlash + 1,
         scorePopAmount: 0,
-        scorePopLabel: "RAM",
+        scorePopLabel: "RAM MAX",
       }));
     },
     consumeLogBreak: () => {
@@ -379,6 +384,7 @@ export const useGameStore = create<GameStore>()(
       set((state) => ({
         ...INITIAL_STATE,
         highScore: state.highScore,
+        playerName: state.playerName,
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
         graphicsQuality: state.graphicsQuality,
@@ -433,6 +439,7 @@ export const useGameStore = create<GameStore>()(
       set((state) => ({
         ...INITIAL_STATE,
         highScore: state.highScore,
+        playerName: state.playerName,
         musicMuted: state.musicMuted,
         sfxMuted: state.sfxMuted,
         graphicsQuality: state.graphicsQuality,
