@@ -63,9 +63,9 @@ export function HeatHud() {
       <div className="pointer-events-none absolute right-3 bottom-28 z-20 flex max-w-[32vw] flex-col items-end gap-1 sm:right-6 sm:bottom-32">
         <p
           ref={gapRef}
-          className="text-right text-[0.65rem] tracking-[0.22em] text-[#f6e6c2]/85 uppercase"
+          className="font-bengali text-right text-[0.72rem] text-[#f6e6c2]/85"
         >
-          Hunt boats · axe logs · hammer rocks
+          নৌকা শিকার · কুঠার · হাতুড়ি
         </p>
         <div
           ref={warnRef}

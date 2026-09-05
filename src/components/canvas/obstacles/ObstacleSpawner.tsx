@@ -14,12 +14,14 @@ import {
   SCENERY_MODELS,
   DIFFICULTY_PRESETS,
   INTRO,
+  HEAT_UP,
   KICK,
   BUMP,
   type Difficulty,
   type GameMode,
   getLaneLimit,
   getSpawnInterval,
+  heatUpAmount,
 } from "@/components/canvas/sceneConfig";
 import {
   createDinghyObstacle,
@@ -651,9 +653,18 @@ export function ObstacleSpawner() {
 
     consumeDirectedSpawns(items, pools, root);
 
+    const elapsed = getJuice().runElapsed;
+    const heated = heatUpAmount(elapsed);
+    const bankEvery =
+      heated > 0
+        ? HEAT_UP.bankRockEvery
+        : OBSTACLE_SPAWN.bankRockEvery;
     bankDistanceRef.current += dz;
-    if (bankDistanceRef.current >= OBSTACLE_SPAWN.bankRockEvery) {
-      bankDistanceRef.current -= OBSTACLE_SPAWN.bankRockEvery;
+    if (
+      elapsed >= INTRO.holdSpawnUntil &&
+      bankDistanceRef.current >= bankEvery
+    ) {
+      bankDistanceRef.current -= bankEvery;
       const bankSeed = spawnCountRef.current * 13 + Math.floor(state.distance);
       const side: -1 | 1 = seededRandom(bankSeed * 2.9) < 0.5 ? -1 : 1;
       spawnBankGutterRock(
@@ -843,13 +854,14 @@ export function ObstacleSpawner() {
       difficulty,
       state.distance,
       state.gameMode,
+      elapsed,
     );
     let spawnsThisFrame = 0;
-    const introHold =
-      state.gameMode === "festival"
-        ? getJuice().runElapsed < 1.05
-        : getJuice().runElapsed < INTRO.holdSpawnUntil;
-    const spawnCap = state.gameMode === "festival" ? 3 : MAX_SPAWNS_PER_FRAME;
+    const introHold = elapsed < INTRO.holdSpawnUntil;
+    const spawnCap =
+      state.gameMode === "festival" && heated > 0.35
+        ? 3
+        : MAX_SPAWNS_PER_FRAME;
     while (
       !introHold &&
       distanceRef.current >= interval &&

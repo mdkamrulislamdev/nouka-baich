@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { PICKUP_LABELS } from "@/lib/pickupLabels";
 import { getPowers } from "@/lib/powerUps";
 import { useGameStore } from "@/store/useGameStore";
 
@@ -55,11 +56,11 @@ export function PowerTimerStrip() {
     <div className="mt-1.5 flex flex-wrap items-stretch justify-center gap-1.5">
       <div
         ref={ramRef}
-        className="min-w-[4.6rem] flex-col items-center rounded-sm border border-[#ff3d6e]/90 bg-[#4a1020]/92 px-2 py-1"
+        className="min-w-[5.2rem] flex-col items-center rounded-sm border border-[#ff3d6e]/90 bg-[#4a1020]/92 px-2 py-1"
         style={{ display: "none" }}
       >
-        <span className="text-[0.55rem] tracking-[0.18em] text-[#ff7a9a] uppercase">
-          RAM
+        <span className="font-bengali text-[0.72rem] leading-none font-bold text-[#ff7a9a]">
+          {PICKUP_LABELS.ram}
         </span>
         <span
           ref={ramTimeRef}
@@ -73,8 +74,8 @@ export function PowerTimerStrip() {
         className="min-w-[4.6rem] flex-col items-center rounded-sm border border-[#3dffc0]/85 bg-[#06382c]/92 px-2 py-1"
         style={{ display: "none" }}
       >
-        <span className="text-[0.55rem] tracking-[0.18em] text-[#7affd8] uppercase">
-          SPEED+
+        <span className="font-bengali text-[0.72rem] leading-none font-bold text-[#7affd8]">
+          {PICKUP_LABELS.haste}
         </span>
         <span
           ref={hasteTimeRef}
@@ -88,8 +89,8 @@ export function PowerTimerStrip() {
         className="min-w-[4.6rem] flex-col items-center rounded-sm border border-[#b47aff]/85 bg-[#2a1644]/92 px-2 py-1"
         style={{ display: "none" }}
       >
-        <span className="text-[0.55rem] tracking-[0.18em] text-[#d4a6ff] uppercase">
-          SLOW
+        <span className="font-bengali text-[0.72rem] leading-none font-bold text-[#d4a6ff]">
+          {PICKUP_LABELS.drag}
         </span>
         <span
           ref={dragTimeRef}
@@ -100,8 +101,8 @@ export function PowerTimerStrip() {
       </div>
       {logBreakCharges > 0 ? (
         <div className="min-w-[4.6rem] flex flex-col items-center rounded-sm border border-[#ffb347]/85 bg-[#6b2a08]/92 px-2 py-1">
-          <span className="text-[0.55rem] tracking-[0.18em] text-[#ffd36a] uppercase">
-            AXE
+          <span className="font-bengali text-[0.72rem] leading-none font-bold text-[#ffd36a]">
+            {PICKUP_LABELS.breaker}
           </span>
           <span className="font-mono text-lg font-bold leading-none text-[#ffe7b0] tabular-nums">
             {logBreakCharges}
@@ -110,8 +111,8 @@ export function PowerTimerStrip() {
       ) : null}
       {rockBreakCharges > 0 ? (
         <div className="min-w-[4.6rem] flex flex-col items-center rounded-sm border border-[#c5d0dc]/85 bg-[#243044]/92 px-2 py-1">
-          <span className="text-[0.55rem] tracking-[0.18em] text-[#c5d0dc] uppercase">
-            HAMMER
+          <span className="font-bengali text-[0.72rem] leading-none font-bold text-[#c5d0dc]">
+            {PICKUP_LABELS.crusher}
           </span>
           <span className="font-mono text-lg font-bold leading-none text-[#e8eef4] tabular-nums">
             {rockBreakCharges}

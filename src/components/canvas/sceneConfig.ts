@@ -464,13 +464,29 @@ export const FESTIVAL = {
   packSpan: 1.15,
   actionMul: 1.45,
   surviveBonus: 700,
-  graceSec: 1.05,
+  graceSec: 3.2,
   starts: [
     { z: -20, xOff: -2.45, speedDelta: -0.35, heatIndex: 0 },
     { z: -30, xOff: 2.5, speedDelta: -0.9, heatIndex: 1 },
     { z: -42, xOff: -2.2, speedDelta: 0.25, heatIndex: 2 },
   ],
 } as const;
+
+/** Opening stretch stays calm; pressure rises after this many seconds. */
+export const HEAT_UP = {
+  sec: 20,
+  blendSec: 2.5,
+  spawnMul: 0.74,
+  speedMul: 1.1,
+  bankRockEvery: 12,
+} as const;
+
+export function heatUpAmount(runElapsed: number): number {
+  if (runElapsed < HEAT_UP.sec) {
+    return 0;
+  }
+  return Math.min(1, (runElapsed - HEAT_UP.sec) / HEAT_UP.blendSec);
+}
 
 export function getGraceSec(mode: GameMode): number {
   return mode === "festival" ? FESTIVAL.graceSec : INTRO.graceSec;
@@ -493,10 +509,15 @@ export function getTargetSpeed(
   level: number,
   difficulty: Difficulty = "medium",
   gameMode: GameMode = "endless",
+  runElapsed = 0,
 ): number {
   const t = Math.max(0, level - 1);
   const preset = DIFFICULTY_PRESETS[difficulty];
-  const heat = gameMode === "festival" ? FESTIVAL.speedMul : 1;
+  const heated = heatUpAmount(runElapsed);
+  const heat =
+    gameMode === "festival"
+      ? 1 + heated * (FESTIVAL.speedMul - 1)
+      : 1 + heated * (HEAT_UP.speedMul - 1);
   return PROGRESSION.baseSpeed * 1.12 ** t * preset.speedMul * heat;
 }
 
@@ -505,6 +526,7 @@ export function getSpawnInterval(
   difficulty: Difficulty = "medium",
   distance = 0,
   gameMode: GameMode = "endless",
+  runElapsed = 0,
 ): number {
   const preset = DIFFICULTY_PRESETS[difficulty];
   const wave = 0.72 + seededIntervalJitter(distance) * 0.56;
@@ -516,7 +538,11 @@ export function getSpawnInterval(
           OBSTACLE_SPAWN.interval *
             PROGRESSION.intervalDecay ** Math.max(0, level - 1),
         ) * preset.spawnMul;
-  const heat = gameMode === "festival" ? FESTIVAL.spawnMul : 1;
+  const heated = heatUpAmount(runElapsed);
+  const heat =
+    gameMode === "festival"
+      ? 1 - heated * (1 - FESTIVAL.spawnMul)
+      : 1 - heated * (1 - HEAT_UP.spawnMul);
   return base * wave * heat;
 }
 

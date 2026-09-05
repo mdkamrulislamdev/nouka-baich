@@ -5,6 +5,7 @@ import { FEVER, FESTIVAL, PICKUPS, SCORE, type Difficulty, type GameMode } from 
 import { markFeverAction } from "@/lib/actionJuice";
 import { skillBonus } from "@/lib/festivalScore";
 import { draftPlayerName } from "@/lib/leaderboard";
+import { PICKUP_LABELS } from "@/lib/pickupLabels";
 import { grantDrag, grantHaste, grantRam } from "@/lib/powerUps";
 
 export type GameStatus = "MENU" | "PLAYING" | "PAUSED" | "GAMEOVER";
@@ -286,7 +287,7 @@ export const useGameStore = create<GameStore>()(
           ),
           scorePopFlash: state.scorePopFlash + 1,
           scorePopAmount: 0,
-          scorePopLabel: "AXE",
+          scorePopLabel: PICKUP_LABELS.breaker,
         };
       }),
     collectCrusher: () =>
@@ -299,7 +300,7 @@ export const useGameStore = create<GameStore>()(
           ),
           scorePopFlash: state.scorePopFlash + 1,
           scorePopAmount: 0,
-          scorePopLabel: "HAMMER",
+          scorePopLabel: PICKUP_LABELS.crusher,
         };
       }),
     collectBonus: () =>
@@ -312,7 +313,7 @@ export const useGameStore = create<GameStore>()(
           score: state.score + bonus,
           scorePopFlash: state.scorePopFlash + 1,
           scorePopAmount: bonus,
-          scorePopLabel: "100 PTS",
+          scorePopLabel: PICKUP_LABELS.bonus,
         };
       }),
     collectHaste: () => {
@@ -321,7 +322,7 @@ export const useGameStore = create<GameStore>()(
       set((state) => ({
         scorePopFlash: state.scorePopFlash + 1,
         scorePopAmount: 0,
-        scorePopLabel: "SPEED+",
+        scorePopLabel: PICKUP_LABELS.haste,
       }));
     },
     collectDrag: () => {
@@ -330,7 +331,7 @@ export const useGameStore = create<GameStore>()(
       set((state) => ({
         scorePopFlash: state.scorePopFlash + 1,
         scorePopAmount: 0,
-        scorePopLabel: "SLOW",
+        scorePopLabel: PICKUP_LABELS.drag,
       }));
     },
     collectRam: () => {
@@ -339,7 +340,7 @@ export const useGameStore = create<GameStore>()(
       set((state) => ({
         scorePopFlash: state.scorePopFlash + 1,
         scorePopAmount: 0,
-        scorePopLabel: "RAM MAX",
+        scorePopLabel: PICKUP_LABELS.ram,
       }));
     },
     consumeLogBreak: () => {

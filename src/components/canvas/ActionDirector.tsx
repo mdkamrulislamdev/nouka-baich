@@ -6,11 +6,13 @@ import {
   BOAT_BOUNDS,
   DRAFT,
   FESTIVAL,
+  HEAT_UP,
   INTRO,
   JUICE,
   RIVAL,
   RIVAL_NAMES,
   getLaneLimit,
+  heatUpAmount,
 } from "@/components/canvas/sceneConfig";
 import {
   addSurge,
@@ -160,7 +162,7 @@ export function ActionDirector() {
     if (gameMode === "festival" && !juice.heatSeeded) {
       juice.heatSeeded = true;
       juice.introIndex = INTRO.beats.length;
-      juice.packNext = FESTIVAL.packMin;
+      juice.packNext = 1.8;
       for (let index = 0; index < FESTIVAL.boatCount; index += 1) {
         const seed = juice.eventSeed + index * 17;
         queueRiverThreat({
@@ -265,11 +267,13 @@ export function ActionDirector() {
     juice.prevLane = laneOffset;
 
     juice.packTimer += clampGameDelta(delta);
-    if (juice.packTimer >= juice.packNext && juice.runElapsed > (gameMode === "festival" ? 1.8 : RIVAL.packAfter)) {
+    const heated = heatUpAmount(juice.runElapsed);
+    const packGate = gameMode === "festival" ? 5 : RIVAL.packAfter;
+    if (juice.packTimer >= juice.packNext && juice.runElapsed > packGate) {
       juice.packTimer = 0;
       juice.eventSeed += 1;
       juice.packNext =
-        gameMode === "festival"
+        gameMode === "festival" && heated > 0.35
           ? FESTIVAL.packMin + seededRandom(juice.eventSeed * 9.1) * FESTIVAL.packSpan
           : 1.5 + seededRandom(juice.eventSeed * 9.1) * 2.8;
       const heatCount = countHeatBoats();

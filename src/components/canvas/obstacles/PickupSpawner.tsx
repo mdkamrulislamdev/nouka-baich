@@ -16,8 +16,11 @@ import { pickRiverLaneX, seededRandom } from "@/lib/mathUtils";
 import { detachObject } from "@/lib/dispose";
 import {
   createPickup,
+  getPickupIcon,
+  PICKUP_BEACON_RANGE,
   PICKUP_KINDS,
   pickupSpinRate,
+  syncPickupBeacon,
   type PickupKind,
 } from "@/components/canvas/obstacles/pickupFactory";
 import { useGameStore } from "@/store/useGameStore";
@@ -181,13 +184,18 @@ export function PickupSpawner() {
       slot.z += dz;
       const beat = 0.5 + 0.5 * Math.sin(elapsed * 6.4 + index);
       const pulse = 1.08 + beat * beat * 0.32;
-      slot.object.scale.setScalar(pulse);
-      slot.object.rotation.y += dt * pickupSpinRate(slot.kind);
-      slot.object.position.set(
-        slot.x,
-        PICKUPS.y + Math.sin(elapsed * 3.2 + index) * 0.16,
-        slot.z,
+      const worldY = PICKUPS.y + Math.sin(elapsed * 3.2 + index) * 0.16;
+      const icon = getPickupIcon(slot.object);
+      icon.scale.setScalar(pulse);
+      icon.rotation.y += dt * pickupSpinRate(slot.kind);
+      slot.object.scale.setScalar(1);
+      slot.object.position.set(slot.x, worldY, slot.z);
+      const near = Math.max(
+        0,
+        1 -
+          Math.hypot(slot.x - state.laneOffset, slot.z) / PICKUP_BEACON_RANGE,
       );
+      syncPickupBeacon(slot.object, worldY, near, beat);
 
       const collectDx = Math.abs(slot.x - state.laneOffset);
       const collectDz = Math.abs(slot.z);
@@ -257,6 +265,8 @@ export function PickupSpawner() {
     free.z = placedZ;
     free.object.visible = true;
     free.object.position.set(free.x, PICKUPS.y, free.z);
+    getPickupIcon(free.object).rotation.y = 0;
+    syncPickupBeacon(free.object, PICKUPS.y, 0.2, 0.4);
     free.object.scale.setScalar(1);
   });
 

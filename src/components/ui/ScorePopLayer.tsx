@@ -15,7 +15,7 @@ export function ScorePopLayer() {
   return (
     <div className="pointer-events-none absolute top-24 right-3 z-20 flex max-w-[42vw] flex-col items-end sm:top-28 sm:right-5">
       <div key={flash} className="score-pop text-right">
-        <p className="text-[0.62rem] tracking-[0.22em] text-[#e4c36a] uppercase">
+        <p className="font-bengali text-sm tracking-wide text-[#e4c36a]">
           {label}
         </p>
         {amount > 0 ? (

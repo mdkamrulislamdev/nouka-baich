@@ -29,7 +29,12 @@ export function ProgressionSystem() {
 
     const dt = Math.min(delta, 0.05);
     const target =
-      getTargetSpeed(nextLevel, difficulty, state.gameMode) *
+      getTargetSpeed(
+        nextLevel,
+        difficulty,
+        state.gameMode,
+        getJuice().runElapsed,
+      ) *
         (getJuice().drafting ? 1 + DRAFT.speedMul : 1) *
         getSpeedPowerMul() +
       tickSurge(dt);
