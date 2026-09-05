@@ -30,6 +30,8 @@ import {
   createLogObstacle,
   createLogResources,
   disposeLogResources,
+  resetLogHalves,
+  splitLogHalves,
   LOG_EXTENTS,
 } from "@/components/canvas/obstacles/logFactory";
 import {
@@ -142,6 +144,9 @@ function activateObstacle(
 
   item.object = getPool(pools, item.record.kind).acquire();
   item.object.visible = true;
+  if (item.record.kind === "log") {
+    resetLogHalves(item.object);
+  }
   root.add(item.object);
 }
 
@@ -158,6 +163,9 @@ function recycleObstacle(item: PooledObstacle, pools: ObstaclePools): void {
   object.position.set(0, -999, 0);
   object.rotation.set(0, 0, 0);
   object.scale.setScalar(1);
+  if (item.record.kind === "log") {
+    resetLogHalves(object);
+  }
   getPool(pools, item.record.kind).release(object);
   item.object = null;
 }
@@ -590,7 +598,26 @@ export function ObstacleSpawner() {
 
     forEachActiveObstacle((obstacle) => {
       if (obstacle.sinking) {
-        if (obstacle.smash || obstacle.kind === "log") {
+        if (obstacle.smash && obstacle.kind === "log") {
+          obstacle.smashT += dt / 0.92;
+          const t = Math.min(1, obstacle.smashT);
+          obstacle.y = obstacle.sinkStartY + t * 0.28;
+          obstacle.x += obstacle.sinkSide * 2.1 * dt;
+          obstacle.z -= 0.18 * dt;
+          obstacle.rotX = 0;
+          obstacle.rotY = 0;
+          obstacle.rotZ = 0;
+          obstacle.scale = 1;
+          const splitItem = findItem(items, obstacle);
+          if (splitItem?.object) {
+            splitLogHalves(splitItem.object, t, obstacle.sinkSide);
+          }
+          if (t >= 1 && splitItem) {
+            recycleObstacle(splitItem, pools);
+          }
+          return;
+        }
+        if (obstacle.smash) {
           obstacle.smashT += dt / 0.88;
           const t = Math.min(1, obstacle.smashT);
           const burst = 1 - (1 - t) * (1 - t);

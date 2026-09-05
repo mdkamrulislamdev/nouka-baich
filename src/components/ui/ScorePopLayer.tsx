@@ -13,7 +13,7 @@ export function ScorePopLayer() {
   }
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[42%] z-20 flex justify-center px-4">
+    <div className="pointer-events-none absolute inset-x-0 top-[12%] z-20 flex justify-center px-4 sm:top-[10%]">
       <div key={flash} className="score-pop text-center">
         <p className="text-[0.7rem] tracking-[0.32em] text-[#e4c36a] uppercase">
           {label}

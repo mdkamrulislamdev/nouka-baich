@@ -7,7 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Group } from "three";
 
-import { PICKUPS } from "@/components/canvas/sceneConfig";
+import { PICKUPS, getLaneLimit } from "@/components/canvas/sceneConfig";
 import { getJuice } from "@/lib/actionJuice";
 import { audio } from "@/lib/audio";
 import { clampGameDelta, isGameplayActive } from "@/lib/gameplay";
@@ -61,12 +61,26 @@ function pickKind(seed: number): PickupKind {
   return PICKUP_ORDER[(seed - 1) % PICKUP_ORDER.length];
 }
 
-function pickLane(seed: number, kind: PickupKind): number {
-  const lanes =
+function pickPickupX(seed: number, attempt: number, kind: PickupKind): number {
+  const limit = getLaneLimit() * (kind === "ram" ? 0.86 : 0.94);
+  const roll = seededRandom(seed * 7.13 + attempt * 3.91);
+  if (roll < 0.34) {
+    return -limit * (0.18 + seededRandom(seed * 11.7 + attempt) * 0.82);
+  }
+  if (roll < 0.68) {
+    return limit * (0.18 + seededRandom(seed * 11.7 + attempt) * 0.82);
+  }
+  return (seededRandom(seed * 19.3 + attempt) * 2 - 1) * limit * 0.4;
+}
+
+function pickPickupZ(seed: number, kind: PickupKind): number {
+  const base =
     kind === "ram"
-      ? [2.15, -2.15, 1.85, -1.85]
-      : [0, 1.15, -1.15, 1.85, -1.85, 0.55, -0.55];
-  return lanes[Math.floor(seededRandom(seed * 4.1) * lanes.length) % lanes.length];
+      ? PICKUPS.ramSpawnZ
+      : seed <= 2
+        ? PICKUPS.earlySpawnZ
+        : PICKUPS.spawnZ;
+  return base + (seededRandom(seed * 2.27) * 2 - 1) * 14;
 }
 
 function collectPickup(kind: PickupKind): void {
@@ -222,29 +236,21 @@ export function PickupSpawner() {
       return;
     }
 
-    const placedZ =
-      kind === "ram"
-        ? PICKUPS.ramSpawnZ
-        : seed <= 2
-          ? PICKUPS.earlySpawnZ
-          : PICKUPS.spawnZ;
-    let placedX = pickLane(seed, kind);
+    const placedZ = pickPickupZ(seed, kind);
+    let placedX = pickPickupX(seed, 0, kind);
     let foundClear = isCorridorClear(placedX, placedZ);
     if (!foundClear) {
-      const lanes =
-        kind === "ram"
-          ? [2.15, -2.15, 1.85, -1.85]
-          : [0, 1.15, -1.15, 1.85, -1.85, 0.55, -0.55];
-      for (let i = 0; i < lanes.length; i += 1) {
-        if (isCorridorClear(lanes[i], placedZ)) {
-          placedX = lanes[i];
+      for (let attempt = 1; attempt <= 8; attempt += 1) {
+        const candidate = pickPickupX(seed, attempt, kind);
+        if (isCorridorClear(candidate, placedZ)) {
+          placedX = candidate;
           foundClear = true;
           break;
         }
       }
     }
     if (!foundClear) {
-      placedX = pickLane(seed + 3, kind);
+      placedX = pickPickupX(seed + 17, 3, kind);
     }
 
     free.active = true;
